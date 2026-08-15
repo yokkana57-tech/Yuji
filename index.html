@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>三日月オーダー</title>
+<style>
+  :root {
+    --bg: #E8E1D2;
+    --surface: #F7F3EA;
+    --surface-2: #FFFFFF;
+    --text: #2B2118;
+    --text-dim: #6B5D4F;
+    --line: #DDD3C0;
+    --accent: #C97B12;
+    --accent-ink: #FFFDF8;
+    --accent2: #A83A2A;
+    --accent2-ink: #FFF8F5;
+    --state-fresh: #2C7A6B;
+    --state-wait: #B8862F;
+    --state-late: #B23B3B;
+    --shadow: 0 8px 24px -12px rgba(43,33,24,0.35);
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 22px;
+    --font-display: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+    --font-body: "Hiragino Sans", "Yu Gothic Medium", "Yu Gothic", "Noto Sans JP", -apple-system, "Segoe UI", sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1B1611;
+      --surface: #241D16;
+      --surface-2: #2C231A;
+      --text: #F1E9DC;
+      --text-dim: #B4A692;
+      --line: #3A2F24;
+      --accent: #E3A83D;
+      --accent-ink: #1B1611;
+      --accent2: #E2604A;
+      --accent2-ink: #1B1611;
+      --state-fresh: #4FB6A3;
+      --state-wait: #E0A94E;
+      --state-late: #E36A6A;
+      --shadow: 0 10px 28px -14px rgba(0,0,0,0.6);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #1B1611;
+    --surface: #241D16;
+    --surface-2: #2C231A;
+    --text: #F1E9DC;
+    --text-dim: #B4A692;
+    --line: #3A2F24;
+    --accent: #E3A83D;
+    --accent-ink: #1B1611;
+    --accent2: #E2604A;
+    --accent2-ink: #1B1611;
+    --state-fresh: #4FB6A3;
+    --state-wait: #E0A94E;
+    --state-late: #E36A6A;
+    --shadow: 0 10px 28px -14px rgba(0,0,0,0.6);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font-family: inherit; }
+  button:focus-visible, .table-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  h1, h2 { font-family: var(--font-display); margin: 0; text-wrap: balance; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  .shell { max-width: 640px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 14px 18px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .brand-mark { font-size: 1.6rem; line-height: 1; }
+  .brand-name { font-family: var(--font-display); font-size: 0.95rem; font-weight: 600; }
+  .brand-sub { font-size: 0.75rem; color: var(--text-dim); letter-spacing: 0.02em; }
+  .link-btn {
+    background: none; border: 1px solid var(--line); color: var(--text-dim);
+    padding: 7px 12px; border-radius: var(--radius-sm); font-size: 0.75rem;
+    cursor: pointer; white-space: nowrap;
+  }
+  .link-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .role-main {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 22px; padding: 40px 24px; text-align: center;
+  }
+  .role-title { font-size: 1.4rem; font-weight: 600; }
+  .role-cards { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 380px; }
+  .role-card {
+    display: flex; flex-direction: column; gap: 6px; align-items: center;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
+    padding: 22px 18px; cursor: pointer; box-shadow: var(--shadow);
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+  .role-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .role-card-emoji { font-size: 1.8rem; }
+  .role-card-label { font-weight: 600; font-size: 0.98rem; }
+  .role-card-desc { color: var(--text-dim); font-size: 0.78rem; }
+  .role-hint { color: var(--text-dim); font-size: 0.72rem; max-width: 380px; line-height: 1.7; }
+
+  .table-main { flex: 1; padding: 32px 22px; text-align: center; }
+  .section-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 8px; }
+  .section-sub { color: var(--text-dim); font-size: 0.8rem; margin: 0 0 24px; }
+  .table-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; max-width: 380px; margin: 0 auto; }
+  .table-btn {
+    aspect-ratio: 1; border-radius: var(--radius-md); border: 1px solid var(--line);
+    background: var(--surface); color: var(--text); font-size: 1.1rem; font-weight: 600;
+    font-variant-numeric: tabular-nums; cursor: pointer;
+  }
+  .table-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .tabbar {
+    display: flex; gap: 6px; padding: 10px 14px; overflow-x: auto;
+    background: var(--bg); border-bottom: 1px solid var(--line);
+    position: sticky; top: 61px; z-index: 15;
+  }
+  .tab {
+    flex: 0 0 auto; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--text-dim); font-size: 0.82rem; cursor: pointer;
+    white-space: nowrap;
+  }
+  .tab.is-active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+
+  .menu-main { flex: 1; padding: 18px 18px 100px; }
+  .menu-group { margin-bottom: 26px; }
+  .menu-group-title {
+    font-size: 0.78rem; letter-spacing: 0.08em; color: var(--text-dim);
+    text-transform: uppercase; margin-bottom: 10px;
+  }
+  .menu-list { display: flex; flex-direction: column; gap: 10px; }
+  .menu-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
+    padding: 13px 14px;
+  }
+  .menu-item.is-disabled { opacity: 0.55; }
+  .menu-item-main { min-width: 0; }
+  .menu-item-name { font-weight: 600; font-size: 0.92rem; }
+  .menu-item-desc { color: var(--text-dim); font-size: 0.74rem; margin-top: 3px; line-height: 1.55; }
+  .menu-item-note { color: var(--accent2); font-size: 0.72rem; margin-top: 3px; }
+  .menu-item-side { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; flex: 0 0 auto; }
+  .menu-item-price { font-size: 0.86rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .stepper { display: flex; align-items: center; gap: 9px; }
+  .stepper-btn {
+    width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line);
+    background: var(--surface-2); color: var(--text); font-size: 1rem; line-height: 1;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .stepper-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .stepper-btn:disabled { opacity: 0.35; cursor: default; }
+  .stepper-qty { min-width: 16px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  .cart-bar {
+    position: sticky; bottom: 0; z-index: 20; margin: 0 14px 14px; padding: 15px 18px;
+    background: var(--accent); color: var(--accent-ink); border: none; border-radius: var(--radius-lg);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    font-size: 0.86rem; font-weight: 600; cursor: pointer; box-shadow: var(--shadow);
+  }
+  .cart-bar-total { font-variant-numeric: tabular-nums; }
+
+  .cart-main { flex: 1; padding: 18px 18px 32px; }
+  .cart-head { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; align-items: flex-start; }
+  .cart-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+  .cart-line {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
+    padding: 12px 14px;
+  }
+  .cart-line-name { font-weight: 600; font-size: 0.88rem; }
+  .cart-line-side { display: flex; align-items: center; gap: 14px; }
+  .cart-line-price { font-size: 0.84rem; font-variant-numeric: tabular-nums; min-width: 64px; text-align: right; }
+  .cart-total-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 14px 4px; border-top: 1px solid var(--line); margin-bottom: 18px;
+    font-size: 0.92rem; font-weight: 600;
+  }
+  .cart-total-amount { font-size: 1.3rem; font-variant-numeric: tabular-nums; color: var(--accent); }
+  .empty-note { color: var(--text-dim); font-size: 0.85rem; text-align: center; padding: 40px 0; }
+
+  .primary-btn {
+    width: 100%; padding: 15px; border: none; border-radius: var(--radius-md);
+    background: var(--accent); color: var(--accent-ink); font-size: 0.95rem; font-weight: 700;
+    cursor: pointer;
+  }
+  .primary-btn:hover { filter: brightness(1.06); }
+
+  .confirm-main {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 40px 24px; text-align: center;
+  }
+  .confirm-badge {
+    width: 56px; height: 56px; border-radius: 50%; background: var(--state-fresh); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 6px;
+  }
+  .confirm-sub { font-size: 0.9rem; }
+  .confirm-note { color: var(--text-dim); font-size: 0.78rem; max-width: 320px; line-height: 1.7; margin-bottom: 10px; }
+  .confirm-main .primary-btn { max-width: 260px; }
+
+  .staff-summary { display: flex; gap: 10px; padding: 14px 18px 0; }
+  .summary-chip {
+    flex: 1; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
+    padding: 10px 14px; display: flex; flex-direction: column; gap: 2px;
+  }
+  .summary-num { font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .summary-label { font-size: 0.7rem; color: var(--text-dim); }
+
+  .ticket-board {
+    flex: 1; padding: 16px 18px 40px; display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; align-content: start;
+  }
+  .ticket {
+    background: var(--surface); border: 1px solid var(--line); border-left: 5px solid var(--state-fresh);
+    border-radius: var(--radius-md); padding: 14px 16px; box-shadow: var(--shadow);
+  }
+  .ticket.state-fresh { border-left-color: var(--state-fresh); }
+  .ticket.state-wait { border-left-color: var(--state-wait); }
+  .ticket.state-late { border-left-color: var(--state-late); }
+  .ticket-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .ticket-table { font-weight: 700; font-size: 0.98rem; }
+  .ticket-time { font-size: 0.8rem; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  .ticket-items { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+  .ticket-items li { display: flex; gap: 8px; font-size: 0.85rem; }
+  .ticket-item-qty { font-weight: 700; color: var(--accent2); min-width: 1.4em; font-variant-numeric: tabular-nums; }
+  .ticket-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .ticket-total { font-size: 0.88rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .ticket-done {
+    border: none; border-radius: var(--radius-sm); background: var(--text); color: var(--bg);
+    padding: 8px 12px; font-size: 0.76rem; font-weight: 600; cursor: pointer;
+  }
+  .ticket-done:hover { background: var(--accent2); color: var(--accent2-ink); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function () {
+  var ORDERS_KEY = 'mikazuki_orders_v1';
+  var COMPLETED_KEY = 'mikazuki_completed_v1';
+  var TABLE_COUNT = 10;
+
+  var MENU = [
+    {
+      id: 'curry', label: 'カレー',
+      groups: [
+        { title: '通常', items: [
+          { name: '三元豚カツカレー', price: 1100 },
+          { name: 'からあげカレー', price: 1100 },
+          { name: 'ビーフカレー', price: 1100 },
+          { name: 'チキンカレー', price: 900 }
+        ]},
+        { title: 'セット（サラダ付き）', items: [
+          { name: 'ビーフ&チキンカレー', desc: '濃厚な旨みのビーフカレーと、スパイスが香るチキンカレーのあいがけプレート', price: 1300 }
+        ]},
+        { title: 'ルーのみ（500ml・約2人前）', items: [
+          { name: 'ビーフカレー（ルーのみ）', price: 1200 },
+          { name: 'チキンカレー（ルーのみ）', price: 1000 }
+        ]}
+      ]
+    },
+    {
+      id: 'food', label: 'フード・サイド',
+      groups: [
+        { title: 'フード', items: [
+          { name: 'リーフサラダ', desc: 'ふき農園様より仕入れた朝取りの新鮮リーフを使用。仕入れにより提供できない場合あり', price: 200 },
+          { name: 'オムライス', price: 800 }
+        ]},
+        { title: 'サイド', items: [
+          { name: 'からあげ3個', price: 300 },
+          { name: 'たこ焼き5個', price: 300 },
+          { name: 'ポテトフライ', price: 300 },
+          { name: '三元豚カツ', price: 500 },
+          { name: 'タコ唐揚げ', price: 500 },
+          { name: 'イカ旨天', price: 500 },
+          { name: 'マンゴー', price: 500 }
+        ]}
+      ]
+    },
+    {
+      id: 'dessert', label: 'デザート',
+      groups: [
+        { title: 'ケーキ', items: [
+          { name: '季節のフルーツムース', desc: '口の中とろけるクリーミーなムース', price: 500 },
+          { name: 'コーヒーゼリー', desc: 'ほろ苦いコーヒーの香りが広がる絶品のゼリー', price: 300 }
+        ]}
+      ]
+    },
+    {
+      id: 'drink', label: 'ドリンク',
+      groups: [
+        { title: 'ハーブティー', items: [
+          { name: 'ムーンガーデン（アップル）', price: 600 },
+          { name: 'フラワーマスカット', price: 600 },
+          { name: 'プリンセスタイム（ピーチ）', price: 600 },
+          { name: 'アサイーラズベリー', price: null, note: '価格未定のため、現在ご注文いただけません' }
+        ]},
+        { title: '紅茶', items: [
+          { name: '紅茶（ブレンドティー）', price: 500 }
+        ]},
+        { title: 'コーヒー', items: [
+          { name: 'ガテマラ', price: 500 },
+          { name: 'キリマンジャロ', price: 500 },
+          { name: 'コロンビアスプレモ', price: 500 }
+        ]},
+        { title: 'ラテ', items: [
+          { name: 'カプチーノ', price: 600 },
+          { name: 'アフォガード', desc: 'バニラアイスにエスプレッソをかけたドルチェ', price: 600 }
+        ]},
+        { title: 'ビール', items: [
+          { name: 'アサヒスーパードライ 中瓶', price: 545 },
+          { name: 'キリン一番搾り 中瓶', price: 545 }
+        ]}
+      ]
+    }
+  ];
+
+  function itemKey(catId, groupTitle, name) { return catId + '__' + groupTitle + '__' + name; }
+
+  var ITEM_BY_KEY = {};
+  MENU.forEach(function (cat) {
+    cat.groups.forEach(function (g) {
+      g.items.forEach(function (item) {
+        ITEM_BY_KEY[itemKey(cat.id, g.title, item.name)] = item;
+      });
+    });
+  });
+
+  var STAFF_TOKEN = '4663562f';
+
+  var state = {
+    role: null,
+    table: null,
+    tableLocked: false,
+    view: 'menu',
+    activeTab: MENU[0].id,
+    cart: {},
+    lastOrderNo: null
+  };
+
+  var channel = null;
+  try { channel = new BroadcastChannel('mikazuki-orders'); } catch (e) { channel = null; }
+  var staffTicker = null;
+
+  function loadOrders() {
+    try { return JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]'); }
+    catch (e) { return []; }
+  }
+  function saveOrders(orders) {
+    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+    if (channel) channel.postMessage({ type: 'update' });
+  }
+  function bumpCompleted() {
+    var n = parseInt(localStorage.getItem(COMPLETED_KEY) || '0', 10) + 1;
+    localStorage.setItem(COMPLETED_KEY, String(n));
+    return n;
+  }
+  function getCompleted() { return parseInt(localStorage.getItem(COMPLETED_KEY) || '0', 10); }
+
+  function fmtYen(n) { return '¥' + n.toLocaleString('ja-JP'); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  }); }
+
+  function cartCount() { return Object.keys(state.cart).reduce(function (s, k) { return s + state.cart[k].qty; }, 0); }
+  function cartTotal() { return Object.keys(state.cart).reduce(function (s, k) { return s + state.cart[k].qty * state.cart[k].price; }, 0); }
+
+  function addToCart(key) {
+    var item = ITEM_BY_KEY[key];
+    if (!item || item.price == null) return;
+    if (!state.cart[key]) state.cart[key] = { name: item.name, price: item.price, qty: 0 };
+    state.cart[key].qty++;
+    render();
+  }
+  function decFromCart(key) {
+    if (!state.cart[key]) return;
+    state.cart[key].qty--;
+    if (state.cart[key].qty <= 0) delete state.cart[key];
+    render();
+  }
+
+  function submitOrder() {
+    var keys = Object.keys(state.cart);
+    if (!keys.length) return;
+    var items = keys.map(function (k) { return state.cart[k]; });
+    var orders = loadOrders();
+    var maxNo = orders.reduce(function (m, o) { return Math.max(m, o.no); }, 0);
+    var order = {
+      id: 'o' + Date.now() + Math.random().toString(36).slice(2, 7),
+      no: maxNo + 1,
+      table: state.table,
+      items: items,
+      total: cartTotal(),
+      createdAt: Date.now()
+    };
+    orders.push(order);
+    saveOrders(orders);
+    state.lastOrderNo = order.no;
+    state.cart = {};
+    state.view = 'confirm';
+    render();
+  }
+
+  function completeOrder(id) {
+    var orders = loadOrders().filter(function (o) { return o.id !== id; });
+    saveOrders(orders);
+    bumpCompleted();
+    render();
+  }
+
+  function pickRole(role) {
+    state.role = role;
+    if (role === 'staff') startStaffTicker(); else stopStaffTicker();
+    render();
+  }
+  function backToRolePicker() {
+    state.role = null;
+    state.table = null;
+    state.view = 'menu';
+    state.cart = {};
+    stopStaffTicker();
+    render();
+  }
+  function startStaffTicker() {
+    stopStaffTicker();
+    staffTicker = setInterval(function () { if (state.role === 'staff') render(); }, 1000);
+  }
+  function stopStaffTicker() {
+    if (staffTicker) { clearInterval(staffTicker); staffTicker = null; }
+  }
+
+  window.addEventListener('storage', function (e) {
+    if (e.key === ORDERS_KEY && state.role === 'staff') render();
+  });
+  if (channel) channel.onmessage = function () { if (state.role === 'staff') render(); };
+
+  function elapsedLabel(createdAt) {
+    var sec = Math.max(0, Math.floor((Date.now() - createdAt) / 1000));
+    var m = Math.floor(sec / 60), s = sec % 60;
+    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+  function elapsedState(createdAt) {
+    var min = (Date.now() - createdAt) / 60000;
+    if (min < 2) return 'fresh';
+    if (min < 5) return 'wait';
+    return 'late';
+  }
+
+  function topbarCustomer() {
+    var switchBtn = state.tableLocked ? '' : '<button class="link-btn" data-action="switch-role">役割を変更</button>';
+    return '<header class="topbar"><div class="brand"><span class="brand-mark">🍛</span><div>' +
+      '<div class="brand-name">Dream studio 三日月カレー</div>' +
+      (state.table ? '<div class="brand-sub">テーブル ' + state.table + ' 番</div>' : '<div class="brand-sub">お客様用オーダー</div>') +
+      '</div></div>' + switchBtn + '</header>';
+  }
+
+  function renderRolePicker() {
+    return '<div class="shell role-shell">' +
+      '<header class="topbar"><div class="brand"><span class="brand-mark">🍛</span><div>' +
+      '<div class="brand-name">Dream studio 三日月カレー</div><div class="brand-sub">QRコード注文デモ</div>' +
+      '</div></div></header>' +
+      '<main class="role-main">' +
+      '<h1 class="role-title">どちらの画面を開きますか？</h1>' +
+      '<div class="role-cards">' +
+      '<button class="role-card" data-role="customer"><span class="role-card-emoji">📱</span>' +
+      '<span class="role-card-label">お客様として注文する</span>' +
+      '<span class="role-card-desc">テーブルのQRコードを読み取った想定で、メニューを注文します</span></button>' +
+      '<button class="role-card" data-role="staff"><span class="role-card-emoji">🧾</span>' +
+      '<span class="role-card-label">店員用の注文一覧を見る</span>' +
+      '<span class="role-card-desc">入ってきた注文がテーブルごとに並びます</span></button>' +
+      '</div>' +
+      '<p class="role-hint">試し方：このページを2つのタブで開き、片方は「お客様」、もう片方は「店員用」を選ぶと、注文が届く様子を確認できます（同じ端末内でのみ同期します）。</p>' +
+      '</main></div>';
+  }
+
+  function renderTableScreen() {
+    var btns = '';
+    for (var n = 1; n <= TABLE_COUNT; n++) btns += '<button class="table-btn" data-table="' + n + '">' + n + '</button>';
+    return '<div class="shell">' + topbarCustomer() +
+      '<main class="table-main"><h1 class="section-title">テーブル番号を選んでください</h1>' +
+      '<p class="section-sub">実際の店舗では、テーブルのQRコードを読み取ると自動でこの画面が開きます</p>' +
+      '<div class="table-grid">' + btns + '</div></main></div>';
+  }
+
+  function renderMenuScreen() {
+    var cat = null;
+    for (var i = 0; i < MENU.length; i++) if (MENU[i].id === state.activeTab) cat = MENU[i];
+    if (!cat) cat = MENU[0];
+
+    var tabs = MENU.map(function (c) {
+      return '<button class="tab' + (c.id === cat.id ? ' is-active' : '') + '" data-tab="' + c.id + '">' + c.label + '</button>';
+    }).join('');
+
+    var groups = cat.groups.map(function (g) {
+      var items = g.items.map(function (item) {
+        var key = itemKey(cat.id, g.title, item.name);
+        var qty = state.cart[key] ? state.cart[key].qty : 0;
+        var disabled = item.price == null;
+        var side = disabled
+          ? '<div class="menu-item-price">価格未定</div>'
+          : '<div class="menu-item-price">' + fmtYen(item.price) + '</div>' +
+            '<div class="stepper">' +
+            '<button class="stepper-btn" data-dec="' + key + '"' + (qty === 0 ? ' disabled' : '') + '>−</button>' +
+            '<span class="stepper-qty">' + qty + '</span>' +
+            '<button class="stepper-btn" data-add="' + key + '">+</button>' +
+            '</div>';
+        return '<li class="menu-item' + (disabled ? ' is-disabled' : '') + '">' +
+          '<div class="menu-item-main"><div class="menu-item-name">' + esc(item.name) + '</div>' +
+          (item.desc ? '<div class="menu-item-desc">' + esc(item.desc) + '</div>' : '') +
+          (item.note ? '<div class="menu-item-note">' + esc(item.note) + '</div>' : '') +
+          '</div><div class="menu-item-side">' + side + '</div></li>';
+      }).join('');
+      return '<section class="menu-group"><h2 class="menu-group-title">' + esc(g.title) + '</h2><ul class="menu-list">' + items + '</ul></section>';
+    }).join('');
+
+    var cartBar = cartCount() > 0
+      ? '<button class="cart-bar" data-action="open-cart"><span class="cart-bar-count">' + cartCount() + '点</span>' +
+        '<span class="cart-bar-label">注文内容を見る</span><span class="cart-bar-total">' + fmtYen(cartTotal()) + '</span></button>'
+      : '';
+
+    return '<div class="shell">' + topbarCustomer() +
+      '<nav class="tabbar">' + tabs + '</nav>' +
+      '<main class="menu-main">' + groups + '</main>' + cartBar + '</div>';
+  }
+
+  function renderCartScreen() {
+    var keys = Object.keys(state.cart);
+    var body;
+    if (keys.length === 0) {
+      body = '<p class="empty-note">カートは空です</p>';
+    } else {
+      var lines = keys.map(function (key) {
+        var i = state.cart[key];
+        return '<li class="cart-line"><div class="cart-line-name">' + esc(i.name) + '</div>' +
+          '<div class="cart-line-side"><div class="stepper">' +
+          '<button class="stepper-btn" data-dec="' + key + '">−</button>' +
+          '<span class="stepper-qty">' + i.qty + '</span>' +
+          '<button class="stepper-btn" data-inc="' + key + '">+</button>' +
+          '</div><div class="cart-line-price">' + fmtYen(i.price * i.qty) + '</div></div></li>';
+      }).join('');
+      body = '<ul class="cart-list">' + lines + '</ul>' +
+        '<div class="cart-total-row"><span>合計</span><span class="cart-total-amount">' + fmtYen(cartTotal()) + '</span></div>' +
+        '<button class="primary-btn" data-action="submit-order">この内容で注文する</button>';
+    }
+    return '<div class="shell">' + topbarCustomer() +
+      '<main class="cart-main"><div class="cart-head">' +
+      '<button class="link-btn" data-action="back-to-menu">← メニューに戻る</button>' +
+      '<h1 class="section-title">ご注文内容</h1></div>' + body + '</main></div>';
+  }
+
+  function renderConfirmScreen() {
+    return '<div class="shell">' + topbarCustomer() +
+      '<main class="confirm-main"><div class="confirm-badge">✓</div>' +
+      '<h1 class="section-title">ご注文ありがとうございます</h1>' +
+      '<p class="confirm-sub">テーブル ' + state.table + ' 番で承りました（注文番号 No.' + state.lastOrderNo + '）</p>' +
+      '<p class="confirm-note">店員側の画面にすぐ届きます。追加のご注文もこのまま続けられます。</p>' +
+      '<button class="primary-btn" data-action="order-more">続けて注文する</button></main></div>';
+  }
+
+  function renderCustomer() {
+    if (!state.table) return renderTableScreen();
+    if (state.view === 'cart') return renderCartScreen();
+    if (state.view === 'confirm') return renderConfirmScreen();
+    return renderMenuScreen();
+  }
+
+  function renderTicket(o) {
+    var st = elapsedState(o.createdAt);
+    var items = o.items.map(function (i) {
+      return '<li><span class="ticket-item-qty">' + i.qty + '</span><span class="ticket-item-name">' + esc(i.name) + '</span></li>';
+    }).join('');
+    return '<article class="ticket state-' + st + '"><div class="ticket-head">' +
+      '<span class="ticket-table">テーブル ' + o.table + '</span>' +
+      '<span class="ticket-time">' + elapsedLabel(o.createdAt) + '</span></div>' +
+      '<ul class="ticket-items">' + items + '</ul>' +
+      '<div class="ticket-foot"><span class="ticket-total">' + fmtYen(o.total) + '</span>' +
+      '<button class="ticket-done" data-complete="' + o.id + '">提供済みにする</button></div></article>';
+  }
+
+  function renderStaff() {
+    var orders = loadOrders().slice().sort(function (a, b) { return a.createdAt - b.createdAt; });
+    var board = orders.length === 0
+      ? '<p class="empty-note">現在、注文はありません</p>'
+      : orders.map(renderTicket).join('');
+    return '<div class="shell" style="max-width:1080px">' +
+      '<header class="topbar"><div class="brand"><span class="brand-mark">🍛</span><div>' +
+      '<div class="brand-name">Dream studio 三日月カレー</div><div class="brand-sub">店員用オーダー画面</div>' +
+      '</div></div><button class="link-btn" data-action="switch-role">役割を変更</button></header>' +
+      '<div class="staff-summary">' +
+      '<div class="summary-chip"><span class="summary-num">' + orders.length + '</span><span class="summary-label">対応中</span></div>' +
+      '<div class="summary-chip"><span class="summary-num">' + getCompleted() + '</span><span class="summary-label">本日完了</span></div>' +
+      '</div><main class="ticket-board">' + board + '</main></div>';
+  }
+
+  function bindRolePicker() {
+    document.querySelectorAll('[data-role]').forEach(function (b) {
+      b.addEventListener('click', function () { pickRole(b.dataset.role); });
+    });
+  }
+  function bindCustomer() {
+    var app = document.getElementById('app');
+    app.querySelectorAll('[data-action="switch-role"]').forEach(function (b) { b.addEventListener('click', backToRolePicker); });
+    app.querySelectorAll('[data-table]').forEach(function (b) {
+      b.addEventListener('click', function () { state.table = parseInt(b.dataset.table, 10); render(); });
+    });
+    app.querySelectorAll('[data-tab]').forEach(function (b) {
+      b.addEventListener('click', function () { state.activeTab = b.dataset.tab; render(); });
+    });
+    app.querySelectorAll('[data-add]').forEach(function (b) { b.addEventListener('click', function () { addToCart(b.dataset.add); }); });
+    app.querySelectorAll('[data-inc]').forEach(function (b) { b.addEventListener('click', function () { addToCart(b.dataset.inc); }); });
+    app.querySelectorAll('[data-dec]').forEach(function (b) { b.addEventListener('click', function () { decFromCart(b.dataset.dec); }); });
+    var openCart = app.querySelector('[data-action="open-cart"]');
+    if (openCart) openCart.addEventListener('click', function () { state.view = 'cart'; render(); });
+    var backMenu = app.querySelector('[data-action="back-to-menu"]');
+    if (backMenu) backMenu.addEventListener('click', function () { state.view = 'menu'; render(); });
+    var submitBtn = app.querySelector('[data-action="submit-order"]');
+    if (submitBtn) submitBtn.addEventListener('click', submitOrder);
+    var moreBtn = app.querySelector('[data-action="order-more"]');
+    if (moreBtn) moreBtn.addEventListener('click', function () { state.view = 'menu'; render(); });
+  }
+  function bindStaff() {
+    var app = document.getElementById('app');
+    app.querySelectorAll('[data-action="switch-role"]').forEach(function (b) { b.addEventListener('click', backToRolePicker); });
+    app.querySelectorAll('[data-complete]').forEach(function (b) {
+      b.addEventListener('click', function () { completeOrder(b.dataset.complete); });
+    });
+  }
+
+  function render() {
+    var app = document.getElementById('app');
+    if (!state.role) { app.innerHTML = renderRolePicker(); bindRolePicker(); return; }
+    if (state.role === 'customer') { app.innerHTML = renderCustomer(); bindCustomer(); return; }
+    app.innerHTML = renderStaff(); bindStaff();
+  }
+
+  (function bootstrapFromUrl() {
+    var params = new URLSearchParams(location.search);
+    var t = parseInt(params.get('table'), 10);
+    if (t >= 1 && t <= TABLE_COUNT) {
+      state.role = 'customer';
+      state.table = t;
+      state.tableLocked = true;
+      return;
+    }
+    var s = params.get('staff');
+    if (s && s === STAFF_TOKEN) {
+      state.role = 'staff';
+      startStaffTicker();
+    }
+  })();
+
+  render();
+})();
+</script>
+</body>
+</html>
