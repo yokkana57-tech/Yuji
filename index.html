@@ -229,6 +229,20 @@
   }
   .summary-num { font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
   .summary-label { font-size: 0.7rem; color: var(--text-dim); }
+  .summary-chip-btn { text-align: left; cursor: pointer; font-family: inherit; }
+  .summary-chip-btn:hover { border-color: var(--accent); }
+
+  .completed-section { padding: 4px 18px 8px; }
+  .completed-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 4px; }
+  .completed-row {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
+    padding: 10px 14px;
+  }
+  .completed-row-top { display: flex; align-items: baseline; gap: 10px; }
+  .completed-row-table { font-weight: 700; font-size: 0.88rem; }
+  .completed-row-time { color: var(--text-dim); font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+  .completed-row-total { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .completed-row-items { color: var(--text-dim); font-size: 0.78rem; margin-top: 3px; }
 
   .ticket-board {
     flex: 1; padding: 16px 18px 40px; display: grid;
@@ -363,7 +377,9 @@
     cart: {},
     lastOrderNo: null,
     orders: [],
+    completedOrders: [],
     completedToday: 0,
+    showCompleted: false,
     submitting: false,
     submitError: ''
   };
@@ -390,8 +406,10 @@
 
       var startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
-      var done = await sb.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'done').gte('created_at', startOfDay.toISOString());
-      state.completedToday = done.count || 0;
+      var done = await sb.from('orders').select('*').eq('status', 'done').gte('created_at', startOfDay.toISOString()).order('created_at', { ascending: false });
+      if (done.error) throw done.error;
+      state.completedOrders = done.data.map(mapOrderRow);
+      state.completedToday = state.completedOrders.length;
     } catch (e) {
       console.error('refreshOrders failed', e);
       // ネットワーク不調時は前回表示のまま維持する
@@ -631,19 +649,41 @@
       '<button class="ticket-done" data-complete="' + o.id + '">提供済みにする</button></div></article>';
   }
 
+  function renderCompletedRow(o) {
+    var d = new Date(o.createdAt);
+    var hh = String(d.getHours()).padStart(2, '0');
+    var mm = String(d.getMinutes()).padStart(2, '0');
+    var itemsText = o.items.map(function (i) { return i.name + '×' + i.qty; }).join('、');
+    return '<li class="completed-row">' +
+      '<div class="completed-row-top">' +
+      '<span class="completed-row-table">テーブル ' + o.table + '</span>' +
+      '<span class="completed-row-time">' + hh + ':' + mm + '</span>' +
+      '<span class="completed-row-total">' + fmtYen(o.total) + '</span>' +
+      '</div>' +
+      '<div class="completed-row-items">' + esc(itemsText) + '</div></li>';
+  }
+
   function renderStaff() {
     var orders = state.orders;
     var board = orders.length === 0
       ? '<p class="empty-note">現在、注文はありません</p>'
       : orders.map(renderTicket).join('');
+    var completedSection = state.showCompleted
+      ? '<section class="completed-section"><h2 class="menu-group-title" style="padding:0 18px 8px">本日完了した注文（会計の確認用）</h2>' +
+        (state.completedOrders.length === 0
+          ? '<p class="empty-note">本日、完了した注文はまだありません</p>'
+          : '<ul class="completed-list">' + state.completedOrders.map(renderCompletedRow).join('') + '</ul>') +
+        '</section>'
+      : '';
     return '<div class="shell" style="max-width:1080px">' +
       '<header class="topbar"><div class="brand"><span class="brand-mark">🍛</span><div>' +
       '<div class="brand-name">Dream studio 三日月カレー</div><div class="brand-sub">店員用オーダー画面</div>' +
       '</div></div><button class="link-btn" data-action="switch-role">役割を変更</button></header>' +
       '<div class="staff-summary">' +
       '<div class="summary-chip"><span class="summary-num">' + orders.length + '</span><span class="summary-label">対応中</span></div>' +
-      '<div class="summary-chip"><span class="summary-num">' + state.completedToday + '</span><span class="summary-label">本日完了</span></div>' +
-      '</div><main class="ticket-board">' + board + '</main></div>';
+      '<button class="summary-chip summary-chip-btn" data-action="toggle-completed">' +
+      '<span class="summary-num">' + state.completedToday + '</span><span class="summary-label">本日完了（タップで金額確認）</span></button>' +
+      '</div>' + completedSection + '<main class="ticket-board">' + board + '</main></div>';
   }
 
   function bindRolePicker() {
@@ -678,6 +718,8 @@
     app.querySelectorAll('[data-complete]').forEach(function (b) {
       b.addEventListener('click', function () { completeOrder(b.dataset.complete); });
     });
+    var toggleBtn = app.querySelector('[data-action="toggle-completed"]');
+    if (toggleBtn) toggleBtn.addEventListener('click', function () { state.showCompleted = !state.showCompleted; render(); });
   }
 
   function render() {
