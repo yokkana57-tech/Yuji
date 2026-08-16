@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>三日月オーダー</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
   :root {
     --bg: #E8E1D2;
@@ -207,6 +208,7 @@
     cursor: pointer;
   }
   .primary-btn:hover { filter: brightness(1.06); }
+  .primary-btn:disabled { opacity: 0.6; cursor: default; }
 
   .confirm-main {
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -259,8 +261,9 @@
 
 <script>
 (function () {
-  var ORDERS_KEY = 'mikazuki_orders_v1';
-  var COMPLETED_KEY = 'mikazuki_completed_v1';
+  var SUPABASE_URL = 'https://eacpfypgottcctupbetb.supabase.co';
+  var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhY3BmeXBnb3R0Y2N0dXBiZXRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4MzA1OTMsImV4cCI6MjEwMjQwNjU5M30.5u_RCxgOULP8q-P3rerptEqDYOXnZDEGqiAmKjfq_zs';
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   var TABLE_COUNT = 10;
 
   var MENU = [
@@ -358,27 +361,48 @@
     view: 'menu',
     activeTab: MENU[0].id,
     cart: {},
-    lastOrderNo: null
+    lastOrderNo: null,
+    orders: [],
+    completedToday: 0,
+    submitting: false,
+    submitError: ''
   };
 
-  var channel = null;
-  try { channel = new BroadcastChannel('mikazuki-orders'); } catch (e) { channel = null; }
   var staffTicker = null;
+  var staffPoller = null;
 
-  function loadOrders() {
-    try { return JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]'); }
-    catch (e) { return []; }
+  function mapOrderRow(row) {
+    return {
+      id: row.id,
+      no: row.id,
+      table: row.table_number,
+      items: row.items,
+      total: row.total,
+      createdAt: new Date(row.created_at).getTime()
+    };
   }
-  function saveOrders(orders) {
-    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-    if (channel) channel.postMessage({ type: 'update' });
+
+  async function refreshOrders() {
+    try {
+      var active = await sb.from('orders').select('*').eq('status', 'new').order('created_at', { ascending: true });
+      if (active.error) throw active.error;
+      state.orders = active.data.map(mapOrderRow);
+
+      var startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      var done = await sb.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'done').gte('created_at', startOfDay.toISOString());
+      state.completedToday = done.count || 0;
+    } catch (e) {
+      // ネットワーク不調時は前回表示のまま維持する
+    }
+    if (state.role === 'staff') render();
   }
-  function bumpCompleted() {
-    var n = parseInt(localStorage.getItem(COMPLETED_KEY) || '0', 10) + 1;
-    localStorage.setItem(COMPLETED_KEY, String(n));
-    return n;
-  }
-  function getCompleted() { return parseInt(localStorage.getItem(COMPLETED_KEY) || '0', 10); }
+
+  sb.channel('orders-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, function () {
+      if (state.role === 'staff') refreshOrders();
+    })
+    .subscribe();
 
   function fmtYen(n) { return '¥' + n.toLocaleString('ja-JP'); }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) {
@@ -402,33 +426,37 @@
     render();
   }
 
-  function submitOrder() {
+  async function submitOrder() {
     var keys = Object.keys(state.cart);
-    if (!keys.length) return;
+    if (!keys.length || state.submitting) return;
     var items = keys.map(function (k) { return state.cart[k]; });
-    var orders = loadOrders();
-    var maxNo = orders.reduce(function (m, o) { return Math.max(m, o.no); }, 0);
-    var order = {
-      id: 'o' + Date.now() + Math.random().toString(36).slice(2, 7),
-      no: maxNo + 1,
-      table: state.table,
-      items: items,
-      total: cartTotal(),
-      createdAt: Date.now()
-    };
-    orders.push(order);
-    saveOrders(orders);
-    state.lastOrderNo = order.no;
-    state.cart = {};
-    state.view = 'confirm';
+    state.submitting = true;
+    state.submitError = '';
+    render();
+    try {
+      var res = await sb.from('orders')
+        .insert({ table_number: state.table, items: items, total: cartTotal() })
+        .select()
+        .single();
+      if (res.error) throw res.error;
+      state.lastOrderNo = res.data.id;
+      state.cart = {};
+      state.view = 'confirm';
+    } catch (e) {
+      state.submitError = '通信に失敗しました。電波の良い場所でもう一度お試しください。';
+    }
+    state.submitting = false;
     render();
   }
 
-  function completeOrder(id) {
-    var orders = loadOrders().filter(function (o) { return o.id !== id; });
-    saveOrders(orders);
-    bumpCompleted();
-    render();
+  async function completeOrder(id) {
+    try {
+      var res = await sb.from('orders').update({ status: 'done' }).eq('id', parseInt(id, 10));
+      if (res.error) throw res.error;
+    } catch (e) {
+      // 失敗時は再取得で最新状態に戻す
+    }
+    refreshOrders();
   }
 
   function pickRole(role) {
@@ -446,16 +474,14 @@
   }
   function startStaffTicker() {
     stopStaffTicker();
+    refreshOrders();
     staffTicker = setInterval(function () { if (state.role === 'staff') render(); }, 1000);
+    staffPoller = setInterval(function () { if (state.role === 'staff') refreshOrders(); }, 15000);
   }
   function stopStaffTicker() {
     if (staffTicker) { clearInterval(staffTicker); staffTicker = null; }
+    if (staffPoller) { clearInterval(staffPoller); staffPoller = null; }
   }
-
-  window.addEventListener('storage', function (e) {
-    if (e.key === ORDERS_KEY && state.role === 'staff') render();
-  });
-  if (channel) channel.onmessage = function () { if (state.role === 'staff') render(); };
 
   function elapsedLabel(createdAt) {
     var sec = Math.max(0, Math.floor((Date.now() - createdAt) / 1000));
@@ -563,7 +589,9 @@
       }).join('');
       body = '<ul class="cart-list">' + lines + '</ul>' +
         '<div class="cart-total-row"><span>合計</span><span class="cart-total-amount">' + fmtYen(cartTotal()) + '</span></div>' +
-        '<button class="primary-btn" data-action="submit-order">この内容で注文する</button>';
+        (state.submitError ? '<p class="menu-item-note" style="margin-bottom:10px">' + esc(state.submitError) + '</p>' : '') +
+        '<button class="primary-btn" data-action="submit-order"' + (state.submitting ? ' disabled' : '') + '>' +
+        (state.submitting ? '送信中…' : 'この内容で注文する') + '</button>';
     }
     return '<div class="shell">' + topbarCustomer() +
       '<main class="cart-main"><div class="cart-head">' +
@@ -601,7 +629,7 @@
   }
 
   function renderStaff() {
-    var orders = loadOrders().slice().sort(function (a, b) { return a.createdAt - b.createdAt; });
+    var orders = state.orders;
     var board = orders.length === 0
       ? '<p class="empty-note">現在、注文はありません</p>'
       : orders.map(renderTicket).join('');
@@ -611,7 +639,7 @@
       '</div></div><button class="link-btn" data-action="switch-role">役割を変更</button></header>' +
       '<div class="staff-summary">' +
       '<div class="summary-chip"><span class="summary-num">' + orders.length + '</span><span class="summary-label">対応中</span></div>' +
-      '<div class="summary-chip"><span class="summary-num">' + getCompleted() + '</span><span class="summary-label">本日完了</span></div>' +
+      '<div class="summary-chip"><span class="summary-num">' + state.completedToday + '</span><span class="summary-label">本日完了</span></div>' +
       '</div><main class="ticket-board">' + board + '</main></div>';
   }
 
