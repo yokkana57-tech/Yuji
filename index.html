@@ -242,7 +242,9 @@
   .completed-row-table { font-weight: 700; font-size: 0.88rem; }
   .completed-row-time { color: var(--text-dim); font-size: 0.78rem; font-variant-numeric: tabular-nums; }
   .completed-row-total { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .completed-row-items { color: var(--text-dim); font-size: 0.78rem; margin-top: 3px; }
+  .completed-item-list { display: flex; flex-direction: column; gap: 2px; margin-top: 5px; }
+  .completed-item-list li { display: flex; justify-content: space-between; gap: 10px; color: var(--text-dim); font-size: 0.78rem; }
+  .completed-item-price { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
   .ticket-board {
     flex: 1; padding: 16px 18px 40px; display: grid;
@@ -259,8 +261,10 @@
   .ticket-table { font-weight: 700; font-size: 0.98rem; }
   .ticket-time { font-size: 0.8rem; color: var(--text-dim); font-variant-numeric: tabular-nums; }
   .ticket-items { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
-  .ticket-items li { display: flex; gap: 8px; font-size: 0.85rem; }
+  .ticket-items li { display: flex; align-items: baseline; gap: 8px; font-size: 0.85rem; }
   .ticket-item-qty { font-weight: 700; color: var(--accent2); min-width: 1.4em; font-variant-numeric: tabular-nums; }
+  .ticket-item-name { flex: 1; }
+  .ticket-item-price { font-variant-numeric: tabular-nums; color: var(--text-dim); font-size: 0.8rem; }
   .ticket-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .ticket-total { font-size: 0.88rem; font-weight: 600; font-variant-numeric: tabular-nums; }
   .ticket-done {
@@ -639,7 +643,8 @@
   function renderTicket(o) {
     var st = elapsedState(o.createdAt);
     var items = o.items.map(function (i) {
-      return '<li><span class="ticket-item-qty">' + i.qty + '</span><span class="ticket-item-name">' + esc(i.name) + '</span></li>';
+      return '<li><span class="ticket-item-qty">' + i.qty + '</span><span class="ticket-item-name">' + esc(i.name) + '</span>' +
+        '<span class="ticket-item-price">' + fmtYen(i.price * i.qty) + '</span></li>';
     }).join('');
     return '<article class="ticket state-' + st + '"><div class="ticket-head">' +
       '<span class="ticket-table">テーブル ' + o.table + '</span>' +
@@ -653,14 +658,17 @@
     var d = new Date(o.createdAt);
     var hh = String(d.getHours()).padStart(2, '0');
     var mm = String(d.getMinutes()).padStart(2, '0');
-    var itemsText = o.items.map(function (i) { return i.name + '×' + i.qty; }).join('、');
+    var itemsHtml = o.items.map(function (i) {
+      return '<li><span class="completed-item-name">' + esc(i.name) + ' ×' + i.qty + '</span>' +
+        '<span class="completed-item-price">' + fmtYen(i.price * i.qty) + '</span></li>';
+    }).join('');
     return '<li class="completed-row">' +
       '<div class="completed-row-top">' +
       '<span class="completed-row-table">テーブル ' + o.table + '</span>' +
       '<span class="completed-row-time">' + hh + ':' + mm + '</span>' +
       '<span class="completed-row-total">' + fmtYen(o.total) + '</span>' +
       '</div>' +
-      '<div class="completed-row-items">' + esc(itemsText) + '</div></li>';
+      '<ul class="completed-item-list">' + itemsHtml + '</ul></li>';
   }
 
   function renderStaff() {
