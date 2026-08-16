@@ -126,6 +126,8 @@
   .section-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 8px; }
   .section-sub { color: var(--text-dim); font-size: 0.8rem; margin: 0 0 24px; }
   .table-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; max-width: 380px; margin: 0 auto; }
+  .party-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 320px; margin: 0 auto; }
+  .party-wide { grid-column: 1 / -1; aspect-ratio: auto; padding: 14px 0; }
   .table-btn {
     aspect-ratio: 1; border-radius: var(--radius-md); border: 1px solid var(--line);
     background: var(--surface); color: var(--text); font-size: 1.1rem; font-weight: 600;
@@ -222,9 +224,9 @@
   .confirm-note { color: var(--text-dim); font-size: 0.78rem; max-width: 320px; line-height: 1.7; margin-bottom: 10px; }
   .confirm-main .primary-btn { max-width: 260px; }
 
-  .staff-summary { display: flex; gap: 10px; padding: 14px 18px 0; }
+  .staff-summary { display: flex; flex-wrap: wrap; gap: 10px; padding: 14px 18px 0; }
   .summary-chip {
-    flex: 1; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
+    flex: 1; min-width: 130px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
     padding: 10px 14px; display: flex; flex-direction: column; gap: 2px;
   }
   .summary-num { font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -248,6 +250,14 @@
   .completed-item-list li { display: flex; justify-content: space-between; gap: 10px; color: var(--text-dim); font-size: 0.78rem; }
   .completed-item-price { font-variant-numeric: tabular-nums; white-space: nowrap; }
   .completed-row .ticket-done { margin-top: 10px; width: 100%; }
+
+  .sales-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 4px; }
+  .sales-stat {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
+    padding: 12px 10px; text-align: center;
+  }
+  .sales-stat-num { font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--accent); }
+  .sales-stat-label { font-size: 0.7rem; color: var(--text-dim); margin-top: 2px; }
 
   .ticket-board {
     flex: 1; padding: 16px 18px 40px; display: grid;
@@ -379,6 +389,8 @@
     role: null,
     table: null,
     tableLocked: false,
+    partySize: null,
+    visitId: null,
     view: 'menu',
     activeTab: MENU[0].id,
     cart: {},
@@ -387,6 +399,12 @@
     completedOrders: [],
     completedToday: 0,
     showCompleted: false,
+    todayOrders: [],
+    salesTotal: 0,
+    salesOrderCount: 0,
+    salesVisits: 0,
+    salesGuests: 0,
+    showSales: false,
     submitting: false,
     submitError: ''
   };
@@ -401,8 +419,16 @@
       table: row.table_number,
       items: row.items,
       total: row.total,
+      status: row.status,
+      partySize: row.party_size,
+      visitId: row.visit_id,
       createdAt: new Date(row.created_at).getTime()
     };
+  }
+
+  function genVisitId() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'v' + Date.now() + Math.random().toString(36).slice(2, 10);
   }
 
   async function refreshOrders() {
@@ -413,10 +439,21 @@
 
       var startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
-      var done = await sb.from('orders').select('*').eq('status', 'done').gte('created_at', startOfDay.toISOString()).order('created_at', { ascending: false });
-      if (done.error) throw done.error;
-      state.completedOrders = done.data.map(mapOrderRow);
+      var todayRes = await sb.from('orders').select('*').gte('created_at', startOfDay.toISOString()).order('created_at', { ascending: false });
+      if (todayRes.error) throw todayRes.error;
+      var todayOrders = todayRes.data.map(mapOrderRow);
+      state.todayOrders = todayOrders;
+      state.completedOrders = todayOrders.filter(function (o) { return o.status === 'done'; });
       state.completedToday = state.completedOrders.length;
+
+      state.salesTotal = todayOrders.reduce(function (s, o) { return s + o.total; }, 0);
+      state.salesOrderCount = todayOrders.length;
+      var visitMap = {};
+      todayOrders.forEach(function (o) {
+        if (o.visitId && !(o.visitId in visitMap)) visitMap[o.visitId] = o.partySize || 0;
+      });
+      state.salesVisits = Object.keys(visitMap).length;
+      state.salesGuests = Object.keys(visitMap).reduce(function (s, k) { return s + visitMap[k]; }, 0);
     } catch (e) {
       console.error('refreshOrders failed', e);
       // ネットワーク不調時は前回表示のまま維持する
@@ -461,7 +498,7 @@
     render();
     try {
       var res = await sb.from('orders')
-        .insert({ table_number: state.table, items: items, total: cartTotal() })
+        .insert({ table_number: state.table, items: items, total: cartTotal(), party_size: state.partySize, visit_id: state.visitId })
         .select()
         .single();
       if (res.error) throw res.error;
@@ -518,6 +555,8 @@
   function backToRolePicker() {
     state.role = null;
     state.table = null;
+    state.partySize = null;
+    state.visitId = null;
     state.view = 'menu';
     state.cart = {};
     stopStaffTicker();
@@ -580,6 +619,16 @@
       '<main class="table-main"><h1 class="section-title">テーブル番号を選んでください</h1>' +
       '<p class="section-sub">実際の店舗では、テーブルのQRコードを読み取ると自動でこの画面が開きます</p>' +
       '<div class="table-grid">' + btns + '</div></main></div>';
+  }
+
+  function renderPartyScreen() {
+    var nums = [1, 2, 3, 4, 5, 6];
+    var btns = nums.map(function (n) { return '<button class="table-btn" data-party="' + n + '">' + n + '</button>'; }).join('') +
+      '<button class="table-btn party-wide" data-party="7">7名以上</button>';
+    return '<div class="shell">' + topbarCustomer() +
+      '<main class="table-main"><h1 class="section-title">何名様ですか？</h1>' +
+      '<p class="section-sub">ご来店人数の記録にご協力ください</p>' +
+      '<div class="party-grid">' + btns + '</div></main></div>';
   }
 
   function renderMenuScreen() {
@@ -661,6 +710,7 @@
 
   function renderCustomer() {
     if (!state.table) return renderTableScreen();
+    if (!state.partySize) return renderPartyScreen();
     if (state.view === 'cart') return renderCartScreen();
     if (state.view === 'confirm') return renderConfirmScreen();
     return renderMenuScreen();
@@ -701,6 +751,20 @@
       '<button class="ticket-done" data-pay="' + g.table + '">支払い完了にする</button></li>';
   }
 
+  function renderSalesLogRow(o) {
+    var d = new Date(o.createdAt);
+    var hh = String(d.getHours()).padStart(2, '0');
+    var mm = String(d.getMinutes()).padStart(2, '0');
+    var itemsHtml = o.items.map(function (i) {
+      return '<li><span class="completed-item-name">' + esc(i.name) + ' ×' + i.qty + '</span>' +
+        '<span class="completed-item-price">' + fmtYen(i.price * i.qty) + '</span></li>';
+    }).join('');
+    return '<li class="completed-row"><div class="completed-row-top">' +
+      '<span class="completed-row-table">' + hh + ':' + mm + '　テーブル ' + o.table + '</span>' +
+      '<span class="completed-row-total">' + fmtYen(o.total) + '</span></div>' +
+      '<ul class="completed-item-list">' + itemsHtml + '</ul></li>';
+  }
+
   function renderStaff() {
     var orders = state.orders;
     var board = orders.length === 0
@@ -714,6 +778,20 @@
           : '<ul class="completed-list">' + groups.map(renderTableGroup).join('') + '</ul>') +
         '</section>'
       : '';
+    var salesSection = state.showSales
+      ? '<section class="completed-section"><h2 class="menu-group-title" style="padding:0 18px 8px">本日の売上</h2>' +
+        '<div class="sales-grid">' +
+        '<div class="sales-stat"><div class="sales-stat-num">' + fmtYen(state.salesTotal) + '</div><div class="sales-stat-label">売上合計</div></div>' +
+        '<div class="sales-stat"><div class="sales-stat-num">' + state.salesVisits + '</div><div class="sales-stat-label">組</div></div>' +
+        '<div class="sales-stat"><div class="sales-stat-num">' + state.salesGuests + '</div><div class="sales-stat-label">名様</div></div>' +
+        '<div class="sales-stat"><div class="sales-stat-num">' + state.salesOrderCount + '</div><div class="sales-stat-label">注文件数</div></div>' +
+        '</div>' +
+        '<h2 class="menu-group-title" style="padding:14px 0 8px">注文履歴（時刻順）</h2>' +
+        (state.todayOrders.length === 0
+          ? '<p class="empty-note">本日の注文はまだありません</p>'
+          : '<ul class="completed-list">' + state.todayOrders.map(renderSalesLogRow).join('') + '</ul>') +
+        '</section>'
+      : '';
     return '<div class="shell" style="max-width:1080px">' +
       '<header class="topbar"><div class="brand"><span class="brand-mark">🍛</span><div>' +
       '<div class="brand-name">Dream studio 三日月カレー</div><div class="brand-sub">店員用オーダー画面</div>' +
@@ -722,7 +800,9 @@
       '<div class="summary-chip"><span class="summary-num">' + orders.length + '</span><span class="summary-label">対応中</span></div>' +
       '<button class="summary-chip summary-chip-btn" data-action="toggle-completed">' +
       '<span class="summary-num">' + groups.length + '</span><span class="summary-label">会計待ち（タップで表示）</span></button>' +
-      '</div>' + completedSection + '<main class="ticket-board">' + board + '</main></div>';
+      '<button class="summary-chip summary-chip-btn" data-action="toggle-sales">' +
+      '<span class="summary-num">' + fmtYen(state.salesTotal) + '</span><span class="summary-label">本日の売上（タップで詳細）</span></button>' +
+      '</div>' + completedSection + salesSection + '<main class="ticket-board">' + board + '</main></div>';
   }
 
   function bindRolePicker() {
@@ -734,7 +814,10 @@
     var app = document.getElementById('app');
     app.querySelectorAll('[data-action="switch-role"]').forEach(function (b) { b.addEventListener('click', backToRolePicker); });
     app.querySelectorAll('[data-table]').forEach(function (b) {
-      b.addEventListener('click', function () { state.table = parseInt(b.dataset.table, 10); render(); });
+      b.addEventListener('click', function () { state.table = parseInt(b.dataset.table, 10); state.visitId = genVisitId(); render(); });
+    });
+    app.querySelectorAll('[data-party]').forEach(function (b) {
+      b.addEventListener('click', function () { state.partySize = parseInt(b.dataset.party, 10); render(); });
     });
     app.querySelectorAll('[data-tab]').forEach(function (b) {
       b.addEventListener('click', function () { state.activeTab = b.dataset.tab; render(); });
@@ -762,6 +845,8 @@
     });
     var toggleBtn = app.querySelector('[data-action="toggle-completed"]');
     if (toggleBtn) toggleBtn.addEventListener('click', function () { state.showCompleted = !state.showCompleted; render(); });
+    var toggleSalesBtn = app.querySelector('[data-action="toggle-sales"]');
+    if (toggleSalesBtn) toggleSalesBtn.addEventListener('click', function () { state.showSales = !state.showSales; render(); });
   }
 
   function render() {
@@ -778,6 +863,7 @@
       state.role = 'customer';
       state.table = t;
       state.tableLocked = true;
+      state.visitId = genVisitId();
       return;
     }
     var s = params.get('staff');
