@@ -240,11 +240,14 @@
   }
   .completed-row-top { display: flex; align-items: baseline; gap: 10px; }
   .completed-row-table { font-weight: 700; font-size: 0.88rem; }
-  .completed-row-time { color: var(--text-dim); font-size: 0.78rem; font-variant-numeric: tabular-nums; }
-  .completed-row-total { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .completed-item-list { display: flex; flex-direction: column; gap: 2px; margin-top: 5px; }
+  .completed-row-total { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--accent); }
+  .completed-round { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+  .completed-round:first-of-type { border-top: none; }
+  .completed-round-time { color: var(--text-dim); font-size: 0.78rem; font-variant-numeric: tabular-nums; margin-bottom: 3px; }
+  .completed-item-list { display: flex; flex-direction: column; gap: 2px; }
   .completed-item-list li { display: flex; justify-content: space-between; gap: 10px; color: var(--text-dim); font-size: 0.78rem; }
   .completed-item-price { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .completed-row .ticket-done { margin-top: 10px; width: 100%; }
 
   .ticket-board {
     flex: 1; padding: 16px 18px 40px; display: grid;
@@ -484,6 +487,29 @@
     refreshOrders();
   }
 
+  async function markTablePaid(tableNumber) {
+    try {
+      var res = await sb.from('orders').update({ status: 'paid' }).eq('status', 'done').eq('table_number', tableNumber);
+      if (res.error) throw res.error;
+    } catch (e) {
+      // 失敗時は再取得で最新状態に戻す
+    }
+    refreshOrders();
+  }
+
+  function groupOrdersByTable(orders) {
+    var map = {};
+    orders.forEach(function (o) {
+      if (!map[o.table]) map[o.table] = [];
+      map[o.table].push(o);
+    });
+    return Object.keys(map).map(function (t) {
+      var group = map[t].slice().sort(function (a, b) { return a.createdAt - b.createdAt; });
+      var total = group.reduce(function (s, o) { return s + o.total; }, 0);
+      return { table: parseInt(t, 10), orders: group, total: total };
+    }).sort(function (a, b) { return a.table - b.table; });
+  }
+
   function pickRole(role) {
     state.role = role;
     if (role === 'staff') startStaffTicker(); else stopStaffTicker();
@@ -654,21 +680,25 @@
       '<button class="ticket-done" data-complete="' + o.id + '">提供済みにする</button></div></article>';
   }
 
-  function renderCompletedRow(o) {
-    var d = new Date(o.createdAt);
-    var hh = String(d.getHours()).padStart(2, '0');
-    var mm = String(d.getMinutes()).padStart(2, '0');
-    var itemsHtml = o.items.map(function (i) {
-      return '<li><span class="completed-item-name">' + esc(i.name) + ' ×' + i.qty + '</span>' +
-        '<span class="completed-item-price">' + fmtYen(i.price * i.qty) + '</span></li>';
+  function renderTableGroup(g) {
+    var rounds = g.orders.map(function (o) {
+      var d = new Date(o.createdAt);
+      var hh = String(d.getHours()).padStart(2, '0');
+      var mm = String(d.getMinutes()).padStart(2, '0');
+      var itemsHtml = o.items.map(function (i) {
+        return '<li><span class="completed-item-name">' + esc(i.name) + ' ×' + i.qty + '</span>' +
+          '<span class="completed-item-price">' + fmtYen(i.price * i.qty) + '</span></li>';
+      }).join('');
+      return '<div class="completed-round">' +
+        '<div class="completed-round-time">' + hh + ':' + mm + '　' + fmtYen(o.total) + '</div>' +
+        '<ul class="completed-item-list">' + itemsHtml + '</ul></div>';
     }).join('');
     return '<li class="completed-row">' +
       '<div class="completed-row-top">' +
-      '<span class="completed-row-table">テーブル ' + o.table + '</span>' +
-      '<span class="completed-row-time">' + hh + ':' + mm + '</span>' +
-      '<span class="completed-row-total">' + fmtYen(o.total) + '</span>' +
-      '</div>' +
-      '<ul class="completed-item-list">' + itemsHtml + '</ul></li>';
+      '<span class="completed-row-table">テーブル ' + g.table + '</span>' +
+      '<span class="completed-row-total">合計 ' + fmtYen(g.total) + '</span>' +
+      '</div>' + rounds +
+      '<button class="ticket-done" data-pay="' + g.table + '">支払い完了にする</button></li>';
   }
 
   function renderStaff() {
@@ -676,11 +706,12 @@
     var board = orders.length === 0
       ? '<p class="empty-note">現在、注文はありません</p>'
       : orders.map(renderTicket).join('');
+    var groups = groupOrdersByTable(state.completedOrders);
     var completedSection = state.showCompleted
-      ? '<section class="completed-section"><h2 class="menu-group-title" style="padding:0 18px 8px">本日完了した注文（会計の確認用）</h2>' +
-        (state.completedOrders.length === 0
-          ? '<p class="empty-note">本日、完了した注文はまだありません</p>'
-          : '<ul class="completed-list">' + state.completedOrders.map(renderCompletedRow).join('') + '</ul>') +
+      ? '<section class="completed-section"><h2 class="menu-group-title" style="padding:0 18px 8px">会計待ち（テーブルごとの合計）</h2>' +
+        (groups.length === 0
+          ? '<p class="empty-note">会計待ちのテーブルはありません</p>'
+          : '<ul class="completed-list">' + groups.map(renderTableGroup).join('') + '</ul>') +
         '</section>'
       : '';
     return '<div class="shell" style="max-width:1080px">' +
@@ -690,7 +721,7 @@
       '<div class="staff-summary">' +
       '<div class="summary-chip"><span class="summary-num">' + orders.length + '</span><span class="summary-label">対応中</span></div>' +
       '<button class="summary-chip summary-chip-btn" data-action="toggle-completed">' +
-      '<span class="summary-num">' + state.completedToday + '</span><span class="summary-label">本日完了（タップで金額確認）</span></button>' +
+      '<span class="summary-num">' + groups.length + '</span><span class="summary-label">会計待ち（タップで表示）</span></button>' +
       '</div>' + completedSection + '<main class="ticket-board">' + board + '</main></div>';
   }
 
@@ -725,6 +756,9 @@
     app.querySelectorAll('[data-action="switch-role"]').forEach(function (b) { b.addEventListener('click', backToRolePicker); });
     app.querySelectorAll('[data-complete]').forEach(function (b) {
       b.addEventListener('click', function () { completeOrder(b.dataset.complete); });
+    });
+    app.querySelectorAll('[data-pay]').forEach(function (b) {
+      b.addEventListener('click', function () { markTablePaid(parseInt(b.dataset.pay, 10)); });
     });
     var toggleBtn = app.querySelector('[data-action="toggle-completed"]');
     if (toggleBtn) toggleBtn.addEventListener('click', function () { state.showCompleted = !state.showCompleted; render(); });
