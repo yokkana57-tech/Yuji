@@ -393,6 +393,7 @@
       var done = await sb.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'done').gte('created_at', startOfDay.toISOString());
       state.completedToday = done.count || 0;
     } catch (e) {
+      console.error('refreshOrders failed', e);
       // ネットワーク不調時は前回表示のまま維持する
     }
     if (state.role === 'staff') render();
@@ -443,7 +444,9 @@
       state.cart = {};
       state.view = 'confirm';
     } catch (e) {
-      state.submitError = '通信に失敗しました。電波の良い場所でもう一度お試しください。';
+      var detail = (e && (e.message || e.error_description || e.msg)) || String(e);
+      state.submitError = '通信に失敗しました： ' + detail;
+      console.error('submitOrder failed', e);
     }
     state.submitting = false;
     render();
