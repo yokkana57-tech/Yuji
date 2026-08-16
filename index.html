@@ -251,6 +251,11 @@
   .completed-item-price { font-variant-numeric: tabular-nums; white-space: nowrap; }
   .completed-row .ticket-done { margin-top: 10px; width: 100%; }
 
+  .report-datebar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .date-input {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+    color: var(--text); padding: 7px 10px; font-size: 0.82rem; font-family: inherit;
+  }
   .sales-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 4px; }
   .sales-stat {
     background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
@@ -399,12 +404,13 @@
     completedOrders: [],
     completedToday: 0,
     showCompleted: false,
-    todayOrders: [],
-    salesTotal: 0,
-    salesOrderCount: 0,
-    salesVisits: 0,
-    salesGuests: 0,
-    showSales: false,
+    reportOrders: [],
+    reportTotal: 0,
+    reportOrderCount: 0,
+    reportVisits: 0,
+    reportGuests: 0,
+    selectedDate: localDateStr(),
+    showReport: false,
     submitting: false,
     submitError: ''
   };
@@ -431,29 +437,52 @@
     return 'v' + Date.now() + Math.random().toString(36).slice(2, 10);
   }
 
+  function localDateStr(d) {
+    d = d || new Date();
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+  function dayBounds(dateStr) {
+    var start = new Date(dateStr + 'T00:00:00');
+    var end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+    return { start: start, end: end };
+  }
+  function formatDateJa(dateStr) {
+    var p = dateStr.split('-');
+    return p[0] + '年' + parseInt(p[1], 10) + '月' + parseInt(p[2], 10) + '日';
+  }
+
   async function refreshOrders() {
     try {
       var active = await sb.from('orders').select('*').eq('status', 'new').order('created_at', { ascending: true });
       if (active.error) throw active.error;
       state.orders = active.data.map(mapOrderRow);
 
-      var startOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0);
-      var todayRes = await sb.from('orders').select('*').gte('created_at', startOfDay.toISOString()).order('created_at', { ascending: false });
-      if (todayRes.error) throw todayRes.error;
-      var todayOrders = todayRes.data.map(mapOrderRow);
-      state.todayOrders = todayOrders;
-      state.completedOrders = todayOrders.filter(function (o) { return o.status === 'done'; });
+      var startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      var done = await sb.from('orders').select('*').eq('status', 'done').gte('created_at', startOfToday.toISOString()).order('created_at', { ascending: false });
+      if (done.error) throw done.error;
+      state.completedOrders = done.data.map(mapOrderRow);
       state.completedToday = state.completedOrders.length;
 
-      state.salesTotal = todayOrders.reduce(function (s, o) { return s + o.total; }, 0);
-      state.salesOrderCount = todayOrders.length;
+      var bounds = dayBounds(state.selectedDate);
+      var reportRes = await sb.from('orders').select('*')
+        .gte('created_at', bounds.start.toISOString())
+        .lt('created_at', bounds.end.toISOString())
+        .order('created_at', { ascending: false });
+      if (reportRes.error) throw reportRes.error;
+      var reportOrders = reportRes.data.map(mapOrderRow);
+      state.reportOrders = reportOrders;
+      state.reportTotal = reportOrders.reduce(function (s, o) { return s + o.total; }, 0);
+      state.reportOrderCount = reportOrders.length;
       var visitMap = {};
-      todayOrders.forEach(function (o) {
+      reportOrders.forEach(function (o) {
         if (o.visitId && !(o.visitId in visitMap)) visitMap[o.visitId] = o.partySize || 0;
       });
-      state.salesVisits = Object.keys(visitMap).length;
-      state.salesGuests = Object.keys(visitMap).reduce(function (s, k) { return s + visitMap[k]; }, 0);
+      state.reportVisits = Object.keys(visitMap).length;
+      state.reportGuests = Object.keys(visitMap).reduce(function (s, k) { return s + visitMap[k]; }, 0);
     } catch (e) {
       console.error('refreshOrders failed', e);
       // ネットワーク不調時は前回表示のまま維持する
@@ -751,7 +780,7 @@
       '<button class="ticket-done" data-pay="' + g.table + '">支払い完了にする</button></li>';
   }
 
-  function renderSalesLogRow(o) {
+  function renderReportLogRow(o) {
     var d = new Date(o.createdAt);
     var hh = String(d.getHours()).padStart(2, '0');
     var mm = String(d.getMinutes()).padStart(2, '0');
@@ -778,18 +807,23 @@
           : '<ul class="completed-list">' + groups.map(renderTableGroup).join('') + '</ul>') +
         '</section>'
       : '';
-    var salesSection = state.showSales
-      ? '<section class="completed-section"><h2 class="menu-group-title" style="padding:0 18px 8px">本日の売上</h2>' +
+    var isToday = state.selectedDate === localDateStr();
+    var reportSection = state.showReport
+      ? '<section class="completed-section"><h2 class="menu-group-title" style="padding:0 18px 8px">' + formatDateJa(state.selectedDate) + 'の売上</h2>' +
+        '<div class="report-datebar">' +
+        '<input type="date" class="date-input" id="report-date-input" value="' + state.selectedDate + '" max="' + localDateStr() + '">' +
+        (isToday ? '' : '<button class="link-btn" data-action="report-today">今日に戻る</button>') +
+        '</div>' +
         '<div class="sales-grid">' +
-        '<div class="sales-stat"><div class="sales-stat-num">' + fmtYen(state.salesTotal) + '</div><div class="sales-stat-label">売上合計</div></div>' +
-        '<div class="sales-stat"><div class="sales-stat-num">' + state.salesVisits + '</div><div class="sales-stat-label">組</div></div>' +
-        '<div class="sales-stat"><div class="sales-stat-num">' + state.salesGuests + '</div><div class="sales-stat-label">名様</div></div>' +
-        '<div class="sales-stat"><div class="sales-stat-num">' + state.salesOrderCount + '</div><div class="sales-stat-label">注文件数</div></div>' +
+        '<div class="sales-stat"><div class="sales-stat-num">' + fmtYen(state.reportTotal) + '</div><div class="sales-stat-label">売上合計</div></div>' +
+        '<div class="sales-stat"><div class="sales-stat-num">' + state.reportVisits + '</div><div class="sales-stat-label">組</div></div>' +
+        '<div class="sales-stat"><div class="sales-stat-num">' + state.reportGuests + '</div><div class="sales-stat-label">名様</div></div>' +
+        '<div class="sales-stat"><div class="sales-stat-num">' + state.reportOrderCount + '</div><div class="sales-stat-label">注文件数</div></div>' +
         '</div>' +
         '<h2 class="menu-group-title" style="padding:14px 0 8px">注文履歴（時刻順）</h2>' +
-        (state.todayOrders.length === 0
-          ? '<p class="empty-note">本日の注文はまだありません</p>'
-          : '<ul class="completed-list">' + state.todayOrders.map(renderSalesLogRow).join('') + '</ul>') +
+        (state.reportOrders.length === 0
+          ? '<p class="empty-note">この日の注文はありません</p>'
+          : '<ul class="completed-list">' + state.reportOrders.map(renderReportLogRow).join('') + '</ul>') +
         '</section>'
       : '';
     return '<div class="shell" style="max-width:1080px">' +
@@ -800,9 +834,9 @@
       '<div class="summary-chip"><span class="summary-num">' + orders.length + '</span><span class="summary-label">対応中</span></div>' +
       '<button class="summary-chip summary-chip-btn" data-action="toggle-completed">' +
       '<span class="summary-num">' + groups.length + '</span><span class="summary-label">会計待ち（タップで表示）</span></button>' +
-      '<button class="summary-chip summary-chip-btn" data-action="toggle-sales">' +
-      '<span class="summary-num">' + fmtYen(state.salesTotal) + '</span><span class="summary-label">本日の売上（タップで詳細）</span></button>' +
-      '</div>' + completedSection + salesSection + '<main class="ticket-board">' + board + '</main></div>';
+      '<button class="summary-chip summary-chip-btn" data-action="toggle-report">' +
+      '<span class="summary-num">' + fmtYen(state.reportTotal) + '</span><span class="summary-label">売上（タップで日付を選ぶ）</span></button>' +
+      '</div>' + completedSection + reportSection + '<main class="ticket-board">' + board + '</main></div>';
   }
 
   function bindRolePicker() {
@@ -845,8 +879,14 @@
     });
     var toggleBtn = app.querySelector('[data-action="toggle-completed"]');
     if (toggleBtn) toggleBtn.addEventListener('click', function () { state.showCompleted = !state.showCompleted; render(); });
-    var toggleSalesBtn = app.querySelector('[data-action="toggle-sales"]');
-    if (toggleSalesBtn) toggleSalesBtn.addEventListener('click', function () { state.showSales = !state.showSales; render(); });
+    var toggleReportBtn = app.querySelector('[data-action="toggle-report"]');
+    if (toggleReportBtn) toggleReportBtn.addEventListener('click', function () { state.showReport = !state.showReport; render(); });
+    var dateInput = app.querySelector('#report-date-input');
+    if (dateInput) dateInput.addEventListener('change', function () {
+      if (dateInput.value) { state.selectedDate = dateInput.value; refreshOrders(); }
+    });
+    var todayBtn = app.querySelector('[data-action="report-today"]');
+    if (todayBtn) todayBtn.addEventListener('click', function () { state.selectedDate = localDateStr(); refreshOrders(); });
   }
 
   function render() {
