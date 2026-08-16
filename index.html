@@ -492,7 +492,7 @@
 
   sb.channel('orders-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, function () {
-      if (state.role === 'staff') refreshOrders();
+      if (state.role === 'staff' && !state.showReport) refreshOrders();
     })
     .subscribe();
 
@@ -594,8 +594,8 @@
   function startStaffTicker() {
     stopStaffTicker();
     refreshOrders();
-    staffTicker = setInterval(function () { if (state.role === 'staff') render(); }, 1000);
-    staffPoller = setInterval(function () { if (state.role === 'staff') refreshOrders(); }, 15000);
+    staffTicker = setInterval(function () { if (state.role === 'staff' && !state.showReport) render(); }, 1000);
+    staffPoller = setInterval(function () { if (state.role === 'staff' && !state.showReport) refreshOrders(); }, 15000);
   }
   function stopStaffTicker() {
     if (staffTicker) { clearInterval(staffTicker); staffTicker = null; }
