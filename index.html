@@ -97,6 +97,7 @@
   .brand-mark { font-size: 1.6rem; line-height: 1; }
   .brand-name { font-family: var(--font-display); font-size: 0.95rem; font-weight: 600; }
   .brand-sub { font-size: 0.75rem; color: var(--text-dim); letter-spacing: 0.02em; }
+  .brand-total { font-size: 0.72rem; color: var(--accent); font-variant-numeric: tabular-nums; margin-top: 2px; }
   .link-btn {
     background: none; border: 1px solid var(--line); color: var(--text-dim);
     padding: 7px 12px; border-radius: var(--radius-sm); font-size: 0.75rem;
@@ -426,6 +427,8 @@
     activeTab: MENU[0].id,
     cart: {},
     lastOrderNo: null,
+    visitTotal: 0,
+    visitOrderCount: 0,
     cancelling: false,
     cancelled: false,
     cancelError: '',
@@ -445,6 +448,7 @@
     showReport: false,
     submitting: false,
     submitError: '',
+    staffError: '',
     loggingIn: false,
     loginError: ''
   };
@@ -490,6 +494,7 @@
 
   async function refreshOrders() {
     try {
+      state.staffError = '';
       var active = await sb.from('orders').select('*').eq('status', 'new').order('created_at', { ascending: true });
       if (active.error) throw active.error;
       state.orders = active.data.map(mapOrderRow);
@@ -525,8 +530,9 @@
       state.reportVisits = Object.keys(visitMap).length;
       state.reportGuests = Object.keys(visitMap).reduce(function (s, k) { return s + visitMap[k]; }, 0);
     } catch (e) {
+      var detail = (e && (e.message || e.error_description || e.msg)) || String(e);
+      state.staffError = '最新の情報を取得できませんでした： ' + detail;
       console.error('refreshOrders failed', e);
-      // ネットワーク不調時は前回表示のまま維持する
     }
     if (state.role === 'staff') render();
   }
@@ -574,16 +580,19 @@
     var keys = Object.keys(state.cart);
     if (!keys.length || state.submitting) return;
     var items = keys.map(function (k) { return state.cart[k]; });
+    var orderTotal = cartTotal();
     state.submitting = true;
     state.submitError = '';
     render();
     try {
       var res = await sb.from('orders')
-        .insert({ table_number: state.table, items: items, total: cartTotal(), party_size: state.partySize, visit_id: state.visitId })
+        .insert({ table_number: state.table, items: items, total: orderTotal, party_size: state.partySize, visit_id: state.visitId })
         .select()
         .single();
       if (res.error) throw res.error;
       state.lastOrderNo = res.data.id;
+      state.visitTotal += orderTotal;
+      state.visitOrderCount += 1;
       state.cart = {};
       state.view = 'confirm';
     } catch (e) {
@@ -770,9 +779,12 @@
       else callBtn = '<button class="link-btn call-btn" data-action="call-staff"' + (state.calling ? ' disabled' : '') + '>' +
         (state.calling ? '呼び出し中…' : '📣 スタッフを呼ぶ') + '</button>';
     }
+    var subLine = state.table ? '<div class="brand-sub">テーブル ' + state.table + ' 番</div>' : '<div class="brand-sub">お客様用オーダー</div>';
+    var totalLine = state.visitOrderCount > 0
+      ? '<div class="brand-total">これまでのご注文合計：' + fmtYen(state.visitTotal) + '（' + state.visitOrderCount + '件）</div>'
+      : '';
     return '<header class="topbar"><div class="brand"><span class="brand-mark">🍛</span><div>' +
-      '<div class="brand-name">Dream studio 三日月カレー</div>' +
-      (state.table ? '<div class="brand-sub">テーブル ' + state.table + ' 番</div>' : '<div class="brand-sub">お客様用オーダー</div>') +
+      '<div class="brand-name">Dream studio 三日月カレー</div>' + subLine + totalLine +
       '</div></div><div class="topbar-actions">' + callBtn + switchBtn + '</div></header>';
   }
 
@@ -1035,6 +1047,7 @@
       '<div class="brand-name">Dream studio 三日月カレー</div><div class="brand-sub">店員用オーダー画面</div>' +
       '</div></div><button class="link-btn" data-action="switch-role">役割を変更</button></header>' +
       renderCallBanner() +
+      (state.staffError ? '<p class="menu-item-note" style="padding:10px 18px 0">' + esc(state.staffError) + '</p>' : '') +
       '<div class="staff-summary">' +
       '<div class="summary-chip"><span class="summary-num">' + orders.length + '</span><span class="summary-label">対応中</span></div>' +
       '<button class="summary-chip summary-chip-btn" data-action="toggle-completed">' +
