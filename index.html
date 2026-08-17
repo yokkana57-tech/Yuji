@@ -256,6 +256,34 @@
     background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
     color: var(--text); padding: 7px 10px; font-size: 0.82rem; font-family: inherit;
   }
+  .text-input {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+    color: var(--text); padding: 10px 12px; font-size: 0.9rem; font-family: inherit; width: 100%;
+  }
+  .login-form { max-width: 320px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+
+  .topbar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .call-btn { color: var(--accent2); border-color: var(--accent2); }
+  .call-btn:disabled { opacity: 0.6; cursor: default; }
+
+  .call-alert {
+    background: var(--accent2); color: var(--accent2-ink); padding: 10px 18px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .call-alert-item { display: flex; align-items: center; gap: 12px; }
+  .call-alert-table { font-weight: 700; }
+  .call-alert-time { opacity: 0.85; font-size: 0.8rem; flex: 1; }
+  .call-alert-done {
+    border: none; border-radius: var(--radius-sm); background: var(--accent2-ink); color: var(--accent2);
+    padding: 7px 12px; font-size: 0.76rem; font-weight: 600; cursor: pointer;
+  }
+
+  .bulk-prompts { display: flex; flex-direction: column; gap: 6px; padding: 10px 18px 0; }
+  .bulk-prompt {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+    padding: 8px 12px; font-size: 0.82rem;
+  }
   .sales-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 4px; }
   .sales-stat {
     background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
@@ -388,8 +416,6 @@
     });
   });
 
-  var STAFF_TOKEN = '4663562f';
-
   var state = {
     role: null,
     table: null,
@@ -400,7 +426,13 @@
     activeTab: MENU[0].id,
     cart: {},
     lastOrderNo: null,
+    cancelling: false,
+    cancelled: false,
+    cancelError: '',
+    calling: false,
+    calledJustNow: false,
     orders: [],
+    calls: [],
     completedOrders: [],
     completedToday: 0,
     showCompleted: false,
@@ -412,7 +444,9 @@
     selectedDate: localDateStr(),
     showReport: false,
     submitting: false,
-    submitError: ''
+    submitError: '',
+    loggingIn: false,
+    loginError: ''
   };
 
   var staffTicker = null;
@@ -460,6 +494,12 @@
       if (active.error) throw active.error;
       state.orders = active.data.map(mapOrderRow);
 
+      var callsRes = await sb.from('calls').select('*').eq('status', 'open').order('created_at', { ascending: true });
+      if (callsRes.error) throw callsRes.error;
+      state.calls = callsRes.data.map(function (row) {
+        return { id: row.id, table: row.table_number, createdAt: new Date(row.created_at).getTime() };
+      });
+
       var startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
       var done = await sb.from('orders').select('*').eq('status', 'done').gte('created_at', startOfToday.toISOString()).order('created_at', { ascending: false });
@@ -469,6 +509,7 @@
 
       var bounds = dayBounds(state.selectedDate);
       var reportRes = await sb.from('orders').select('*')
+        .neq('status', 'cancelled')
         .gte('created_at', bounds.start.toISOString())
         .lt('created_at', bounds.end.toISOString())
         .order('created_at', { ascending: false });
@@ -490,8 +531,19 @@
     if (state.role === 'staff') render();
   }
 
+  window.addEventListener('online', function () { if (state.role === 'staff' && !state.showReport) refreshOrders(); });
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && state.role === 'staff' && !state.showReport) refreshOrders();
+  });
+
   sb.channel('orders-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, function () {
+      if (state.role === 'staff' && !state.showReport) refreshOrders();
+    })
+    .subscribe();
+
+  sb.channel('calls-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'calls' }, function () {
       if (state.role === 'staff' && !state.showReport) refreshOrders();
     })
     .subscribe();
@@ -543,6 +595,39 @@
     render();
   }
 
+  async function cancelLastOrder() {
+    if (!state.lastOrderNo || state.cancelling) return;
+    state.cancelling = true;
+    state.cancelError = '';
+    render();
+    try {
+      var res = await sb.from('orders').update({ status: 'cancelled' }).eq('id', state.lastOrderNo).eq('status', 'new');
+      if (res.error) throw res.error;
+      state.cancelled = true;
+    } catch (e) {
+      state.cancelError = '取り消せませんでした。恐れ入りますがスタッフまでお声がけください。';
+      console.error('cancelLastOrder failed', e);
+    }
+    state.cancelling = false;
+    render();
+  }
+
+  async function callStaff() {
+    if (!state.table || state.calling) return;
+    state.calling = true;
+    render();
+    try {
+      var res = await sb.from('calls').insert({ table_number: state.table });
+      if (res.error) throw res.error;
+      state.calledJustNow = true;
+      setTimeout(function () { state.calledJustNow = false; render(); }, 8000);
+    } catch (e) {
+      console.error('callStaff failed', e);
+    }
+    state.calling = false;
+    render();
+  }
+
   async function completeOrder(id) {
     try {
       var res = await sb.from('orders').update({ status: 'done' }).eq('id', parseInt(id, 10));
@@ -553,9 +638,39 @@
     refreshOrders();
   }
 
+  async function bulkCompleteTable(tableNumber) {
+    try {
+      var res = await sb.from('orders').update({ status: 'done' }).eq('status', 'new').eq('table_number', tableNumber);
+      if (res.error) throw res.error;
+    } catch (e) {
+      // 失敗時は再取得で最新状態に戻す
+    }
+    refreshOrders();
+  }
+
   async function markTablePaid(tableNumber) {
     try {
       var res = await sb.from('orders').update({ status: 'paid' }).eq('status', 'done').eq('table_number', tableNumber);
+      if (res.error) throw res.error;
+    } catch (e) {
+      // 失敗時は再取得で最新状態に戻す
+    }
+    refreshOrders();
+  }
+
+  async function undoPayment(id) {
+    try {
+      var res = await sb.from('orders').update({ status: 'done' }).eq('id', parseInt(id, 10));
+      if (res.error) throw res.error;
+    } catch (e) {
+      // 失敗時は再取得で最新状態に戻す
+    }
+    refreshOrders();
+  }
+
+  async function resolveCall(id) {
+    try {
+      var res = await sb.from('calls').update({ status: 'done' }).eq('id', parseInt(id, 10));
       if (res.error) throw res.error;
     } catch (e) {
       // 失敗時は再取得で最新状態に戻す
@@ -576,9 +691,18 @@
     }).sort(function (a, b) { return a.table - b.table; });
   }
 
-  function pickRole(role) {
-    state.role = role;
-    if (role === 'staff') startStaffTicker(); else stopStaffTicker();
+  async function pickRole(role) {
+    if (role === 'staff') {
+      var sessionRes = await sb.auth.getSession();
+      if (sessionRes.data && sessionRes.data.session) {
+        state.role = 'staff';
+        startStaffTicker();
+      } else {
+        state.role = 'staff-login';
+      }
+    } else {
+      state.role = role;
+    }
     render();
   }
   function backToRolePicker() {
@@ -588,8 +712,32 @@
     state.visitId = null;
     state.view = 'menu';
     state.cart = {};
+    state.loginError = '';
     stopStaffTicker();
     render();
+  }
+
+  async function doStaffLogin() {
+    var emailEl = document.getElementById('staff-email');
+    var pwEl = document.getElementById('staff-password');
+    var email = emailEl ? emailEl.value.trim() : '';
+    var password = pwEl ? pwEl.value : '';
+    if (!email || !password || state.loggingIn) return;
+    state.loggingIn = true;
+    state.loginError = '';
+    render();
+    try {
+      var res = await sb.auth.signInWithPassword({ email: email, password: password });
+      if (res.error) throw res.error;
+      state.role = 'staff';
+      state.loggingIn = false;
+      startStaffTicker();
+      render();
+    } catch (e) {
+      state.loggingIn = false;
+      state.loginError = 'ログインできませんでした：' + ((e && e.message) || String(e));
+      render();
+    }
   }
   function startStaffTicker() {
     stopStaffTicker();
@@ -616,10 +764,16 @@
 
   function topbarCustomer() {
     var switchBtn = state.tableLocked ? '' : '<button class="link-btn" data-action="switch-role">役割を変更</button>';
+    var callBtn = '';
+    if (state.table) {
+      if (state.calledJustNow) callBtn = '<button class="link-btn call-btn" disabled>✓ 呼び出し済み</button>';
+      else callBtn = '<button class="link-btn call-btn" data-action="call-staff"' + (state.calling ? ' disabled' : '') + '>' +
+        (state.calling ? '呼び出し中…' : '📣 スタッフを呼ぶ') + '</button>';
+    }
     return '<header class="topbar"><div class="brand"><span class="brand-mark">🍛</span><div>' +
       '<div class="brand-name">Dream studio 三日月カレー</div>' +
       (state.table ? '<div class="brand-sub">テーブル ' + state.table + ' 番</div>' : '<div class="brand-sub">お客様用オーダー</div>') +
-      '</div></div>' + switchBtn + '</header>';
+      '</div></div><div class="topbar-actions">' + callBtn + switchBtn + '</div></header>';
   }
 
   function renderRolePicker() {
@@ -637,8 +791,23 @@
       '<span class="role-card-label">店員用の注文一覧を見る</span>' +
       '<span class="role-card-desc">入ってきた注文がテーブルごとに並びます</span></button>' +
       '</div>' +
-      '<p class="role-hint">試し方：このページを2つのタブで開き、片方は「お客様」、もう片方は「店員用」を選ぶと、注文が届く様子を確認できます（同じ端末内でのみ同期します）。</p>' +
+      '<p class="role-hint">お客様用は、実際の店舗ではテーブルのQRコードから直接開きます。店員用はログインが必要です。</p>' +
       '</main></div>';
+  }
+
+  function renderStaffLogin() {
+    return '<div class="shell">' +
+      '<header class="topbar"><div class="brand"><span class="brand-mark">🍛</span><div>' +
+      '<div class="brand-name">Dream studio 三日月カレー</div><div class="brand-sub">店員ログイン</div>' +
+      '</div></div><button class="link-btn" data-action="switch-role">戻る</button></header>' +
+      '<main class="table-main"><h1 class="section-title">店員ログイン</h1>' +
+      '<div class="login-form">' +
+      '<input type="email" id="staff-email" class="text-input" placeholder="メールアドレス" autocomplete="username">' +
+      '<input type="password" id="staff-password" class="text-input" placeholder="パスワード" autocomplete="current-password">' +
+      (state.loginError ? '<p class="menu-item-note">' + esc(state.loginError) + '</p>' : '') +
+      '<button class="primary-btn" data-action="staff-login"' + (state.loggingIn ? ' disabled' : '') + '>' +
+      (state.loggingIn ? 'ログイン中…' : 'ログイン') + '</button>' +
+      '</div></main></div>';
   }
 
   function renderTableScreen() {
@@ -729,12 +898,23 @@
   }
 
   function renderConfirmScreen() {
+    if (state.cancelled) {
+      return '<div class="shell">' + topbarCustomer() +
+        '<main class="confirm-main"><div class="confirm-badge" style="background:var(--text-dim)">✕</div>' +
+        '<h1 class="section-title">ご注文を取り消しました</h1>' +
+        '<button class="primary-btn" data-action="order-more">メニューに戻る</button></main></div>';
+    }
+    var cancelBlock = '<p class="confirm-note">ご注文後5分以内であれば取り消せます。</p>' +
+      (state.cancelError ? '<p class="menu-item-note">' + esc(state.cancelError) + '</p>' : '') +
+      '<button class="link-btn" data-action="cancel-order"' + (state.cancelling ? ' disabled' : '') + '>' +
+      (state.cancelling ? '取り消し中…' : 'この注文を取り消す') + '</button>';
     return '<div class="shell">' + topbarCustomer() +
       '<main class="confirm-main"><div class="confirm-badge">✓</div>' +
       '<h1 class="section-title">ご注文ありがとうございます</h1>' +
       '<p class="confirm-sub">テーブル ' + state.table + ' 番で承りました（注文番号 No.' + state.lastOrderNo + '）</p>' +
       '<p class="confirm-note">店員側の画面にすぐ届きます。追加のご注文もこのまま続けられます。</p>' +
-      '<button class="primary-btn" data-action="order-more">続けて注文する</button></main></div>';
+      '<button class="primary-btn" data-action="order-more">続けて注文する</button>' +
+      cancelBlock + '</main></div>';
   }
 
   function renderCustomer() {
@@ -788,10 +968,33 @@
       return '<li><span class="completed-item-name">' + esc(i.name) + ' ×' + i.qty + '</span>' +
         '<span class="completed-item-price">' + fmtYen(i.price * i.qty) + '</span></li>';
     }).join('');
+    var undoBtn = o.status === 'paid'
+      ? '<button class="link-btn" data-undo-pay="' + o.id + '" style="margin-top:6px">会計待ちに戻す</button>'
+      : '';
     return '<li class="completed-row"><div class="completed-row-top">' +
       '<span class="completed-row-table">' + hh + ':' + mm + '　テーブル ' + o.table + '</span>' +
       '<span class="completed-row-total">' + fmtYen(o.total) + '</span></div>' +
-      '<ul class="completed-item-list">' + itemsHtml + '</ul></li>';
+      '<ul class="completed-item-list">' + itemsHtml + '</ul>' + undoBtn + '</li>';
+  }
+
+  function renderCallBanner() {
+    if (!state.calls.length) return '';
+    var items = state.calls.map(function (c) {
+      var mins = Math.max(0, Math.floor((Date.now() - c.createdAt) / 60000));
+      return '<div class="call-alert-item"><span class="call-alert-table">📣 テーブル ' + c.table + '</span>' +
+        '<span class="call-alert-time">' + (mins === 0 ? 'たった今' : mins + '分前') + '</span>' +
+        '<button class="call-alert-done" data-resolve-call="' + c.id + '">対応済みにする</button></div>';
+    }).join('');
+    return '<section class="call-alert">' + items + '</section>';
+  }
+
+  function renderBulkPrompts(activeOrders) {
+    var groups = groupOrdersByTable(activeOrders).filter(function (g) { return g.orders.length > 1; });
+    if (!groups.length) return '';
+    return '<div class="bulk-prompts">' + groups.map(function (g) {
+      return '<div class="bulk-prompt"><span>テーブル ' + g.table + '：対応中が' + g.orders.length + '件</span>' +
+        '<button class="link-btn" data-bulk-complete="' + g.table + '">まとめて提供済みにする</button></div>';
+    }).join('') + '</div>';
   }
 
   function renderStaff() {
@@ -799,6 +1002,7 @@
     var board = orders.length === 0
       ? '<p class="empty-note">現在、注文はありません</p>'
       : orders.map(renderTicket).join('');
+    var bulkPrompts = renderBulkPrompts(orders);
     var groups = groupOrdersByTable(state.completedOrders);
     var completedSection = state.showCompleted
       ? '<section class="completed-section"><h2 class="menu-group-title" style="padding:0 18px 8px">会計待ち（テーブルごとの合計）</h2>' +
@@ -830,19 +1034,28 @@
       '<header class="topbar"><div class="brand"><span class="brand-mark">🍛</span><div>' +
       '<div class="brand-name">Dream studio 三日月カレー</div><div class="brand-sub">店員用オーダー画面</div>' +
       '</div></div><button class="link-btn" data-action="switch-role">役割を変更</button></header>' +
+      renderCallBanner() +
       '<div class="staff-summary">' +
       '<div class="summary-chip"><span class="summary-num">' + orders.length + '</span><span class="summary-label">対応中</span></div>' +
       '<button class="summary-chip summary-chip-btn" data-action="toggle-completed">' +
       '<span class="summary-num">' + groups.length + '</span><span class="summary-label">会計待ち（タップで表示）</span></button>' +
       '<button class="summary-chip summary-chip-btn" data-action="toggle-report">' +
       '<span class="summary-num">' + fmtYen(state.reportTotal) + '</span><span class="summary-label">売上（タップで日付を選ぶ）</span></button>' +
-      '</div>' + completedSection + reportSection + '<main class="ticket-board">' + board + '</main></div>';
+      '</div>' + bulkPrompts + completedSection + reportSection + '<main class="ticket-board">' + board + '</main></div>';
   }
 
   function bindRolePicker() {
     document.querySelectorAll('[data-role]').forEach(function (b) {
       b.addEventListener('click', function () { pickRole(b.dataset.role); });
     });
+  }
+  function bindStaffLogin() {
+    var app = document.getElementById('app');
+    app.querySelectorAll('[data-action="switch-role"]').forEach(function (b) { b.addEventListener('click', backToRolePicker); });
+    var btn = app.querySelector('[data-action="staff-login"]');
+    if (btn) btn.addEventListener('click', doStaffLogin);
+    var pwInput = app.querySelector('#staff-password');
+    if (pwInput) pwInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') doStaffLogin(); });
   }
   function bindCustomer() {
     var app = document.getElementById('app');
@@ -866,7 +1079,16 @@
     var submitBtn = app.querySelector('[data-action="submit-order"]');
     if (submitBtn) submitBtn.addEventListener('click', submitOrder);
     var moreBtn = app.querySelector('[data-action="order-more"]');
-    if (moreBtn) moreBtn.addEventListener('click', function () { state.view = 'menu'; render(); });
+    if (moreBtn) moreBtn.addEventListener('click', function () {
+      state.view = 'menu';
+      state.cancelled = false;
+      state.cancelError = '';
+      render();
+    });
+    var cancelBtn = app.querySelector('[data-action="cancel-order"]');
+    if (cancelBtn) cancelBtn.addEventListener('click', cancelLastOrder);
+    var callBtn = app.querySelector('[data-action="call-staff"]');
+    if (callBtn) callBtn.addEventListener('click', callStaff);
   }
   function bindStaff() {
     var app = document.getElementById('app');
@@ -876,6 +1098,15 @@
     });
     app.querySelectorAll('[data-pay]').forEach(function (b) {
       b.addEventListener('click', function () { markTablePaid(parseInt(b.dataset.pay, 10)); });
+    });
+    app.querySelectorAll('[data-undo-pay]').forEach(function (b) {
+      b.addEventListener('click', function () { undoPayment(b.dataset.undoPay); });
+    });
+    app.querySelectorAll('[data-bulk-complete]').forEach(function (b) {
+      b.addEventListener('click', function () { bulkCompleteTable(parseInt(b.dataset.bulkComplete, 10)); });
+    });
+    app.querySelectorAll('[data-resolve-call]').forEach(function (b) {
+      b.addEventListener('click', function () { resolveCall(b.dataset.resolveCall); });
     });
     var toggleBtn = app.querySelector('[data-action="toggle-completed"]');
     if (toggleBtn) toggleBtn.addEventListener('click', function () { state.showCompleted = !state.showCompleted; render(); });
@@ -891,12 +1122,13 @@
 
   function render() {
     var app = document.getElementById('app');
+    if (state.role === 'staff-login') { app.innerHTML = renderStaffLogin(); bindStaffLogin(); return; }
     if (!state.role) { app.innerHTML = renderRolePicker(); bindRolePicker(); return; }
     if (state.role === 'customer') { app.innerHTML = renderCustomer(); bindCustomer(); return; }
     app.innerHTML = renderStaff(); bindStaff();
   }
 
-  (function bootstrapFromUrl() {
+  async function bootstrap() {
     var params = new URLSearchParams(location.search);
     var t = parseInt(params.get('table'), 10);
     if (t >= 1 && t <= TABLE_COUNT) {
@@ -904,16 +1136,24 @@
       state.table = t;
       state.tableLocked = true;
       state.visitId = genVisitId();
+      render();
       return;
     }
-    var s = params.get('staff');
-    if (s && s === STAFF_TOKEN) {
-      state.role = 'staff';
-      startStaffTicker();
+    if (params.has('staff')) {
+      var sessionRes = await sb.auth.getSession();
+      if (sessionRes.data && sessionRes.data.session) {
+        state.role = 'staff';
+        startStaffTicker();
+      } else {
+        state.role = 'staff-login';
+      }
+      render();
+      return;
     }
-  })();
+    render();
+  }
 
-  render();
+  bootstrap();
 })();
 </script>
 </body>
