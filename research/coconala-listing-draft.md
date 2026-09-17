@@ -289,3 +289,207 @@ CEOとしては(a)を推奨するが、この判断も反論の余地がある�
 
 - フェーズ1に追加: サービスB(中小企業向け汎用)の出品ページを、サービスAと同一スコープ・同一価格・差別化コピーのみ汎用化して作成する。
 - フェーズ2に追加: **工数記録シート**を作り、最初の1〜2件でヒアリング〜納品までの実働時間をログして時給換算する。目安時給を下回った場合は価格・スコープを早期に見直す。
+
+## 9. 説明文ドラフト(確定版、2026-09-17)
+
+出品実績ゼロを踏まえ、競合の説明文の型(特に「りゅうきｰStudio Design」氏・[services/2302431](https://coconala.com/services/2302431)の【お悩み】【解決策】【作業内容】構成と、「しばいぬ。」型の見積り相談フロー・自衛条項・保守切り分け)を採用しつつ、8章の方針(実務経験は補足程度、二本立て出品)を反映した。
+
+### 見出し構成(両サービス共通の型)
+
+```
+■サービスタイトル+キャッチコピー
+【お悩み】(顧客の悩みを箇条書きで言語化)
+【解決策】(このサービスで何が解決するか)
+■このサービスでできること
+■作業内容・対応範囲
+■対応していないこと(誤解防止の明記)
+■ご用意いただくもの
+■ご注文までの流れ(見積り相談必須)
+■納期
+■納品後について(保守の切り分け)
+■現在、モニター価格でご案内しています
+■その他ご注意事項(自衛条項)
+```
+
+### サービスA: 飲食店特化版
+
+**タイトル**: 「【飲食店様向け】更新も自分でできるホームページを作ります〜AIノーコードで低価格・短納期〜」
+
+**キャッチコピー**: 「AIノーコードツールで、安く・早く・自分で更新できるホームページを。」
+
+```
+【お悩み】
+・ホームページを作りたいが、何十万円もの制作費は出せない
+・SNSだけでは新規のお客様に営業時間やメニューが伝わりにくい
+・作ってもらった後、ちょっとした写真やメニューの差し替えのたびに追加費用がかかるのが不安
+
+【解決策】
+AIとノーコードツールを組み合わせることで、制作費を抑えながらスマホ対応のホームページを短納期でご用意します。納品後はご自身で写真やメニューを更新できる構成にしてお渡しするので、更新のたびに追加費用がかかる心配もありません。
+
+■このサービスでできること
+飲食店(カフェ・居酒屋・ラーメン店など)向けに、スマホ対応の1ページ完結ホームページを制作します。
+Wix/STUDIOなどのノーコードツールで制作するため、納品後は写真やメニューの差し替えをご自身で
+行っていただけます(操作マニュアル動画付きでお渡しします)。
+
+■私について
+Web制作の実務経験があり(飲食店向けのシステム開発に携わった経験を含みます)、現場でどう使われるかを踏まえた導線設計を心がけています。
+
+■作業内容・対応範囲
+・トップページ、メニュー、アクセス、SNS導線の設置
+・ChatGPTを活用したキャッチコピー・メニュー紹介文の作成サポート
+・納品後にご自身で更新できるノーコード構成+操作マニュアル動画
+
+■対応していないこと(誤解を防ぐための明記)
+・納品後の運用・保守は含まれません(更新代行はオプションでご依頼いただけます)
+・独自ドメイン・サーバー費用はお客様のご契約となります(取得方法はご案内します)
+・予約・決済・会員登録などの複雑な機能は対応範囲外です(ご相談の上、別途お見積もり)
+・デザインの色・雰囲気はご希望をお伺いしますが、細部のレイアウトは基本お任せいただきます
+
+■ご用意いただくもの
+店舗名・業態・住所・電話番号・営業時間、メニュー情報、店舗やお料理の写真(3〜10枚程度)、お店のこだわりや想い
+
+■ご注文までの流れ
+1. 「無料で見積り相談」からお問い合わせ(業態・メニュー数・お好みのイメージ等)
+2. 内容確認後、正式にご購入
+3. 構成案・デザイン案のご提示(3営業日目安)
+4. 軽微な修正を3回まで無料で対応
+5. 納品+操作マニュアル動画のお渡し
+
+■納期
+ご注文完了から7営業日(特急対応オプションで3営業日も可)
+
+■納品後について
+納品後1週間はサイトに関するご相談を無料で承ります。継続的な更新・修正をご希望の場合は
+有料オプション(更新代行・1ヶ月保守サポート)をご利用ください。
+
+■現在、モニター価格でご案内しています
+出品したばかりのため、先着3名様限定でモニター価格(14,800円)にてご案内しております。
+制作実績として一部を紹介させていただける方、差し支えなければ感想をお聞かせいただける方を
+歓迎いたします。
+
+■その他ご注意事項
+・5日以上ご連絡がない場合は、その時点の内容で正式納品とさせていただく場合があります
+・制作開始後のお客様都合によるキャンセルは原則お受けできません
+```
+
+### サービスB: 中小企業・個人事業主向け汎用版
+
+**タイトル**: 「【個人事業主・中小企業向け】更新も自分でできるホームページを作ります〜AIノーコードで低価格・短納期〜」
+
+サービスAとの差分のみ記載(それ以外の見出し・本文構成は共通)。
+
+```
+【お悩み】
+・ホームページを作りたいが、何十万円もの制作費は出せない
+・SNSや名刺だけでは、事業内容や強みがお客様に伝わりにくい
+・作ってもらった後、ちょっとした文章や写真の差し替えのたびに追加費用がかかるのが不安
+
+■このサービスでできること
+個人事業主・小規模事業者(店舗・サービス業・士業など業種問わず)向けに、スマホ対応の
+1ページ完結ホームページを制作します。
+
+■私について
+Web制作の実務経験があります(飲食店向けのシステム開発に携わった経験を含みます)。業種を問わず、
+「初めて訪れたお客様に何を最初に伝えるべきか」を意識した導線設計を心がけています。
+
+■ご用意いただくもの
+事業者名・業種・所在地・連絡先、営業時間や対応エリア、サービス/商品情報、写真・ロゴ
+(3〜10枚程度)、事業のこだわりや強み
+```
+
+※【解決策】以下、対応していないこと・流れ・納期・保守・モニター価格・自衛条項はサービスAと共通のため転記省略。差別化文言(実務経験)は両サービスとも「■私について」の一文のみで統一し、見出しで大きく打ち出さない。
+
+## 10. 画像生成AI選定とプロンプト設計(2026-09-17)
+
+### 競合の画像の型(リサーチ結果)
+
+- サムネイル推奨サイズ: **1220×1240px**(ココナラ公式基準)。ギャラリー画像は正方形(480〜800px角)が主流。([出典](https://coconala.com/blogs/826272/602927) / [出典](https://coconala.com/blogs/1034601/145614))
+- 実績豊富な出品者(ZUI氏・りゅうき氏)は、ギャラリー画像10枚のうち大半を**実際に制作したサイトのモックアップ・スクリーンショット(業種横断のポートフォリオ)**で埋めている。
+- 説明文の小見出しに沿って画像を作る型(【お悩み】【解決策】【作業内容】に対応する画像)も一般的。
+
+**→ 重要な制約**: CEOは実績ゼロのため「実績サイトのスクリーンショット」を並べることができない。AI生成のダミーモックアップで代替する場合、**実績と誤認されないよう「※イメージ」表記を必ず入れる**こと。これは前回セッションで確認した"労働に対価が見合わなかった"教訓とも通じる話で、誤解に基づく期待値のズレは後のクレーム・追加対応の温床になりうるため、最初から正直な表示を徹底する。
+
+### 推奨画像リスト(共通6枚、A/Bで一部差し替え)
+
+| # | 内容 | 用途 |
+|---|---|---|
+| 1(メイン) | ノートPC+スマホでサイトが表示されているモックアップ+キャッチコピー | サムネイル(1220×1240px) |
+| 2 | 対応内容アイコン一覧(スマホ対応/ノーコード更新/AI活用/修正3回/マニュアル動画/短納期) | ギャラリー |
+| 3 | 制作の流れ(5ステップのフロー図) | ギャラリー |
+| 4 | Before/After(旧サイトの分かりにくさ→新デザインの見やすさ) | ギャラリー |
+| 5 | 作業風景イメージ(顔を出さないイラスト/後ろ姿) | ギャラリー・プロフィール |
+| 6 | 業種イメージ写真(A: 飲食店の店内、B: オフィス/店舗の外観) | ギャラリー |
+
+### 画像生成AIの選定
+
+写真・モックアップ調の完成度が高く、かつ複数枚を通じてトーン(配色・雰囲気)を揃えやすいものを軸に選んだ。**日本語のテキストをAIに直接生成させるのは現状どのモデルでも精度が低い(文字化け・誤字が起きやすい)ため、AIには「文字なしの背景・モックアップ画像」だけを作らせ、キャッチコピーや見出しはCanvaで別途テキストとして重ねる**運用を前提にしている。
+
+| ツール | 位置づけ | 理由 |
+|---|---|---|
+| **Canva(Magic Media)(第一候補)** | 生成〜テキスト乗せ〜ココナラ規定サイズへのリサイズまで一つのツールで完結 | 非デザイナーでも扱いやすく、ココナラ出品者の間でも「サムネイルはCanvaで作るのが定番」という情報が複数のブログで確認できた。生成品質はMidjourney等にやや劣るが、テキスト合成・サイズ調整の手間が最小 |
+| **Google Gemini(Nano Banana / Gemini 2.5 Flash Image)(第二候補)** | 写真調モックアップの品質を上げたい画像だけ個別生成し、Canvaに取り込んで仕上げる | 指示追従性が高く無料利用枠もあり、複数画像の雰囲気を揃えやすい。ノートPC+スマホのモックアップのような「構図の指定が細かい」画像に強い |
+| Midjourney v7(高品質だが手間) | 特にサムネイル(#1)だけ質を最優先したい場合の任意オプション | 写真的な質感・雰囲気の作り込みでは依然トップクラスだが、Discord操作が必要で日本語UIでもなく、非デザイナーには少しハードルが高い |
+
+**結論**: まずはCanva単体(Magic Media機能)で6枚を揃えてみて、サムネイル(#1)だけ「もっと質感を上げたい」と感じたらGemini(Nano Banana)で背景画像を作り直してCanvaに読み込む、という2段構えを推奨する。
+
+### プロンプト(英語、Canva Magic MediaまたはGemini共通で使用可)
+
+いずれも「文字なし」を明記し、キャッチコピーは生成後にCanvaで追加する前提。
+
+**#1 メイン画像(共通ベース)**
+```
+A clean modern flat-lay mockup of a laptop and a smartphone on a wooden desk, both screens
+displaying a minimal one-page website design with a hero section and simple menu layout,
+soft natural window lighting, warm neutral color palette (cream, terracotta, sage green),
+plenty of empty negative space in the upper right third of the frame for text overlay,
+professional stock-photo style, no readable text or logos anywhere in the image,
+photorealistic, 4K
+```
+- サービスA追加: `, the website mockup shows a cozy Japanese restaurant homepage with a warm food photo in the hero section`
+- サービスB追加: `, the website mockup shows a generic small business homepage with a clean neutral corporate hero section, industry-agnostic`
+
+**#2 対応内容アイコン一覧**
+```
+A minimalist flat-design icon set arranged in a 3x2 grid on a white background: a smartphone
+with a checkmark (mobile-responsive), a pencil editing a webpage (no-code self-editing),
+a sparkle/star icon (AI-assisted writing), a checkmark inside a circle (free revisions),
+a video play button (tutorial video), a stopwatch or calendar (fast delivery). Consistent
+thin line-art style, soft pastel color palette, generous white space around each icon,
+no text or labels, vector illustration style
+```
+
+**#3 制作の流れ(5ステップ)**
+```
+A simple horizontal flowchart illustration with 5 connected circular nodes arranged left to
+right on a white background, each node containing a distinct simple icon (a chat bubble, a
+pencil sketching, a screen with a checkmark, a magnifying glass, a gift box), thin arrows
+connecting each node, minimalist flat vector style, soft pastel colors, generous empty space
+below each node for text labels to be added later, no text in the image
+```
+
+**#4 Before/After**
+```
+A split-screen comparison illustration, left half shows an outdated cluttered website
+displayed on an old desktop monitor rendered in dull muted gray tones, right half shows a
+clean modern mobile-friendly website displayed on a smartphone rendered in vibrant warm
+colors, clear visual contrast between the two halves, flat vector illustration style,
+a simple arrow shape pointing from the left half to the right half, no readable text anywhere
+```
+
+**#5 作業風景イメージ(顔を出さない)**
+```
+A friendly minimalist flat-design illustration of a person working on a laptop at a bright
+wooden desk, viewed from behind or from a side angle so the face is not clearly visible,
+warm and approachable mood, soft pastel color palette, cup of coffee and a small plant on
+the desk, vector illustration style, no text
+```
+
+**#6 業種イメージ写真**
+- サービスA: `A warm, inviting interior of a small Japanese cafe or izakaya, wooden furniture and counter, soft warm ambient lighting, shallow depth of field, photorealistic stock-photo style, no people visible, cozy atmosphere, no text or signage with readable words`
+- サービスB: `A bright, clean modern small office or storefront exterior, neutral minimal architecture, soft daylight, photorealistic stock-photo style, no people visible, no readable text or signage, industry-neutral`
+
+### 運用上の注意
+
+- 生成した画像は必ず「※イメージ画像です」等のキャプションをCanva上で添えること(実績と誤認されないため)。
+- ココナラの規約上、生成AI画像の利用自体は許容されているが、実在の店舗・人物に酷似した画像や商標・ロゴを含む生成は避けること。
+- 画像のテイスト(配色・角の丸み・フォント)はサービスA・Bで統一し、"同じ制作者が作っている安心感"を出す。差別化は業種名の入れ替えのみに留める。
