@@ -296,118 +296,145 @@ Web制作の実務経験があります(飲食店向けシステム開発に携�
 
 ---
 
-# STEP 3: 画像を作る(Canva または Nano Banana)
+# STEP 3: 画像を作る(Canvaでバナー9枚 + AIでマスコット1体)
 
-画像は10枚。#1と#9は「写真っぽい」系統1、それ以外は「イラスト」系統2のスタイルを使います。
+**重要**: 参考にしてもらった「低価格×高品質」のような太字バナーは、AIに一発生成させる絵ではありません。文字・数字・色ブロックを正確に配置する"デザインテンプレート"なので、**Canvaに直接文字を打ち込んで作ります**。AIが担当するのは「マスコットキャラクター(柴犬)」のイラストだけです。これを先に1回作って、Canvaの9枚すべてに使い回します。
 
-## 共通スタイル(系統1: 写真っぽい画像用、#1と#9に使う)
-```
-, photorealistic professional stock-photography style, shot with a shallow depth of field on a
-DSLR camera, realistic natural materials and lighting, warm neutral color grading (cream, soft
-terracotta, sage green tones), NOT a vector illustration, NOT a cartoon, NOT anime or flat-design
-art, no readable text, no logos, no watermarks, 4K, high production value comparable to a
-professional web design agency's marketing photo
-```
+配色は参考画像に寄せて **紺(ネイビー) × テラコッタ/赤系** の2色を基本にしてください。
 
-## 共通スタイル(系統2: イラスト画像用、#2〜#8・#10に使う)
-```
-, flat minimal vector illustration style, thin consistent line-art, warm neutral color palette
-(cream, soft terracotta, sage green, charcoal gray accents), soft even lighting, generous negative
-space, no readable text, no logos, no watermarks, clean vector graphic suitable for icon/diagram use
-```
+---
 
-## #1 メインサムネイル(系統1を末尾に足す)
-```
-A professional photograph of a laptop and a smartphone resting on a wooden desk, shot from directly
-above (flat-lay), both screens displaying a blurred, out-of-focus website interface with soft colors
-and no readable content, a cup of coffee and a small potted plant nearby, natural warm window light,
-shallow depth of field, shot on a DSLR camera with a realistic wood grain desk texture, warm neutral
-tones (cream, terracotta, sage green), plenty of empty negative space in the upper third of the frame
-for text overlay, photorealistic commercial stock-photography style, NOT a vector illustration, NOT
-a cartoon, NOT anime or flat-design art, no readable text or logos anywhere in the image, high-end
-web design agency marketing photo aesthetic, 4K
-```
-- サービスA用に追加: `, the blurred screen content faintly suggests a warm Japanese restaurant website`
-- サービスB用に追加: `, the blurred screen content faintly suggests a neutral generic business website`
+## 3-1. マスコットをAIで作る(最初に1回だけ)
 
-## #2 【お悩み】導入(系統2を末尾に足す)
+Nano Banana(または好きな画像生成AI)にこのプロンプトを入れてください。
+
 ```
-A small business owner sitting at a desk, looking thoughtfully at a laptop with a blank
-placeholder website on screen, a notepad with a few question marks beside the laptop, gentle
-worried but hopeful expression, half-body flat illustration
+A cute simple flat-design mascot illustration of a friendly shiba inu dog character, round
+friendly face with a warm smile, simple thick clean outlines, minimal flat vector style, warm
+color palette, isolated on a plain white background, no text, consistent character design
+suitable for reuse across multiple marketing graphics
 ```
 
-## #3 【解決策】図解(系統2を末尾に足す)
-```
-A simple flat vector diagram showing three connected circular nodes left to right: a sparkle/AI
-icon, a drag-and-drop interface icon, and a smartphone displaying a finished website, thin arrows
-connecting each node, minimal line-art icons
-```
+同じキャラクターのまま、ポーズ違いを4種類作ってください(上のプロンプトの末尾に追加):
+- `, giving a thumbs-up or OK sign pose`(サムネイル・安心訴求用)
+- `, pointing at something off to the side with one paw`(注目誘導用)
+- `, sitting calmly with a laptop next to it`(作業イメージ用)
+- `, waving one paw in a greeting pose`(自己紹介用)
 
-## #4 対応内容アイコン一覧(系統2を末尾に足す)
-```
-A minimalist flat-design icon set arranged in a 3x2 grid: a smartphone with a checkmark
-(mobile-responsive), a pencil editing a webpage (self-editing), a sparkle icon (AI-assisted),
-a checkmark inside a circle labeled with the number 3 nearby (three free revisions), a video
-play button (tutorial video), a stopwatch (fast delivery), consistent thin line-art icons evenly
-spaced with room below each for a short label
-```
+できたら、Canvaに読み込んで背景を透過(切り抜き)しておいてください。これで準備完了、以降は全部Canvaで組みます。
 
-## #5 制作の流れ(系統2を末尾に足す)
-```
-A horizontal flowchart illustration with 5 connected circular nodes left to right, each containing
-a distinct simple icon: a chat bubble (consultation), a shopping cart (purchase), a screen with a
-checkmark (proposal), a magnifying glass (revision), a gift box (delivery), thin arrows connecting
-each node, generous empty space below each node for a text label
-```
+---
 
-## #6 Before/After(系統2を末尾に足す)
-```
-A split-screen comparison illustration, left half shows an outdated cluttered website on an old
-desktop monitor in dull muted gray tones, right half shows a clean modern mobile-friendly website
-on a smartphone in vibrant warm colors, a simple arrow shape pointing from the left half to the
-right half
-```
+## 3-2. #1 メインサムネイル(1220×1240px)
 
-## #7 料金表ビジュアル(系統2を末尾に足す)
-```
-A clean flat-design pricing card layout with three empty rectangular card placeholders arranged
-side by side, subtle border lines separating each card, plenty of white space inside each card for
-a price and a short feature list to be added later, one card subtly larger or highlighted to suggest
-a featured/recommended option
-```
+- Canvaで検索: 「ビジネス バナー広告 比較」「サービス紹介 バナー 2色分割」
+- レイアウト: 紺×テラコッタで縦(または斜め)2分割
+- 大見出し(白抜き太字): `AI × 低価格`
+- サブ見出し: `ホームページ制作`
+- 金色の丸バッジ: `初回限定 20,000円`
+- 下部にピル型ボタン4つ: `スマホ対応` `AI活用` `自分で更新OK` `最短7日`
+- マスコット(サムアップのポーズ)を右下に配置
 
-## #8 安心材料バッジ(系統2を末尾に足す)
-```
-A row of three flat circular badge icons evenly spaced on a white background: a checkmark badge,
-a clock/speed badge, and a pencil/edit badge, consistent minimal line-art style, each badge with
-empty space below for a short number/label to be added later
-```
+## 3-3. #2 料金バナー
 
-## #9 業種イメージ写真(系統1を末尾に足す)
-**サービスA用**
-```
-A warm, inviting interior of a small Japanese cafe or izakaya, wooden furniture and counter, soft
-warm ambient lighting, shallow depth of field, no people visible, cozy atmosphere
-```
-**サービスB用**
-```
-A bright, clean modern small office or storefront exterior, neutral minimal architecture, soft
-daylight, no people visible, industry-neutral
-```
+- Canvaで検索: 「料金表 バナー デザイン」
+- 大見出し: `料金`
+- メイン価格を一番大きく: `初回限定 20,000円`(その下に小さく「通常24,800円」)
+- オプション表(小さめの文字で):
+  ```
+  更新代行           3,000円
+  1ヶ月保守サポート   8,000円
+  ページ追加(1P)     5,000円
+  特急対応           5,000円
+  ```
+- マスコット(作業中のポーズ)を隅に配置
 
-## #10 プロフィール風イメージ(系統2を末尾に足す)
-```
-A friendly minimalist flat-design illustration of a person working on a laptop at a bright wooden
-desk, viewed from behind or from a side angle so the face is not clearly visible, warm and
-approachable mood, a cup of coffee and a small plant on the desk
-```
+## 3-4. #3 悩み訴求(4分割ボックス)
+
+- Canvaで検索: 「お悩み解決 4分割 バナー」
+- 見出し: `どこに頼もうか悩んでいる方へ`
+- 4つのボックスにそれぞれ:
+  ```
+  AI活用で低価格
+  最短7営業日
+  納品後も自分で更新できる
+  修正3回まで無料
+  ```
+- マスコット(挨拶ポーズ)を配置
+
+## 3-5. #4 対応内容アイコン一覧
+
+- Canvaで検索: 「サービス内容 アイコン一覧 バナー」
+- 見出し: `対応内容`
+- アイコン+テキストを6つ並べる:
+  ```
+  スマホ対応
+  AIでキャッチコピー作成
+  自分で更新OK
+  無料修正3回
+  操作マニュアル動画付き
+  最短7営業日
+  ```
+
+## 3-6. #5 制作の流れ
+
+- Canvaで検索: 「ご利用の流れ ステップ バナー」
+- 5ステップを横並びで:
+  ```
+  1. 見積り相談
+  2. ご購入
+  3. 構成案・デザイン提示(3営業日)
+  4. 修正(3回まで)
+  5. 納品+マニュアル動画
+  ```
+
+## 3-7. #6 Before/After
+
+- Canvaで検索: 「Before After 比較 バナー」
+- 左側: `よくあるお悩み`(旧サイトのイメージ、暗め・地味な配色)
+- 右側: `このサービスなら`(新デザインのイメージ、明るい配色)
+
+## 3-8. #7 安心材料バッジ
+
+- Canvaで検索: 「安心 数字 バッジ バナー」
+- 大きな数字バッジ3つ:
+  ```
+  3回      無料修正
+  7日      最短納期
+  20,000円  初回限定価格
+  ```
+
+## 3-9. #8 購入前の注意事項バナー
+
+- Canvaで検索: 「注意事項 バナー シンプル」
+- 見出し: `ご購入前にご確認ください`
+- 箇条書き:
+  ```
+  ・運用保守は含みません(有料オプションで対応)
+  ・独自ドメインの場合はWixの有料プラン加入が別途必要です
+  ・大幅な構成変更は別途お見積もりとなります
+  ```
+
+## 3-10. #9 業種イメージ(サービスA・Bで別々に作る)
+
+- Canvaで検索: 「業種 アイコン バナー」
+- **サービスA用**: 飲食店を示すアイコン(器・箸・カップなど)+マスコット
+- **サービスB用**: 中小企業を示すアイコン(オフィス・ビルなど)+マスコット
+
+## 3-11. #10 プロフィール(マスコット紹介)
+
+- Canvaで検索: 「自己紹介 プロフィール バナー」
+- マスコット(挨拶ポーズ)を大きめに配置
+- 見出し: `私について`
+- 一言: `Web制作の実務経験あり。AIノーコードで低価格・短納期に対応します。`
+
+---
 
 ## 作った後にやること
-1. Canvaでキャッチコピー・数字・見出しの日本語テキストを重ねる(AIに直接日本語を書かせない)
-2. サムネイル(#1)はココナラの規定サイズ 1220×1240px にリサイズする
-3. 実績のスクリーンショットではなく「イメージ画像」なので、必要なら小さく「※イメージ」と入れる
-4. サービスA・B、両方に同じ画像セットを使ってOK(業種イメージ写真の#1と#9だけA/B別々に差し替える)
+1. サムネイル(#1)はココナラの規定サイズ 1220×1240px になっているか確認する
+2. 実績のスクリーンショットではなく「イメージ」なので、実績数字(「実績◯件」等)は絶対に入れない
+3. マスコットのテイスト(色・線の太さ)を9枚すべてで統一する
+4. サービスA・Bで9枚のうち8枚(#9以外)は使い回してOK。#9だけ業種イメージを差し替える
 
 ---
 
