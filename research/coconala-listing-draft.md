@@ -555,15 +555,20 @@ Web制作の実務経験があります(飲食店向けシステム開発に携�
 出品したばかりのため、先着3名様限定の初回限定価格にてご案内しております。制作事例として紹介させていただける方や、感想をお聞かせいただける方を歓迎いたします。
 ```
 
-**購入にあたってのお願い(1,000字以内必須・150字以上推奨、318文字)**
+**購入にあたってのお願い(1,000字以内必須・150字以上推奨、628文字、2026-09-18改訂版)**
 ```
 ・ご購入前に必ず「見積り相談」からご連絡ください(即購入では対応できません)
 ・対応範囲: トップページ、メニュー、アクセス、SNS導線を含む1ページ構成です
 ・対応していないこと: 納品後の運用保守、予約や決済など複雑な機能の実装、独自ドメインとサーバーの契約(取得方法はご案内します)
+・Wixで制作します。独自ドメインで公開する場合、Wix側の有料プラン(月額1,000〜2,000円程度)へのご加入が別途必要です。ご加入いただかない場合はWix指定のURL(サブドメイン)での公開となります
 ・デザインの色や雰囲気はご希望を伺いますが、細部のレイアウトは基本お任せください
-・ご用意いただくもの: 店舗名、業態、住所、電話番号、営業時間、メニュー情報、店舗やお料理の写真(3〜10枚程度)
+・無料修正3回は、各回でまとめてご指摘いただく形です。構成の大幅な変更は別途お見積もりとなります
+・AIを活用して作成する文章は、内容に誤りがないか必ずご確認のうえご使用ください
+・ご用意いただくもの: 店舗名、業態、住所、電話番号、営業時間、メニュー情報、店舗やお料理の写真(3〜10枚程度)。写真のご用意が難しい場合はご相談ください
+・納期(7営業日)は、上記の情報・写真が揃った日を起算日とします
+・ヒアリング前のキャンセルは全額返金いたしますが、構成案の提示後のキャンセルは原則お受けできません
 ・5日以上ご連絡がない場合は、その時点の内容で正式納品とさせていただく場合があります
-・制作開始後のお客様都合によるキャンセルは原則お受けできません
+・制作事例としての紹介は任意です。ご希望されない場合は見積り相談時にお知らせください
 ```
 
 **見積りにあたってのお願い(200字以内・任意、77文字)**
@@ -620,15 +625,20 @@ Web制作の実務経験があります(飲食店向けシステム開発に携�
 出品したばかりのため、先着3名様限定の初回限定価格にてご案内しております。制作事例として紹介させていただける方や、感想をお聞かせいただける方を歓迎いたします。
 ```
 
-**購入にあたってのお願い(1,000字以内必須・150字以上推奨、316文字)**
+**購入にあたってのお願い(1,000字以内必須・150字以上推奨、626文字、2026-09-18改訂版)**
 ```
 ・ご購入前に必ず「見積り相談」からご連絡ください(即購入では対応できません)
 ・対応範囲: トップページ、サービス紹介、アクセス、SNS導線を含む1ページ構成です
 ・対応していないこと: 納品後の運用保守、予約や決済など複雑な機能の実装、独自ドメインとサーバーの契約(取得方法はご案内します)
+・Wixで制作します。独自ドメインで公開する場合、Wix側の有料プラン(月額1,000〜2,000円程度)へのご加入が別途必要です。ご加入いただかない場合はWix指定のURL(サブドメイン)での公開となります
 ・デザインの色や雰囲気はご希望を伺いますが、細部のレイアウトは基本お任せください
-・ご用意いただくもの: 事業者名、業種、所在地、連絡先、サービスや商品の情報、写真やロゴ(3〜10枚程度)
+・無料修正3回は、各回でまとめてご指摘いただく形です。構成の大幅な変更は別途お見積もりとなります
+・AIを活用して作成する文章は、内容に誤りがないか必ずご確認のうえご使用ください
+・ご用意いただくもの: 事業者名、業種、所在地、連絡先、サービスや商品の情報、写真やロゴ(3〜10枚程度)。写真のご用意が難しい場合はご相談ください
+・納期(7営業日)は、上記の情報・写真が揃った日を起算日とします
+・ヒアリング前のキャンセルは全額返金いたしますが、構成案の提示後のキャンセルは原則お受けできません
 ・5日以上ご連絡がない場合は、その時点の内容で正式納品とさせていただく場合があります
-・制作開始後のお客様都合によるキャンセルは原則お受けできません
+・制作事例としての紹介は任意です。ご希望されない場合は見積り相談時にお知らせください
 ```
 
 **見積りにあたってのお願い(200字以内・任意、72文字)**
@@ -664,3 +674,149 @@ Web制作の実務経験があります(飲食店向けシステム開発に携�
 | 一度に受注可能な件数 | 2件 | 実績ゼロ×二本立て出品による工数超過を防ぐため、8章で決めた「同時進行を絞る」方針を反映して意図的に少なめに設定 |
 | 事前すり合わせ(ビデオチャット) | OFF(初期は非対応) | 工数記録・時給検証が終わるまでは対応範囲を広げすぎない |
 | 定期購入の設定 | OFF | 保守は都度課金オプションのみとする方針(既存決定事項)と整合 |
+| 有料オプションのステータス | **公開** | 下書きのままだと購入者側にオプションが表示されず選択できないため。3件とも内容確定済みなので公開でよい |
+
+## 12. 最終リスクチェック(2026-09-18): 問い合わせ・認識齟齬の事前潰し込み
+
+出品直前の最終レビューとして、「購入者と食い違いが起きそうな箇所」「Q&Aで聞かれそうな箇所」を洗い出し、11章の「購入にあたってのお願い」に反映した(改訂版に差し替え済み)。見つかった穴と対処は以下の通り。
+
+| # | 見つかった穴 | 起こりうる食い違い | 対処 |
+|---|---|---|---|
+| 1 | **Wixの月額費用が説明文のどこにも書かれていなかった** | 独自ドメインで公開したいお客様が、納品後に「Wixの有料プラン加入が必要」と知り、想定外の追加費用にクレームになる | 「購入にあたってのお願い」に、独自ドメイン希望時はWix側の有料プラン(月額1,000〜2,000円程度)が別途必要な旨を明記 |
+| 2 | **納期7営業日の起算点があいまいだった** | 「注文してから7日」と誤解したお客様が、写真送付が遅れているのに「まだできないのか」と催促してくる | 「必要な情報・写真が揃った日を起算日とする」ことを明記(競合4401581の型を踏襲) |
+| 3 | **「軽微な修正3回」の定義が本文になかった** | お客様が「構成を丸ごと変えたい」を1回の修正として要求し、工数が無制限に膨らむ(過去の"対価が労働力に見合わない"失敗の再発パターンそのもの) | 「各回でまとめて指摘」「大幅な構成変更は別途お見積もり」を明記 |
+| 4 | **AI生成文章の内容確認をお客様にお願いする一文がなかった** | AIが生成したメニュー説明文等に事実誤認があった場合、責任の所在で揉める可能性 | 「内容に誤りがないか必ずご確認のうえご使用ください」を追加 |
+| 5 | **キャンセル規定が「制作開始後は原則不可」の一律表現だった** | ヒアリング直後(まだ何も作っていない段階)でのキャンセル希望者とも揉める可能性 | 「ヒアリング前は全額返金」「構成案提示後は原則不可」と段階を分けて明記 |
+| 6 | **写真素材が用意できない場合の代替手段が書かれていなかった** | 個人経営の飲食店・個人事業主は写真を持っていないことが多く、購入後に「写真がないのですが」と個別対応が発生 | 「写真のご用意が難しい場合はご相談ください」を追加(有料オプションとしてAI生成素材で対応する余地を残す。ただし無料対応と誤解されないよう、本文では"ご相談"止まりの表現にした) |
+| 7 | **ポートフォリオ掲載が任意か強制か不明瞭だった** | 掲載してほしくないお客様が、勝手に事例として紹介されたと不信感を持つ | 「制作事例としての紹介は任意」「ご希望されない場合は見積り相談時にお知らせください」と明記 |
+| 8 | **「一度に受注可能な件数」(フォーム上の機能)と「先着3名の初回限定価格」(本文の訴求)が別概念であることが整理されていなかった** | 4件目の注文が入った際、フォーム側は制限していないのに本文は「先着3名」と書いてあり矛盾が生じる | 運用ルールとして明記: フォームの受注可能件数は"同時進行中の案件数の上限"を管理する機能であり、"初回限定価格を何名に適用するか"は出品者側で手動管理する必要がある。3名分の正式ご購入が完了した時点で、サービスA・B双方の価格欄を24,800円に手動で書き換えること |
+| 9 | **サービスA/Bを同時運用した際の「先着3名」の数え方が未確定だった** | サービスAで2名、サービスBで2名購入されると、合計4名が初回限定価格になってしまい、想定より値引きが多くなる | 8章の方針通り、**サービスA・B合算で3名**を上限として管理する。カウント用に、この`coconala-listing-draft.md`か別の管理シートに購入日・サービス種別を都度記録する運用とする |
+
+**結論**: 上記9点を反映した「購入にあたってのお願い」(A: 628文字、B: 626文字、いずれも1,000字以内)に更新済み。値としては1,000字の上限に対してまだ370字ほど余裕があるため、実際に運用してみて追加で聞かれた質問があれば随時ここに追記していく。
+
+## 13. 画像リサーチ最終版と10枚のプロンプト(2026-09-18)
+
+### 訂正: Klingについて
+
+オーナーから例として挙がった「ナノバナナやKling」のうち、**Klingは主に動画生成AI(テキスト/画像から数秒の動画を作るツール)であり、静止画のサムネイル・ギャラリー画像を10枚作る今回の用途には向いていない**。静止画はNano Banana(Google Gemini 2.5 Flash Image)またはCanva Magic Mediaで作成することを推奨する。Klingは、もし将来的にサービス紹介の短尺動画(ココナラは画像だけでなく動画添付にも対応している)を作る際の候補として温存するのが妥当。
+
+### 追加リサーチで分かった「売れる画像」の原則
+
+- **数字は説得力を持つ**: 「実績豊富です」より「修正3回まで」「納期7営業日」のような具体的な数字の方が信頼されやすい。ただし当方は販売実績0件のため、"実績数"ではなく"サービス条件の数字"(修正回数・納期・価格)で信頼を補う。([出典](https://www.samune-ai.jp/blog/coconala-shuppin-gazou-tsukurikata))
+- **ターゲットを絞って明記する方がクリックされる**: 「誰でも歓迎」より「飲食店向け」「個人事業主向け」と一目でわかる方が刺さる。→ サービスA/Bでメイン画像のターゲット表記を明確に分ける。
+- **原則は「シンプル・コピー・コントラスト」**: 文字だらけ、何をしてくれるか一目でわからない画像はNG。([出典](https://coconala.com/blogs/2027462/618314) ※本セッション後半でcoconala.comへのアクセスが一時503エラーとなり再確認できず、検索結果の要約に基づく)
+- 実績豊富な競合(ZUI氏・りゅうき氏)はギャラリー10枚を「実績サイトのスクリーンショット」で埋めているが、当方はゼロ実績のため使えない。→ 数字訴求・仕組みの図解・業種イメージで代替する設計とする(10章と同じ方針)。
+
+### 確定: 10枚の画像リスト(サムネイル1枚+ギャラリー9枚)
+
+| # | 用途 | 内容 | 目を引く/分かりやすくする工夫 |
+|---|---|---|---|
+| 1 | メインサムネイル(一覧表示) | デバイスモックアップ+ターゲット表記+価格訴求 | ターゲット(飲食店向け/個人事業主向け)を明記、初回限定20,000円を数字で見せる |
+| 2 | 【お悩み】導入 | 悩む経営者のイラスト+3つの悩みが視覚化された吹き出し | 「あるある」共感を最初に作る |
+| 3 | 【解決策】図解 | AI→ノーコード→完成サイトのシンプルな3ステップ図 | 仕組みの分かりやすさで信頼を補う |
+| 4 | 対応内容アイコン一覧 | スマホ対応/自分で更新/AI活用/修正3回/マニュアル動画/短納期の6アイコン | 具体的な数字(3回・7日)を含める |
+| 5 | 制作の流れ | 見積り相談→購入→提案→修正→納品の5ステップ図 | 「見積り相談必須」という購入前のハードルを事前に視覚で伝える |
+| 6 | Before/After | 旧サイトの分かりにくさ→新デザインの見やすさ | 対比でメリットを直感的に見せる |
+| 7 | 料金表ビジュアル | 初回限定価格・正式価格・有料オプションを表形式で整理 | 価格の透明性を見せ、追加費用への不安を先に解消 |
+| 8 | 安心材料バッジ | 「修正3回まで」「7営業日」「自分で更新OK」の3バッジ | 数字訴求の畳みかけ |
+| 9 | 業種イメージ写真 | A: 飲食店の温かい店内 / B: 明るいオフィス・店舗外観 | ターゲットが「自分ごと」として捉えられる情景 |
+| 10 | プロフィール風イメージ | 作業風景(顔を出さない後ろ姿)+一言経験紹介 | 「誰が作るか」の安心感(実績の代わりに人柄で補う) |
+
+### 全画像共通のスタイル指定(プロンプトの末尾に必ず付ける)
+
+```
+, flat minimal illustration and mockup style, warm neutral color palette (cream, soft terracotta,
+sage green, charcoal gray accents), soft even lighting, generous negative space, no readable text,
+no logos, no watermarks, 4K, consistent visual style suitable for a cohesive image series
+```
+
+### 10枚分のプロンプト(英語、Nano Banana / Canva Magic Media共通)
+
+**#1 メインサムネイル**
+```
+A clean modern flat-lay mockup of a laptop and a smartphone on a wooden desk, both screens
+displaying a minimal one-page website with a hero section and simple menu layout, plenty of
+empty space in the upper third of the frame for a headline and price badge to be added later
+[+共通スタイル]
+```
+- A追加: `, the website mockup shows a cozy Japanese restaurant homepage with a warm food photo hero`
+- B追加: `, the website mockup shows a generic small business homepage with a neutral corporate hero, industry-agnostic`
+
+**#2 【お悩み】導入**
+```
+A small business owner sitting at a desk, looking thoughtfully at a laptop with a blank
+placeholder website on screen, a notepad with a few question marks beside the laptop, gentle
+worried but hopeful expression, half-body flat illustration
+[+共通スタイル]
+```
+
+**#3 【解決策】図解**
+```
+A simple flat vector diagram showing three connected circular nodes left to right: a sparkle/AI
+icon, a drag-and-drop interface icon, and a smartphone displaying a finished website, thin arrows
+connecting each node, minimal line-art icons
+[+共通スタイル]
+```
+
+**#4 対応内容アイコン一覧**
+```
+A minimalist flat-design icon set arranged in a 3x2 grid: a smartphone with a checkmark
+(mobile-responsive), a pencil editing a webpage (self-editing), a sparkle icon (AI-assisted),
+a checkmark inside a circle labeled with the number 3 nearby (three free revisions), a video
+play button (tutorial video), a stopwatch (fast delivery), consistent thin line-art icons evenly
+spaced with room below each for a short label
+[+共通スタイル]
+```
+
+**#5 制作の流れ**
+```
+A horizontal flowchart illustration with 5 connected circular nodes left to right, each containing
+a distinct simple icon: a chat bubble (consultation), a shopping cart (purchase), a screen with a
+checkmark (proposal), a magnifying glass (revision), a gift box (delivery), thin arrows connecting
+each node, generous empty space below each node for a text label
+[+共通スタイル]
+```
+
+**#6 Before/After**
+```
+A split-screen comparison illustration, left half shows an outdated cluttered website on an old
+desktop monitor in dull muted gray tones, right half shows a clean modern mobile-friendly website
+on a smartphone in vibrant warm colors, a simple arrow shape pointing from the left half to the
+right half
+[+共通スタイル]
+```
+
+**#7 料金表ビジュアル**
+```
+A clean flat-design pricing card layout with three empty rectangular card placeholders arranged
+side by side, subtle border lines separating each card, plenty of white space inside each card for
+a price and a short feature list to be added later, one card subtly larger or highlighted to suggest
+a featured/recommended option
+[+共通スタイル]
+```
+
+**#8 安心材料バッジ**
+```
+A row of three flat circular badge icons evenly spaced on a white background: a checkmark badge,
+a clock/speed badge, and a pencil/edit badge, consistent minimal line-art style, each badge with
+empty space below for a short number/label to be added later
+[+共通スタイル]
+```
+
+**#9 業種イメージ写真**
+- A: `A warm, inviting interior of a small Japanese cafe or izakaya, wooden furniture and counter, soft warm ambient lighting, shallow depth of field, photorealistic stock-photo style, no people visible, cozy atmosphere [+共通スタイル]`
+- B: `A bright, clean modern small office or storefront exterior, neutral minimal architecture, soft daylight, photorealistic stock-photo style, no people visible, industry-neutral [+共通スタイル]`
+
+**#10 プロフィール風イメージ**
+```
+A friendly minimalist flat-design illustration of a person working on a laptop at a bright wooden
+desk, viewed from behind or from a side angle so the face is not clearly visible, warm and
+approachable mood, a cup of coffee and a small plant on the desk
+[+共通スタイル]
+```
+
+### 運用メモ
+
+- 各プロンプトの末尾に必ず上記「全画像共通のスタイル指定」を追記してから生成すること(10枚のトーンを統一するため)。
+- 生成後、Canvaでキャッチコピー・数字・見出しのテキストを重ねる(日本語はAIに直接生成させない、10章と同じ理由)。
+- #1(サムネイル)と#9(業種イメージ)以外は文字要素の"土台"として作るため、写真調よりイラスト/アイコン調の方が失敗が少ない(Nano Bananaは細かいアイコンの均等配置がやや苦手な場合があるため、崩れる場合はCanvaのテンプレート素材に切り替える代替案も検討する)。
