@@ -143,7 +143,7 @@ WiX
 ```
 20,000円
 ```
-(※実績が3〜5件たまったら、この価格欄を24,800円に書き換える)
+(※実績が3〜5件たまったら、この価格欄を34,800円に書き換える)
 
 ## 1-15. 見積りの受付
 ```
@@ -270,6 +270,7 @@ Web制作の実務経験があります(飲食店向けシステム開発に携�
 ```
 20,000円
 ```
+(※実績が3〜5件たまったら、この価格欄を34,800円に書き換える)
 
 ## 2-7. 見積りにあたってのお願い
 ```
@@ -371,8 +372,8 @@ around each text element so nothing overlaps, 4K
 ```
 A bold modern banner ad, navy blue and terracotta red color blocks, large bold Japanese
 headline text at the top reading "料金", directly below it extremely large bold Japanese
-price text reading "初回限定20,000円" as the visual focal point, smaller Japanese text just
-below that reading "通常24,800円", below that a simple table-like list in smaller Japanese
+price text reading "先行案内価格 20,000円" as the visual focal point, smaller Japanese text
+just below that reading "正式価格34,800円予定", below that a simple table-like list in smaller Japanese
 text reading: "更新代行 3,000円" then "1ヶ月保守サポート 8,000円" then "ページ追加 5,000円"
 then "特急対応 5,000円", each on its own line with clear spacing, a friendly 3D-rendered
 semi-realistic mascot character of a cheerful person (Pixar-movie-style, soft studio lighting,
