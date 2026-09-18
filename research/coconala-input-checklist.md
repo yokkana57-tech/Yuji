@@ -296,144 +296,177 @@ Web制作の実務経験があります(飲食店向けシステム開発に携�
 
 ---
 
-# STEP 3: 画像を作る(Canvaでバナー9枚 + AIでマスコット1体)
+# STEP 3: 画像を作る(AI一発生成、コピペのみ)
 
-**重要**: 参考にしてもらった「低価格×高品質」のような太字バナーは、AIに一発生成させる絵ではありません。文字・数字・色ブロックを正確に配置する"デザインテンプレート"なので、**Canvaに直接文字を打ち込んで作ります**。AIが担当するのは「マスコットキャラクター(柴犬)」のイラストだけです。これを先に1回作って、Canvaの9枚すべてに使い回します。
-
-配色は参考画像に寄せて **紺(ネイビー) × テラコッタ/赤系** の2色を基本にしてください。
+配色は紺(ネイビー)×テラコッタ/赤系で統一。各プロンプトはそのままAI(Nano Banana推奨)に貼り付ければ完成品が出ます。**もし文字が崩れたら、編集せずに同じプロンプトをもう一度貼り付けて作り直してください(再生成)。**
 
 ---
 
-## 3-1. マスコットをAIで作る(最初に1回だけ)
+## 3-1. マスコット(先に4パターン作る)
 
-Nano Banana(または好きな画像生成AI)にこのプロンプトを入れてください。
-
+**①サムアップ**
 ```
-A cute simple flat-design mascot illustration of a friendly shiba inu dog character, round
-friendly face with a warm smile, simple thick clean outlines, minimal flat vector style, warm
-color palette, isolated on a plain white background, no text, consistent character design
-suitable for reuse across multiple marketing graphics
+A bold modern banner ad design element: a cute simple flat-design mascot character of a
+friendly cheerful person (not an animal), simplified rounded human features, short hair,
+minimal flat vector illustration style, thick clean outlines, warm approachable smiling
+expression, wearing a simple casual outfit, giving a thumbs-up or OK sign pose, isolated on
+a plain white background, no text, navy blue and terracotta red color accents, consistent
+character design suitable for reuse across multiple marketing graphics, 4K
 ```
 
-同じキャラクターのまま、ポーズ違いを4種類作ってください(上のプロンプトの末尾に追加):
-- `, giving a thumbs-up or OK sign pose`(サムネイル・安心訴求用)
-- `, pointing at something off to the side with one paw`(注目誘導用)
-- `, sitting calmly with a laptop next to it`(作業イメージ用)
-- `, waving one paw in a greeting pose`(自己紹介用)
+**②指差し**
+```
+A bold modern banner ad design element: a cute simple flat-design mascot character of a
+friendly cheerful person (not an animal), simplified rounded human features, short hair,
+minimal flat vector illustration style, thick clean outlines, warm approachable smiling
+expression, wearing a simple casual outfit, pointing at something off to the side with one
+hand, isolated on a plain white background, no text, navy blue and terracotta red color
+accents, consistent character design suitable for reuse across multiple marketing graphics, 4K
+```
 
-できたら、Canvaに読み込んで背景を透過(切り抜き)しておいてください。これで準備完了、以降は全部Canvaで組みます。
+**③作業中**
+```
+A bold modern banner ad design element: a cute simple flat-design mascot character of a
+friendly cheerful person (not an animal), simplified rounded human features, short hair,
+minimal flat vector illustration style, thick clean outlines, warm approachable smiling
+expression, wearing a simple casual outfit, sitting calmly with a laptop next to them,
+isolated on a plain white background, no text, navy blue and terracotta red color accents,
+consistent character design suitable for reuse across multiple marketing graphics, 4K
+```
+
+**④挨拶**
+```
+A bold modern banner ad design element: a cute simple flat-design mascot character of a
+friendly cheerful person (not an animal), simplified rounded human features, short hair,
+minimal flat vector illustration style, thick clean outlines, warm approachable smiling
+expression, wearing a simple casual outfit, waving one hand in a friendly greeting pose,
+isolated on a plain white background, no text, navy blue and terracotta red color accents,
+consistent character design suitable for reuse across multiple marketing graphics, 4K
+```
 
 ---
 
 ## 3-2. #1 メインサムネイル(1220×1240px)
-
-- Canvaで検索: 「ビジネス バナー広告 比較」「サービス紹介 バナー 2色分割」
-- レイアウト: 紺×テラコッタで縦(または斜め)2分割
-- 大見出し(白抜き太字): `AI × 低価格`
-- サブ見出し: `ホームページ制作`
-- 金色の丸バッジ: `初回限定 20,000円`
-- 下部にピル型ボタン4つ: `スマホ対応` `AI活用` `自分で更新OK` `最短7日`
-- マスコット(サムアップのポーズ)を右下に配置
+```
+A bold modern banner ad, vertical layout, navy blue and terracotta red diagonal split
+background, large bold white Japanese headline text at the top reading "AI×低価格" as the
+main title, smaller Japanese subtitle text below reading "ホームページ制作", a gold circular
+badge in one corner containing the Japanese text "初回限定20,000円", four rounded pill-shaped
+buttons along the bottom edge each containing short Japanese text: "スマホ対応" "AI活用"
+"自分で更新OK" "最短7日", a friendly flat-design mascot character of a cheerful person (thumbs-up
+pose) positioned in the lower right corner, professional marketing banner style, high contrast,
+bold clean sans-serif Japanese typography, crisp readable text, plenty of clear background space
+around each text element so nothing overlaps, 4K
+```
 
 ## 3-3. #2 料金バナー
-
-- Canvaで検索: 「料金表 バナー デザイン」
-- 大見出し: `料金`
-- メイン価格を一番大きく: `初回限定 20,000円`(その下に小さく「通常24,800円」)
-- オプション表(小さめの文字で):
-  ```
-  更新代行           3,000円
-  1ヶ月保守サポート   8,000円
-  ページ追加(1P)     5,000円
-  特急対応           5,000円
-  ```
-- マスコット(作業中のポーズ)を隅に配置
+```
+A bold modern banner ad, navy blue and terracotta red color blocks, large bold Japanese
+headline text at the top reading "料金", directly below it extremely large bold Japanese
+price text reading "初回限定20,000円" as the visual focal point, smaller Japanese text just
+below that reading "通常24,800円", below that a simple table-like list in smaller Japanese
+text reading: "更新代行 3,000円" then "1ヶ月保守サポート 8,000円" then "ページ追加 5,000円"
+then "特急対応 5,000円", each on its own line with clear spacing, a friendly flat-design
+mascot character of a cheerful person (sitting with a laptop) tucked in a corner, professional
+marketing banner style, high contrast, bold clean sans-serif Japanese typography, crisp
+readable text, plenty of clear background space around each text line so nothing overlaps, 4K
+```
 
 ## 3-4. #3 悩み訴求(4分割ボックス)
-
-- Canvaで検索: 「お悩み解決 4分割 バナー」
-- 見出し: `どこに頼もうか悩んでいる方へ`
-- 4つのボックスにそれぞれ:
-  ```
-  AI活用で低価格
-  最短7営業日
-  納品後も自分で更新できる
-  修正3回まで無料
-  ```
-- マスコット(挨拶ポーズ)を配置
+```
+A bold modern banner ad, navy blue and terracotta red color scheme, large bold Japanese
+headline text at the top reading "どこに頼もうか悩んでいる方へ", below it a clean 2x2 grid of
+four rounded rectangle boxes, each box containing short bold Japanese text: box one "AI活用で
+低価格", box two "最短7営業日", box three "納品後も自分で更新できる", box four "修正3回まで
+無料", a friendly flat-design mascot character of a cheerful person (waving pose) positioned
+near the headline, professional marketing banner style, high contrast, bold clean sans-serif
+Japanese typography, crisp readable text, plenty of clear background space inside each box so
+text does not overlap, 4K
+```
 
 ## 3-5. #4 対応内容アイコン一覧
-
-- Canvaで検索: 「サービス内容 アイコン一覧 バナー」
-- 見出し: `対応内容`
-- アイコン+テキストを6つ並べる:
-  ```
-  スマホ対応
-  AIでキャッチコピー作成
-  自分で更新OK
-  無料修正3回
-  操作マニュアル動画付き
-  最短7営業日
-  ```
+```
+A bold modern banner ad, navy blue and terracotta red color scheme, large bold Japanese
+headline text at the top reading "対応内容", below it a clean grid of six items each with a
+simple icon and short Japanese label: "スマホ対応", "AIでキャッチコピー作成", "自分で更新OK",
+"無料修正3回", "操作マニュアル動画付き", "最短7営業日", evenly spaced with consistent icon
+style, professional marketing banner style, high contrast, bold clean sans-serif Japanese
+typography, crisp readable text, plenty of clear background space around each item, 4K
+```
 
 ## 3-6. #5 制作の流れ
-
-- Canvaで検索: 「ご利用の流れ ステップ バナー」
-- 5ステップを横並びで:
-  ```
-  1. 見積り相談
-  2. ご購入
-  3. 構成案・デザイン提示(3営業日)
-  4. 修正(3回まで)
-  5. 納品+マニュアル動画
-  ```
+```
+A bold modern banner ad, navy blue and terracotta red color scheme, large bold Japanese
+headline text at the top reading "ご利用の流れ", below it a horizontal row of 5 numbered
+circular steps connected by thin arrows, each with short Japanese text: step 1 "見積り相談",
+step 2 "ご購入", step 3 "構成案・デザイン提示", step 4 "修正対応", step 5 "納品", professional
+marketing banner style, high contrast, bold clean sans-serif Japanese typography, crisp
+readable text, plenty of clear background space around each step so text does not overlap, 4K
+```
 
 ## 3-7. #6 Before/After
-
-- Canvaで検索: 「Before After 比較 バナー」
-- 左側: `よくあるお悩み`(旧サイトのイメージ、暗め・地味な配色)
-- 右側: `このサービスなら`(新デザインのイメージ、明るい配色)
+```
+A bold modern banner ad, split-screen comparison layout, left half in dull muted gray tones
+with bold Japanese text "よくあるお悩み" at the top, right half in vibrant navy blue and
+terracotta red tones with bold Japanese text "このサービスなら" at the top, a simple arrow
+shape pointing from the left half to the right half, professional marketing banner style,
+high contrast, bold clean sans-serif Japanese typography, crisp readable text, 4K
+```
 
 ## 3-8. #7 安心材料バッジ
-
-- Canvaで検索: 「安心 数字 バッジ バナー」
-- 大きな数字バッジ3つ:
-  ```
-  3回      無料修正
-  7日      最短納期
-  20,000円  初回限定価格
-  ```
+```
+A bold modern banner ad, navy blue and terracotta red color scheme, three large circular
+badges evenly spaced in a row, each badge containing large bold Japanese text: badge one
+"3回" with smaller text below it "無料修正", badge two "7日" with smaller text below it
+"最短納期", badge three "20,000円" with smaller text below it "初回限定価格", professional
+marketing banner style, high contrast, bold clean sans-serif Japanese typography, crisp
+readable text, plenty of clear space inside each badge so text does not overlap, 4K
+```
 
 ## 3-9. #8 購入前の注意事項バナー
+```
+A bold modern banner ad, navy blue and terracotta red color scheme, large bold Japanese
+headline text at the top reading "ご購入前にご確認ください", below it a simple bulleted list
+in Japanese text: "運用保守は含みません", "独自ドメインの場合はWixの有料プラン加入が必要です",
+"大幅な構成変更は別途お見積もりとなります", each bullet point on its own line with clear
+spacing, professional marketing banner style, high contrast, bold clean sans-serif Japanese
+typography, crisp readable text, 4K
+```
 
-- Canvaで検索: 「注意事項 バナー シンプル」
-- 見出し: `ご購入前にご確認ください`
-- 箇条書き:
-  ```
-  ・運用保守は含みません(有料オプションで対応)
-  ・独自ドメインの場合はWixの有料プラン加入が別途必要です
-  ・大幅な構成変更は別途お見積もりとなります
-  ```
+## 3-10. #9 業種イメージ
 
-## 3-10. #9 業種イメージ(サービスA・Bで別々に作る)
+**サービスA用(飲食店)**
+```
+A bold modern banner ad, navy blue and terracotta red color scheme, simple icons representing
+a restaurant (a bowl, chopsticks, a steaming cup) arranged decoratively, a friendly flat-design
+mascot character of a cheerful person (thumbs-up pose) in the center, professional marketing
+banner style, high contrast, no readable text needed, clean vector illustration, 4K
+```
 
-- Canvaで検索: 「業種 アイコン バナー」
-- **サービスA用**: 飲食店を示すアイコン(器・箸・カップなど)+マスコット
-- **サービスB用**: 中小企業を示すアイコン(オフィス・ビルなど)+マスコット
+**サービスB用(中小企業)**
+```
+A bold modern banner ad, navy blue and terracotta red color scheme, simple icons representing
+a small business office (a building, a briefcase, a desk) arranged decoratively, a friendly
+flat-design mascot character of a cheerful person (thumbs-up pose) in the center, professional
+marketing banner style, high contrast, no readable text needed, clean vector illustration, 4K
+```
 
 ## 3-11. #10 プロフィール(マスコット紹介)
-
-- Canvaで検索: 「自己紹介 プロフィール バナー」
-- マスコット(挨拶ポーズ)を大きめに配置
-- 見出し: `私について`
-- 一言: `Web制作の実務経験あり。AIノーコードで低価格・短納期に対応します。`
+```
+A bold modern banner ad, navy blue and terracotta red color scheme, a large friendly flat-design
+mascot character of a cheerful person (waving greeting pose) positioned prominently, bold
+Japanese headline text next to it reading "私について", smaller Japanese text below reading
+"Web制作の実務経験あり。AIノーコードで低価格・短納期に対応します。", professional marketing
+banner style, high contrast, bold clean sans-serif Japanese typography, crisp readable text,
+plenty of clear background space around the text so it does not overlap the mascot, 4K
+```
 
 ---
 
 ## 作った後にやること
-1. サムネイル(#1)はココナラの規定サイズ 1220×1240px になっているか確認する
+1. サムネイル(#1)はココナラの規定サイズ 1220×1240px になっているか確認する(サイズが違えば「1220×1240pxにリサイズして」とAIに一言添えて再生成)
 2. 実績のスクリーンショットではなく「イメージ」なので、実績数字(「実績◯件」等)は絶対に入れない
-3. マスコットのテイスト(色・線の太さ)を9枚すべてで統一する
+3. 文字化けや崩れが出たら編集せず同じプロンプトで再生成する
 4. サービスA・Bで9枚のうち8枚(#9以外)は使い回してOK。#9だけ業種イメージを差し替える
 
 ---
