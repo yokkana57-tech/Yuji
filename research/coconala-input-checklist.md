@@ -445,35 +445,38 @@ crisp readable text, no button row, plenty of clear background space around each
 does not overlap, 4K
 ```
 
-## 3-7. #6 Before/After
+## 3-7. #6 Before/After(見出し追加版)
 **必ず新規の会話で、参照画像なしで貼ってください。**
 ```
 Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
-from any previous image or conversation. A bold modern banner ad, split-screen comparison layout, left half in dull muted flat gray
-tones with bold dark Japanese text "よくあるお悩み" at the top and a small simple icon of a
-confusing tangled website layout below it, right half in vibrant navy blue and glowing
-terracotta red tones with bold white Japanese text "このサービスなら" at the top and a small
-simple icon of a clean smartphone website layout below it with a soft glow highlight, a bold
-arrow shape with a glow effect pointing from the left half to the right half, professional
-marketing banner style, high contrast, bold clean sans-serif Japanese typography, crisp
-readable text, no button row, 4K
+from any previous image or conversation. A bold modern banner ad, split-screen comparison layout,
+left half in dull muted flat gray tones with bold dark Japanese text "よくあるお悩み" at the top,
+below it a small simple icon of a confusing tangled website layout, and below that smaller bold
+Japanese text reading exactly "更新のたびに追加費用が発生", right half in vibrant navy blue and
+glowing terracotta red tones with bold white Japanese text "このサービスなら" at the top, below
+it a small simple icon of a clean smartphone website layout with a soft glow highlight, and below
+that smaller bold white Japanese text reading exactly "自分で無料で更新できる", a bold arrow
+shape with a glow effect pointing from the left half to the right half, render all Japanese text
+exactly as written with no added or repeated characters, professional marketing banner style,
+high contrast, bold clean sans-serif Japanese typography, crisp readable text, no button row, 4K
 ```
 
-## 3-8. #7 安心材料バッジ(作り直し版)
+## 3-8. #7 安心材料バッジ(見出し追加版)
 **必ず新規の会話で、参照画像なしで貼ってください。**
 ```
 Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
 from any previous image or conversation. A bold modern banner ad, deep navy blue background with
-a soft glowing terracotta-red radial burst behind the center, three large circular badges
+a soft glowing terracotta-red radial burst behind the center, large bold white Japanese headline
+text at the top reading exactly "選ばれる3つの理由", below it three large circular badges
 arranged in a staggered overlapping row (not perfectly aligned, for visual dynamism) each with a
 glossy highlight and soft glow — nothing else, no process flow, no additional rows, no extra
-text beyond these three badges. Each badge containing large bold Japanese text, rendered exactly
-as written below, character for character, with no added or repeated characters: badge one "3回"
-with smaller text below it "無料修正", badge two "7日" with smaller text below it "標準納期",
-badge three "20,000円" with smaller text below it "初回限定価格". Professional marketing banner
-style, high contrast, bold clean sans-serif Japanese typography, crisp readable text, no button
-row, no diagonal split background, plenty of clear space inside each badge so text does not
-overlap, 4K
+text beyond the headline and these three badges. Each badge containing large bold Japanese text,
+rendered exactly as written below, character for character, with no added or repeated
+characters: badge one "3回" with smaller text below it "無料修正", badge two "7日" with smaller
+text below it "標準納期", badge three "20,000円" with smaller text below it "初回限定価格".
+Professional marketing banner style, high contrast, bold clean sans-serif Japanese typography,
+crisp readable text, no button row, no diagonal split background, plenty of clear space inside
+each badge so text does not overlap, 4K
 ```
 
 ## 3-9. #8 購入前の注意事項バナー(誤字修正版)
@@ -492,29 +495,34 @@ clear spacing. Professional marketing banner style, high contrast, bold clean sa
 Japanese typography, crisp readable text, no button row, no glow effects, 4K
 ```
 
-## 3-10. #9 業種イメージ
+## 3-10. #9 業種イメージ(見出し追加版)
 **必ず新規の会話で、参照画像なしで貼ってください。**
 
 **サービスA用(飲食店)**
 ```
 Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
-from any previous image or conversation. A bold modern banner ad, deep navy background with a warm glowing terracotta-orange radial
-spotlight behind the center, simple white line icons representing a restaurant (a bowl,
-chopsticks, a steaming cup) arranged decoratively around the edges, a friendly 3D-rendered
-semi-realistic mascot character of a cheerful person (Pixar-movie-style, soft studio lighting,
-realistic shading, not flat vector art) in a thumbs-up pose in the center within the spotlight,
-professional marketing banner style, high contrast, no readable text needed, no button row, 4K
+from any previous image or conversation. A bold modern banner ad, deep navy background with a
+warm glowing terracotta-orange radial spotlight behind the center, large bold white Japanese
+headline text at the top reading exactly "飲食店様向け", simple white line icons representing a
+restaurant (a bowl, chopsticks, a steaming cup) arranged decoratively around the edges, a
+friendly 3D-rendered semi-realistic mascot character of a cheerful person (Pixar-movie-style,
+soft studio lighting, realistic shading, not flat vector art) in a thumbs-up pose in the center
+within the spotlight, render the headline text exactly as written with no added or repeated
+characters, professional marketing banner style, high contrast, no button row, 4K
 ```
 
 **サービスB用(中小企業)**
 ```
 Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
-from any previous image or conversation. A bold modern banner ad, deep navy background with a cool glowing blue-white radial spotlight
-behind the center, simple white line icons representing a small business office (a building, a
-briefcase, a desk) arranged decoratively around the edges, a friendly 3D-rendered semi-realistic
-mascot character of a cheerful person (Pixar-movie-style, soft studio lighting, realistic
-shading, not flat vector art) in a thumbs-up pose in the center within the spotlight,
-professional marketing banner style, high contrast, no readable text needed, no button row, 4K
+from any previous image or conversation. A bold modern banner ad, deep navy background with a
+cool glowing blue-white radial spotlight behind the center, large bold white Japanese headline
+text at the top reading exactly "個人事業主・中小企業様向け", simple white line icons
+representing a small business office (a building, a briefcase, a desk) arranged decoratively
+around the edges, a friendly 3D-rendered semi-realistic mascot character of a cheerful person
+(Pixar-movie-style, soft studio lighting, realistic shading, not flat vector art) in a thumbs-up
+pose in the center within the spotlight, render the headline text exactly as written with no
+added or repeated characters, professional marketing banner style, high contrast, no button
+row, 4K
 ```
 
 ## 3-11. #10 プロフィール(マスコット紹介、誤字修正版)
