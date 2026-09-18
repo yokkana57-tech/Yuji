@@ -358,8 +358,10 @@ octane render quality, 4K
 **共通ルール(全プロンプトに反映済み)**: ボタン列(スマホ対応/AI活用/自分で更新OK/7日で納品)は#1だけに登場します。他の画像には出しません(これが「毎回同じで飽きる」の原因だったため)。「最短7日」という表現もやめ、正確な言い方に統一しました。各画像でレイアウト・光の当て方を変えて、単調にならないようにしています。
 
 ## 3-2. #1 メインサムネイル(1220×1240px)
+**必ず新規の会話で、参照画像なしで貼ってください。**
 ```
-A bold modern banner ad, vertical layout, navy blue and terracotta red diagonal split
+Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+from any previous image or conversation. A bold modern banner ad, vertical layout, navy blue and terracotta red diagonal split
 background, subtle glowing light particles and soft lens-flare accents radiating from behind
 the headline text for a high-tech premium feel, large bold white Japanese headline text at the
 top reading "AI×低価格" as the main title with a soft glow outline, smaller Japanese subtitle
@@ -375,8 +377,10 @@ here, 4K
 ```
 
 ## 3-3. #2 料金バナー
+**必ず新規の会話で、参照画像なしで貼ってください。**
 ```
-A bold modern banner ad, solid deep navy blue background with a glowing radial burst of warm
+Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+from any previous image or conversation. A bold modern banner ad, solid deep navy blue background with a glowing radial burst of warm
 terracotta-red light behind the center, large bold Japanese headline text at the top reading
 "料金", directly below it an extremely large bold Japanese price number reading "先行案内価格
 20,000円" glowing softly like an illuminated price tag as the clear visual focal point, smaller
@@ -392,8 +396,10 @@ overlaps, 4K
 ```
 
 ## 3-4. #3 悩み訴求(4分割ボックス)
+**必ず新規の会話で、参照画像なしで貼ってください。**
 ```
-A bold modern banner ad, horizontal layout with a solid navy blue top third and a lighter
+Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+from any previous image or conversation. A bold modern banner ad, horizontal layout with a solid navy blue top third and a lighter
 off-white bottom two-thirds separated by a bold terracotta-red horizontal accent stripe (not a
 diagonal split), large bold white Japanese headline text in the navy top section reading
 "どこに頼もうか悩んでいる方へ", a friendly 3D-rendered semi-realistic mascot character of a
@@ -407,8 +413,10 @@ card so text does not overlap, 4K
 ```
 
 ## 3-5. #4 対応内容アイコン一覧
+**必ず新規の会話で、参照画像なしで貼ってください。**
 ```
-A bold modern banner ad, deep navy blue background with a soft circular glow in the center,
+Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+from any previous image or conversation. A bold modern banner ad, deep navy blue background with a soft circular glow in the center,
 large bold white Japanese headline text at the top reading "対応内容", below it six simple
 white line icons arranged in a circular ring around a small central emblem, each icon paired
 with a short Japanese label on a small terracotta-red rounded tag: "スマホ対応",
@@ -438,8 +446,10 @@ does not overlap, 4K
 ```
 
 ## 3-7. #6 Before/After
+**必ず新規の会話で、参照画像なしで貼ってください。**
 ```
-A bold modern banner ad, split-screen comparison layout, left half in dull muted flat gray
+Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+from any previous image or conversation. A bold modern banner ad, split-screen comparison layout, left half in dull muted flat gray
 tones with bold dark Japanese text "よくあるお悩み" at the top and a small simple icon of a
 confusing tangled website layout below it, right half in vibrant navy blue and glowing
 terracotta red tones with bold white Japanese text "このサービスなら" at the top and a small
@@ -483,10 +493,12 @@ Japanese typography, crisp readable text, no button row, no glow effects, 4K
 ```
 
 ## 3-10. #9 業種イメージ
+**必ず新規の会話で、参照画像なしで貼ってください。**
 
 **サービスA用(飲食店)**
 ```
-A bold modern banner ad, deep navy background with a warm glowing terracotta-orange radial
+Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+from any previous image or conversation. A bold modern banner ad, deep navy background with a warm glowing terracotta-orange radial
 spotlight behind the center, simple white line icons representing a restaurant (a bowl,
 chopsticks, a steaming cup) arranged decoratively around the edges, a friendly 3D-rendered
 semi-realistic mascot character of a cheerful person (Pixar-movie-style, soft studio lighting,
@@ -496,7 +508,8 @@ professional marketing banner style, high contrast, no readable text needed, no 
 
 **サービスB用(中小企業)**
 ```
-A bold modern banner ad, deep navy background with a cool glowing blue-white radial spotlight
+Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+from any previous image or conversation. A bold modern banner ad, deep navy background with a cool glowing blue-white radial spotlight
 behind the center, simple white line icons representing a small business office (a building, a
 briefcase, a desk) arranged decoratively around the edges, a friendly 3D-rendered semi-realistic
 mascot character of a cheerful person (Pixar-movie-style, soft studio lighting, realistic
