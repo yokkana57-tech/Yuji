@@ -722,101 +722,121 @@ Web制作の実務経験があります(飲食店向けシステム開発に携�
 | 9 | 業種イメージ写真 | A: 飲食店の温かい店内 / B: 明るいオフィス・店舗外観 | ターゲットが「自分ごと」として捉えられる情景 |
 | 10 | プロフィール風イメージ | 作業風景(顔を出さない後ろ姿)+一言経験紹介 | 「誰が作るか」の安心感(実績の代わりに人柄で補う) |
 
-### 全画像共通のスタイル指定(プロンプトの末尾に必ず付ける)
+### スタイル指定は2系統(2026-09-18改訂: #1を実際に生成したところイラスト寄りになったため修正)
 
+オーナーが#1のプロンプトで実際に生成したところ、意図した写真調ではなく可愛いフラットイラスト(ラーメン店のイラスト風モックアップ)になった。原因は、当時の「全画像共通のスタイル指定」が`flat minimal illustration`という指示だったため、#1・#9(本来は写真調にしたい画像)にもイラスト化の指示が混ざってしまっていたこと。**→ スタイル指定を2系統に分離する。**
+
+**系統1: フォトリアル(写真調)— #1(メインサムネイル)と#9(業種イメージ写真)専用**
 ```
-, flat minimal illustration and mockup style, warm neutral color palette (cream, soft terracotta,
-sage green, charcoal gray accents), soft even lighting, generous negative space, no readable text,
-no logos, no watermarks, 4K, consistent visual style suitable for a cohesive image series
+, photorealistic professional stock-photography style, shot with a shallow depth of field on a
+DSLR camera, realistic natural materials and lighting, warm neutral color grading (cream, soft
+terracotta, sage green tones), NOT a vector illustration, NOT a cartoon, NOT anime or flat-design
+art, no readable text, no logos, no watermarks, 4K, high production value comparable to a
+professional web design agency's marketing photo
+```
+
+**系統2: フラットイラスト(アイコン・図解用)— #2〜#8、#10専用**
+```
+, flat minimal vector illustration style, thin consistent line-art, warm neutral color palette
+(cream, soft terracotta, sage green, charcoal gray accents), soft even lighting, generous negative
+space, no readable text, no logos, no watermarks, clean vector graphic suitable for icon/diagram use
 ```
 
 ### 10枚分のプロンプト(英語、Nano Banana / Canva Magic Media共通)
 
-**#1 メインサムネイル**
+**#1 メインサムネイル(系統1を使用、2026-09-18修正版)**
 ```
-A clean modern flat-lay mockup of a laptop and a smartphone on a wooden desk, both screens
-displaying a minimal one-page website with a hero section and simple menu layout, plenty of
-empty space in the upper third of the frame for a headline and price badge to be added later
-[+共通スタイル]
+A professional photograph of a laptop and a smartphone resting on a wooden desk, shot from directly
+above (flat-lay), both screens displaying a blurred, out-of-focus website interface with soft colors
+and no readable content, a cup of coffee and a small potted plant nearby, natural warm window light,
+shallow depth of field, shot on a DSLR camera with a realistic wood grain desk texture, warm neutral
+tones (cream, terracotta, sage green), plenty of empty negative space in the upper third of the frame
+for text overlay, photorealistic commercial stock-photography style, NOT a vector illustration, NOT
+a cartoon, NOT anime or flat-design art, no readable text or logos anywhere in the image, high-end
+web design agency marketing photo aesthetic, 4K
+[+系統1]
 ```
-- A追加: `, the website mockup shows a cozy Japanese restaurant homepage with a warm food photo hero`
-- B追加: `, the website mockup shows a generic small business homepage with a neutral corporate hero, industry-agnostic`
+- A追加: `, the blurred screen content faintly suggests a warm Japanese restaurant website`
+- B追加: `, the blurred screen content faintly suggests a neutral generic business website`
+- 画面の中身を「ぼかす」よう明示しているのがポイント。前バージョンは画面の中身(ラーメンのイラスト等)まで細かく描かせようとしたため、AIが全体をイラスト調と解釈した可能性が高い。周辺の写真部分だけをリアルに寄せ、画面はぼかすことでイラスト化を防ぐ。
+- Nano Bananaでも再びイラスト寄りになる場合は、プロンプト冒頭に`A photograph, not an illustration:`を追加するか、Midjourneyに切り替える。
 
-**#2 【お悩み】導入**
+**#2 【お悩み】導入(系統2)**
 ```
 A small business owner sitting at a desk, looking thoughtfully at a laptop with a blank
 placeholder website on screen, a notepad with a few question marks beside the laptop, gentle
 worried but hopeful expression, half-body flat illustration
-[+共通スタイル]
+[+系統2]
 ```
 
-**#3 【解決策】図解**
+**#3 【解決策】図解(系統2)**
 ```
 A simple flat vector diagram showing three connected circular nodes left to right: a sparkle/AI
 icon, a drag-and-drop interface icon, and a smartphone displaying a finished website, thin arrows
 connecting each node, minimal line-art icons
-[+共通スタイル]
+[+系統2]
 ```
 
-**#4 対応内容アイコン一覧**
+**#4 対応内容アイコン一覧(系統2)**
 ```
 A minimalist flat-design icon set arranged in a 3x2 grid: a smartphone with a checkmark
 (mobile-responsive), a pencil editing a webpage (self-editing), a sparkle icon (AI-assisted),
 a checkmark inside a circle labeled with the number 3 nearby (three free revisions), a video
 play button (tutorial video), a stopwatch (fast delivery), consistent thin line-art icons evenly
 spaced with room below each for a short label
-[+共通スタイル]
+[+系統2]
 ```
 
-**#5 制作の流れ**
+**#5 制作の流れ(系統2)**
 ```
 A horizontal flowchart illustration with 5 connected circular nodes left to right, each containing
 a distinct simple icon: a chat bubble (consultation), a shopping cart (purchase), a screen with a
 checkmark (proposal), a magnifying glass (revision), a gift box (delivery), thin arrows connecting
 each node, generous empty space below each node for a text label
-[+共通スタイル]
+[+系統2]
 ```
 
-**#6 Before/After**
+**#6 Before/After(系統2)**
 ```
 A split-screen comparison illustration, left half shows an outdated cluttered website on an old
 desktop monitor in dull muted gray tones, right half shows a clean modern mobile-friendly website
 on a smartphone in vibrant warm colors, a simple arrow shape pointing from the left half to the
 right half
-[+共通スタイル]
+[+系統2]
 ```
 
-**#7 料金表ビジュアル**
+**#7 料金表ビジュアル(系統2)**
 ```
 A clean flat-design pricing card layout with three empty rectangular card placeholders arranged
 side by side, subtle border lines separating each card, plenty of white space inside each card for
 a price and a short feature list to be added later, one card subtly larger or highlighted to suggest
 a featured/recommended option
-[+共通スタイル]
+[+系統2]
 ```
 
-**#8 安心材料バッジ**
+**#8 安心材料バッジ(系統2)**
 ```
 A row of three flat circular badge icons evenly spaced on a white background: a checkmark badge,
 a clock/speed badge, and a pencil/edit badge, consistent minimal line-art style, each badge with
 empty space below for a short number/label to be added later
-[+共通スタイル]
+[+系統2]
 ```
 
-**#9 業種イメージ写真**
-- A: `A warm, inviting interior of a small Japanese cafe or izakaya, wooden furniture and counter, soft warm ambient lighting, shallow depth of field, photorealistic stock-photo style, no people visible, cozy atmosphere [+共通スタイル]`
-- B: `A bright, clean modern small office or storefront exterior, neutral minimal architecture, soft daylight, photorealistic stock-photo style, no people visible, industry-neutral [+共通スタイル]`
+**#9 業種イメージ写真(系統1、2026-09-18改訂)**
+- A: `A warm, inviting interior of a small Japanese cafe or izakaya, wooden furniture and counter, soft warm ambient lighting, shallow depth of field, no people visible, cozy atmosphere [+系統1]`
+- B: `A bright, clean modern small office or storefront exterior, neutral minimal architecture, soft daylight, no people visible, industry-neutral [+系統1]`
 
-**#10 プロフィール風イメージ**
+**#10 プロフィール風イメージ(系統2)**
 ```
 A friendly minimalist flat-design illustration of a person working on a laptop at a bright wooden
 desk, viewed from behind or from a side angle so the face is not clearly visible, warm and
 approachable mood, a cup of coffee and a small plant on the desk
-[+共通スタイル]
+[+系統2]
 ```
 
 ### 運用メモ
 
-- 各プロンプトの末尾に必ず上記「全画像共通のスタイル指定」を追記してから生成すること(10枚のトーンを統一するため)。
+- #1・#9は系統1(フォトリアル)、#2〜#8・#10は系統2(フラットイラスト)を末尾に追記すること。2種類を混ぜて同じ画像に使わないこと(混ぜると#1で起きたようにAIの解釈がぶれる)。
 - 生成後、Canvaでキャッチコピー・数字・見出しのテキストを重ねる(日本語はAIに直接生成させない、10章と同じ理由)。
-- #1(サムネイル)と#9(業種イメージ)以外は文字要素の"土台"として作るため、写真調よりイラスト/アイコン調の方が失敗が少ない(Nano Bananaは細かいアイコンの均等配置がやや苦手な場合があるため、崩れる場合はCanvaのテンプレート素材に切り替える代替案も検討する)。
+- 系統2(アイコン・図解系)はNano Bananaでも比較的安定して生成できる想定。崩れる場合はCanvaの既存テンプレート素材に切り替える代替案も検討する。
+- 系統1(#1・#9)でイラスト寄りになる場合は、プロンプト冒頭に`A photograph, not an illustration:`を追加するか、Midjourneyに切り替える。
