@@ -355,124 +355,152 @@ octane render quality, 4K
 
 ---
 
+**共通ルール(全プロンプトに反映済み)**: ボタン列(スマホ対応/AI活用/自分で更新OK/7日で納品)は#1だけに登場します。他の画像には出しません(これが「毎回同じで飽きる」の原因だったため)。「最短7日」という表現もやめ、正確な言い方に統一しました。各画像でレイアウト・光の当て方を変えて、単調にならないようにしています。
+
 ## 3-2. #1 メインサムネイル(1220×1240px)
 ```
 A bold modern banner ad, vertical layout, navy blue and terracotta red diagonal split
-background, large bold white Japanese headline text at the top reading "AI×低価格" as the
-main title, smaller Japanese subtitle text below reading "ホームページ制作", a gold circular
-badge in one corner containing the Japanese text "初回限定20,000円", four rounded pill-shaped
-buttons along the bottom edge each containing short Japanese text: "スマホ対応" "AI活用"
-"自分で更新OK" "最短7日", a friendly 3D-rendered semi-realistic mascot character of a cheerful person (Pixar-movie-style, not flat vector art) (thumbs-up
-pose) positioned in the lower right corner, professional marketing banner style, high contrast,
-bold clean sans-serif Japanese typography, crisp readable text, plenty of clear background space
-around each text element so nothing overlaps, 4K
+background, subtle glowing light particles and soft lens-flare accents radiating from behind
+the headline text for a high-tech premium feel, large bold white Japanese headline text at the
+top reading "AI×低価格" as the main title with a soft glow outline, smaller Japanese subtitle
+text below reading "ホームページ制作", a glossy gold circular badge with a subtle shine
+highlight in one corner containing the Japanese text "初回限定20,000円", four rounded
+pill-shaped buttons along the bottom edge each containing short Japanese text: "スマホ対応"
+"AI活用" "自分で更新OK" "7日で納品", a friendly 3D-rendered semi-realistic mascot character of
+a cheerful person (Pixar-movie-style, not flat vector art, thumbs-up pose) positioned in the
+lower right corner, professional marketing banner style, high contrast, bold clean sans-serif
+Japanese typography, crisp readable text, plenty of clear background space around each text
+element so nothing overlaps, do not add any other button row or badge beyond what is described
+here, 4K
 ```
 
 ## 3-3. #2 料金バナー
 ```
-A bold modern banner ad, navy blue and terracotta red color blocks, large bold Japanese
-headline text at the top reading "料金", directly below it extremely large bold Japanese
-price text reading "先行案内価格 20,000円" as the visual focal point, smaller Japanese text
-just below that reading "正式価格34,800円予定", below that a simple table-like list in smaller Japanese
-text reading: "更新代行 3,000円" then "1ヶ月保守サポート 8,000円" then "ページ追加 5,000円"
-then "特急対応 5,000円", each on its own line with clear spacing, a friendly 3D-rendered
-semi-realistic mascot character of a cheerful person (Pixar-movie-style, soft studio lighting,
-realistic shading, not flat vector art) sitting with a laptop tucked in a corner, professional
-marketing banner style, high contrast, bold clean sans-serif Japanese typography, crisp
-readable text, plenty of clear background space around each text line so nothing overlaps, 4K
+A bold modern banner ad, solid deep navy blue background with a glowing radial burst of warm
+terracotta-red light behind the center, large bold Japanese headline text at the top reading
+"料金", directly below it an extremely large bold Japanese price number reading "先行案内価格
+20,000円" glowing softly like an illuminated price tag as the clear visual focal point, smaller
+Japanese text just below that reading "正式価格34,800円予定", below that a simple two-column
+table-like list in smaller Japanese text reading: "更新代行 3,000円" then "1ヶ月保守サポート
+8,000円" then "ページ追加 5,000円" then "特急対応 5,000円", each on its own line with clear
+spacing inside a semi-transparent rounded card, a friendly 3D-rendered semi-realistic mascot
+character of a cheerful person (Pixar-movie-style, soft studio lighting, realistic shading, not
+flat vector art) sitting with a laptop tucked in a corner, professional marketing banner style,
+high contrast, bold clean sans-serif Japanese typography, crisp readable text, no button row, no
+diagonal split background, plenty of clear background space around each text line so nothing
+overlaps, 4K
 ```
 
 ## 3-4. #3 悩み訴求(4分割ボックス)
 ```
-A bold modern banner ad, navy blue and terracotta red color scheme, large bold Japanese
-headline text at the top reading "どこに頼もうか悩んでいる方へ", below it a clean 2x2 grid of
-four rounded rectangle boxes, each box containing short bold Japanese text: box one "AI活用で
-低価格", box two "最短7営業日", box three "納品後も自分で更新できる", box four "修正3回まで
-無料", a friendly 3D-rendered semi-realistic mascot character of a cheerful person (Pixar-movie-style, not flat vector art) (waving pose) positioned
-near the headline, professional marketing banner style, high contrast, bold clean sans-serif
-Japanese typography, crisp readable text, plenty of clear background space inside each box so
-text does not overlap, 4K
+A bold modern banner ad, horizontal layout with a solid navy blue top third and a lighter
+off-white bottom two-thirds separated by a bold terracotta-red horizontal accent stripe (not a
+diagonal split), large bold white Japanese headline text in the navy top section reading
+"どこに頼もうか悩んでいる方へ", a friendly 3D-rendered semi-realistic mascot character of a
+cheerful person (Pixar-movie-style, not flat vector art, waving pose) positioned next to the
+headline, below in the light section a clean 2x2 grid of four rounded rectangle cards with soft
+drop shadows for depth, each card containing short bold navy Japanese text: card one "AI活用で
+低価格", card two "7営業日で納品", card three "納品後も自分で更新できる", card four "修正3回
+まで無料", professional marketing banner style, high contrast, bold clean sans-serif Japanese
+typography, crisp readable text, no button row, plenty of clear background space inside each
+card so text does not overlap, 4K
 ```
 
 ## 3-5. #4 対応内容アイコン一覧
 ```
-A bold modern banner ad, navy blue and terracotta red color scheme, large bold Japanese
-headline text at the top reading "対応内容", below it a clean grid of six items each with a
-simple icon and short Japanese label: "スマホ対応", "AIでキャッチコピー作成", "自分で更新OK",
-"無料修正3回", "操作マニュアル動画付き", "最短7営業日", evenly spaced with consistent icon
-style, professional marketing banner style, high contrast, bold clean sans-serif Japanese
-typography, crisp readable text, plenty of clear background space around each item, 4K
+A bold modern banner ad, deep navy blue background with a soft circular glow in the center,
+large bold white Japanese headline text at the top reading "対応内容", below it six simple
+white line icons arranged in a circular ring around a small central emblem, each icon paired
+with a short Japanese label on a small terracotta-red rounded tag: "スマホ対応",
+"AIでキャッチコピー作成", "自分で更新OK", "無料修正3回", "操作マニュアル動画付き",
+"7営業日で納品", evenly spaced around the circle with consistent icon style, professional
+marketing banner style, high contrast, bold clean sans-serif Japanese typography, crisp
+readable text, no button row, no diagonal split background, plenty of clear background space
+around each item, 4K
 ```
 
 ## 3-6. #5 制作の流れ
 ```
-A bold modern banner ad, navy blue and terracotta red color scheme, large bold Japanese
-headline text at the top reading "ご利用の流れ", below it a horizontal row of 5 numbered
-circular steps connected by thin arrows, each with short Japanese text: step 1 "見積り相談",
-step 2 "ご購入", step 3 "構成案・デザイン提示", step 4 "修正対応", step 5 "納品", professional
-marketing banner style, high contrast, bold clean sans-serif Japanese typography, crisp
-readable text, plenty of clear background space around each step so text does not overlap, 4K
+A bold modern banner ad, horizontal gradient background transitioning smoothly from navy blue
+on the left to terracotta red on the right, large bold white Japanese headline text at the top
+reading "ご利用の流れ", below it exactly 5 numbered circular steps arranged left to right and
+connected by thin glowing arrows, each step used exactly once with no duplicates: step 1 labeled
+"見積り相談", step 2 labeled "ご購入", step 3 labeled "構成案・デザイン提示", step 4 labeled
+"修正対応", step 5 labeled "納品", each step has its own distinct icon and its own distinct
+Japanese text label directly below it, do not repeat any step number, icon, or label, do not add
+extra steps, professional marketing banner style, high contrast, bold clean sans-serif Japanese
+typography, crisp readable text, no button row, plenty of clear background space around each
+step so text does not overlap, 4K
 ```
 
 ## 3-7. #6 Before/After
 ```
-A bold modern banner ad, split-screen comparison layout, left half in dull muted gray tones
-with bold Japanese text "よくあるお悩み" at the top, right half in vibrant navy blue and
-terracotta red tones with bold Japanese text "このサービスなら" at the top, a simple arrow
-shape pointing from the left half to the right half, professional marketing banner style,
-high contrast, bold clean sans-serif Japanese typography, crisp readable text, 4K
+A bold modern banner ad, split-screen comparison layout, left half in dull muted flat gray
+tones with bold dark Japanese text "よくあるお悩み" at the top and a small simple icon of a
+confusing tangled website layout below it, right half in vibrant navy blue and glowing
+terracotta red tones with bold white Japanese text "このサービスなら" at the top and a small
+simple icon of a clean smartphone website layout below it with a soft glow highlight, a bold
+arrow shape with a glow effect pointing from the left half to the right half, professional
+marketing banner style, high contrast, bold clean sans-serif Japanese typography, crisp
+readable text, no button row, 4K
 ```
 
 ## 3-8. #7 安心材料バッジ
 ```
-A bold modern banner ad, navy blue and terracotta red color scheme, three large circular
-badges evenly spaced in a row, each badge containing large bold Japanese text: badge one
-"3回" with smaller text below it "無料修正", badge two "7日" with smaller text below it
-"最短納期", badge three "20,000円" with smaller text below it "初回限定価格", professional
-marketing banner style, high contrast, bold clean sans-serif Japanese typography, crisp
-readable text, plenty of clear space inside each badge so text does not overlap, 4K
+A bold modern banner ad, deep navy blue background with a soft glowing terracotta-red radial
+burst behind the center, three large circular badges arranged in a staggered overlapping row
+(not perfectly aligned, for visual dynamism) each with a glossy highlight and soft glow, each
+badge containing large bold Japanese text: badge one "3回" with smaller text below it "無料修正",
+badge two "7日" with smaller text below it "標準納期", badge three "20,000円" with smaller text
+below it "初回限定価格", professional marketing banner style, high contrast, bold clean
+sans-serif Japanese typography, crisp readable text, no button row, no diagonal split
+background, plenty of clear space inside each badge so text does not overlap, 4K
 ```
 
 ## 3-9. #8 購入前の注意事項バナー
 ```
-A bold modern banner ad, navy blue and terracotta red color scheme, large bold Japanese
-headline text at the top reading "ご購入前にご確認ください", below it a simple bulleted list
-in Japanese text: "運用保守は含みません", "独自ドメインの場合はWixの有料プラン加入が必要です",
-"大幅な構成変更は別途お見積もりとなります", each bullet point on its own line with clear
-spacing, professional marketing banner style, high contrast, bold clean sans-serif Japanese
-typography, crisp readable text, 4K
+A bold modern banner ad, solid deep navy blue background (calm and serious tone, not overly
+flashy since this is an important notice), a bold terracotta-red vertical accent bar on the
+left edge, large bold white Japanese headline text at the top reading "ご購入前にご確認くだ
+さい", below it a simple bulleted list in white Japanese text each preceded by a small checkmark
+icon: "運用保守は含みません", "独自ドメインの場合はWixの有料プラン加入が必要です", "大幅な構成
+変更は別途お見積もりとなります", each bullet point on its own line with clear spacing,
+professional marketing banner style, high contrast, bold clean sans-serif Japanese typography,
+crisp readable text, no button row, no glow effects, 4K
 ```
 
 ## 3-10. #9 業種イメージ
 
 **サービスA用(飲食店)**
 ```
-A bold modern banner ad, navy blue and terracotta red color scheme, simple icons representing
-a restaurant (a bowl, chopsticks, a steaming cup) arranged decoratively, a friendly
-3D-rendered semi-realistic mascot character of a cheerful person (Pixar-movie-style, soft
-studio lighting, realistic shading, not flat vector art) in a thumbs-up pose in the center,
-professional marketing banner style, high contrast, no readable text needed, 4K
+A bold modern banner ad, deep navy background with a warm glowing terracotta-orange radial
+spotlight behind the center, simple white line icons representing a restaurant (a bowl,
+chopsticks, a steaming cup) arranged decoratively around the edges, a friendly 3D-rendered
+semi-realistic mascot character of a cheerful person (Pixar-movie-style, soft studio lighting,
+realistic shading, not flat vector art) in a thumbs-up pose in the center within the spotlight,
+professional marketing banner style, high contrast, no readable text needed, no button row, 4K
 ```
 
 **サービスB用(中小企業)**
 ```
-A bold modern banner ad, navy blue and terracotta red color scheme, simple icons representing
-a small business office (a building, a briefcase, a desk) arranged decoratively, a friendly
-3D-rendered semi-realistic mascot character of a cheerful person (Pixar-movie-style, soft
-studio lighting, realistic shading, not flat vector art) in a thumbs-up pose in the center,
-professional marketing banner style, high contrast, no readable text needed, 4K
+A bold modern banner ad, deep navy background with a cool glowing blue-white radial spotlight
+behind the center, simple white line icons representing a small business office (a building, a
+briefcase, a desk) arranged decoratively around the edges, a friendly 3D-rendered semi-realistic
+mascot character of a cheerful person (Pixar-movie-style, soft studio lighting, realistic
+shading, not flat vector art) in a thumbs-up pose in the center within the spotlight,
+professional marketing banner style, high contrast, no readable text needed, no button row, 4K
 ```
 
 ## 3-11. #10 プロフィール(マスコット紹介)
 ```
-A bold modern banner ad, navy blue and terracotta red color scheme, a large friendly
-3D-rendered semi-realistic mascot character of a cheerful person (Pixar-movie-style, soft
-studio lighting, realistic shading, not flat vector art) in a waving greeting pose positioned
-prominently, bold Japanese headline text next to it reading "私について", smaller Japanese
-text below reading "Web制作の実務経験あり。AIノーコードで低価格・短納期に対応します。",
-professional marketing
-banner style, high contrast, bold clean sans-serif Japanese typography, crisp readable text,
-plenty of clear background space around the text so it does not overlap the mascot, 4K
+A bold modern banner ad, deep navy blue background with a soft circular terracotta-red glow
+spotlight behind the subject, a large friendly 3D-rendered semi-realistic mascot character of a
+cheerful person (Pixar-movie-style, soft studio lighting, realistic shading, not flat vector
+art) in a waving greeting pose positioned prominently within the spotlight, bold white Japanese
+headline text next to it reading "私について", smaller Japanese text below reading "Web制作の
+実務経験あり。AIノーコードで低価格・短納期に対応します。", professional marketing banner
+style, high contrast, bold clean sans-serif Japanese typography, crisp readable text, no button
+row, plenty of clear background space around the text so it does not overlap the mascot, 4K
 ```
 
 ---
@@ -480,8 +508,9 @@ plenty of clear background space around the text so it does not overlap the masc
 ## 作った後にやること
 1. サムネイル(#1)はココナラの規定サイズ 1220×1240px になっているか確認する(サイズが違えば「1220×1240pxにリサイズして」とAIに一言添えて再生成)
 2. 実績のスクリーンショットではなく「イメージ」なので、実績数字(「実績◯件」等)は絶対に入れない
-3. 文字化けや崩れが出たら編集せず同じプロンプトで再生成する
+3. 文字化けや崩れが出たら編集せず同じプロンプトで再生成する(特に#5の5ステップは、ステップが重複したり抜けたりしやすいので要チェック)
 4. サービスA・Bで9枚のうち8枚(#9以外)は使い回してOK。#9だけ業種イメージを差し替える
+5. **出来上がった画像の文字を、必ずサービス内容の本文(STEP1・STEP2)と照らし合わせて確認する。** 特に納期・価格・回数などの数字は、本文と1文字でも食い違っていると誤解を招く表示になるので要注意
 
 ---
 
