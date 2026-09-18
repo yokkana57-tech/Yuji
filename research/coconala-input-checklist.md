@@ -419,18 +419,22 @@ readable text, no button row, no diagonal split background, plenty of clear back
 around each item, 4K
 ```
 
-## 3-6. #5 制作の流れ
+## 3-6. #5 制作の流れ(作り直し版)
+**必ず新規の会話で、参照画像なしで貼ってください。**
 ```
-A bold modern banner ad, horizontal gradient background transitioning smoothly from navy blue
-on the left to terracotta red on the right, large bold white Japanese headline text at the top
-reading "ご利用の流れ", below it exactly 5 numbered circular steps arranged left to right and
-connected by thin glowing arrows, each step used exactly once with no duplicates: step 1 labeled
-"見積り相談", step 2 labeled "ご購入", step 3 labeled "構成案・デザイン提示", step 4 labeled
-"修正対応", step 5 labeled "納品", each step has its own distinct icon and its own distinct
-Japanese text label directly below it, do not repeat any step number, icon, or label, do not add
-extra steps, professional marketing banner style, high contrast, bold clean sans-serif Japanese
-typography, crisp readable text, no button row, plenty of clear background space around each
-step so text does not overlap, 4K
+Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+from any previous image or conversation. A bold modern banner ad, horizontal gradient background
+transitioning smoothly from navy blue on the left to terracotta red on the right, large bold
+white Japanese headline text at the top reading "ご利用の流れ", below it exactly 5 numbered
+circular steps arranged left to right and connected by thin glowing arrows — nothing else, no
+other headline, no comparison layout, no "before/after" concept. The 5 steps, each used exactly
+once: step 1 labeled "見積り相談", step 2 labeled "ご購入", step 3 labeled "構成案・デザイン提示",
+step 4 labeled "修正対応", step 5 labeled "納品". Render each Japanese label exactly as written
+above, character for character — do not add, remove, repeat, or invent any characters or any
+additional steps, labels, or rows beyond these 5. Each step has its own distinct icon.
+Professional marketing banner style, high contrast, bold clean sans-serif Japanese typography,
+crisp readable text, no button row, plenty of clear background space around each step so text
+does not overlap, 4K
 ```
 
 ## 3-7. #6 Before/After
@@ -445,28 +449,37 @@ marketing banner style, high contrast, bold clean sans-serif Japanese typography
 readable text, no button row, 4K
 ```
 
-## 3-8. #7 安心材料バッジ
+## 3-8. #7 安心材料バッジ(作り直し版)
+**必ず新規の会話で、参照画像なしで貼ってください。**
 ```
-A bold modern banner ad, deep navy blue background with a soft glowing terracotta-red radial
-burst behind the center, three large circular badges arranged in a staggered overlapping row
-(not perfectly aligned, for visual dynamism) each with a glossy highlight and soft glow, each
-badge containing large bold Japanese text: badge one "3回" with smaller text below it "無料修正",
-badge two "7日" with smaller text below it "標準納期", badge three "20,000円" with smaller text
-below it "初回限定価格", professional marketing banner style, high contrast, bold clean
-sans-serif Japanese typography, crisp readable text, no button row, no diagonal split
-background, plenty of clear space inside each badge so text does not overlap, 4K
+Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+from any previous image or conversation. A bold modern banner ad, deep navy blue background with
+a soft glowing terracotta-red radial burst behind the center, three large circular badges
+arranged in a staggered overlapping row (not perfectly aligned, for visual dynamism) each with a
+glossy highlight and soft glow — nothing else, no process flow, no additional rows, no extra
+text beyond these three badges. Each badge containing large bold Japanese text, rendered exactly
+as written below, character for character, with no added or repeated characters: badge one "3回"
+with smaller text below it "無料修正", badge two "7日" with smaller text below it "標準納期",
+badge three "20,000円" with smaller text below it "初回限定価格". Professional marketing banner
+style, high contrast, bold clean sans-serif Japanese typography, crisp readable text, no button
+row, no diagonal split background, plenty of clear space inside each badge so text does not
+overlap, 4K
 ```
 
-## 3-9. #8 購入前の注意事項バナー
+## 3-9. #8 購入前の注意事項バナー(誤字修正版)
+**必ず新規の会話で、参照画像なしで貼ってください。**
 ```
-A bold modern banner ad, solid deep navy blue background (calm and serious tone, not overly
-flashy since this is an important notice), a bold terracotta-red vertical accent bar on the
-left edge, large bold white Japanese headline text at the top reading "ご購入前にご確認くだ
-さい", below it a simple bulleted list in white Japanese text each preceded by a small checkmark
-icon: "運用保守は含みません", "独自ドメインの場合はWixの有料プラン加入が必要です", "大幅な構成
-変更は別途お見積もりとなります", each bullet point on its own line with clear spacing,
-professional marketing banner style, high contrast, bold clean sans-serif Japanese typography,
-crisp readable text, no button row, no glow effects, 4K
+Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+from any previous image or conversation. A bold modern banner ad, solid deep navy blue
+background (calm and serious tone, not overly flashy since this is an important notice), a bold
+terracotta-red vertical accent bar on the left edge, large bold white Japanese headline text at
+the top reading "ご購入前にご確認ください", below it a simple bulleted list in white Japanese
+text each preceded by a small checkmark icon. Render each bullet point exactly as written below,
+character for character — do not add, remove, or repeat any characters (in particular, do not
+duplicate the character "と"): "運用保守は含みません", "独自ドメインの場合はWixの有料プラン加入
+が必要です", "大幅な構成変更は別途お見積もりとなります", each bullet point on its own line with
+clear spacing. Professional marketing banner style, high contrast, bold clean sans-serif
+Japanese typography, crisp readable text, no button row, no glow effects, 4K
 ```
 
 ## 3-10. #9 業種イメージ
@@ -491,16 +504,21 @@ shading, not flat vector art) in a thumbs-up pose in the center within the spotl
 professional marketing banner style, high contrast, no readable text needed, no button row, 4K
 ```
 
-## 3-11. #10 プロフィール(マスコット紹介)
+## 3-11. #10 プロフィール(マスコット紹介、誤字修正版)
+**必ず新規の会話で、参照画像なしで貼ってください。**
 ```
-A bold modern banner ad, deep navy blue background with a soft circular terracotta-red glow
-spotlight behind the subject, a large friendly 3D-rendered semi-realistic mascot character of a
-cheerful person (Pixar-movie-style, soft studio lighting, realistic shading, not flat vector
-art) in a waving greeting pose positioned prominently within the spotlight, bold white Japanese
-headline text next to it reading "私について", smaller Japanese text below reading "Web制作の
-実務経験あり。AIノーコードで低価格・短納期に対応します。", professional marketing banner
-style, high contrast, bold clean sans-serif Japanese typography, crisp readable text, no button
-row, plenty of clear background space around the text so it does not overlap the mascot, 4K
+Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+from any previous image or conversation. A bold modern banner ad, deep navy blue background with
+a soft circular terracotta-red glow spotlight behind the subject, a large friendly 3D-rendered
+semi-realistic mascot character of a cheerful person (Pixar-movie-style, soft studio lighting,
+realistic shading, not flat vector art) in a waving greeting pose positioned prominently within
+the spotlight. Bold white Japanese headline text next to it reading exactly "私について" (three
+characters: 私 に つ い て — do not add or repeat any character, especially do not duplicate "つ").
+Smaller Japanese text below, rendered exactly as written word for word, with no words dropped:
+"Web制作の実務経験あり。AIノーコードで低価格・短納期に対応します。". Professional marketing
+banner style, high contrast, bold clean sans-serif Japanese typography, crisp readable text, no
+button row, plenty of clear background space around the text so it does not overlap the mascot,
+4K
 ```
 
 ---
