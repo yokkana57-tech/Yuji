@@ -359,8 +359,11 @@ octane render quality, 4K
 
 ## 3-2. #1 メインサムネイル(1220×1240px)
 **必ず新規の会話で、参照画像なしで貼ってください。**
+**重要: 画像生成ツールに「アスペクト比」や「縦横比」を選べる設定(ボタンやドロップダウン)がある場合は、必ず「正方形」または「1:1」を選んでから生成してください。プロンプト文だけでは縦横比が正しく反映されないことがあります。**
 ```
-Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+Generate this as a completely new, standalone image. Square aspect ratio, 1:1, 1220x1240 pixels.
+Do not crop or cut off any text or the headline — keep all text and the mascot fully inside the
+frame with margin on every side. Do not reference, reuse, or blend elements
 from any previous image or conversation. A bold modern banner ad, vertical layout, navy blue and terracotta red diagonal split
 background, subtle glowing light particles and soft lens-flare accents radiating from behind
 the headline text for a high-tech premium feel, large bold white Japanese headline text at the
@@ -545,11 +548,48 @@ button row, plenty of clear background space around the text so it does not over
 ---
 
 ## 作った後にやること
-1. サムネイル(#1)はココナラの規定サイズ 1220×1240px になっているか確認する(サイズが違えば「1220×1240pxにリサイズして」とAIに一言添えて再生成)
+1. サムネイル(#1)は生成直後、アップロードする前に正方形(縦横比1:1)になっているか目で確認する。**ココナラにアップロードした後に「切れている」と気づいても、そこから直すのは手遅れ**(ココナラ側が表示エリアに合わせて自動トリミングするだけで、元画像を編集する機能はない)。ズレていたら3-2の指示(アスペクト比を正方形に指定)を守って生成し直す
 2. 実績のスクリーンショットではなく「イメージ」なので、実績数字(「実績◯件」等)は絶対に入れない
 3. 文字化けや崩れが出たら編集せず同じプロンプトで再生成する(特に#5の5ステップは、ステップが重複したり抜けたりしやすいので要チェック)
 4. サービスA・Bで9枚のうち8枚(#9以外)は使い回してOK。#9だけ業種イメージを差し替える
 5. **出来上がった画像の文字を、必ずサービス内容の本文(STEP1・STEP2)と照らし合わせて確認する。** 特に納期・価格・回数などの数字は、本文と1文字でも食い違っていると誤解を招く表示になるので要注意
+
+---
+
+## STEP4. プロフィール入力
+
+以下をそのままコピペしてください。
+
+**職業**(17文字/20文字以内)
+```
+Web制作(AI・ノーコード活用)
+```
+
+**ひとことアピール**(31文字/50文字以内)
+```
+AI×ノーコードで、低価格・短納期のホームページを制作します。
+```
+
+**自己紹介文**(571文字/1300文字以内)
+```
+はじめまして、ご覧いただきありがとうございます。
+
+Web制作の実務経験があり、飲食店向けシステム開発にも携わってきました。現在は、その経験を活かしながらAIとノーコードツールを組み合わせ、低価格・短納期でスマホ対応のホームページを制作するサービスを行っています。
+
+■得意なこと
+・飲食店(カフェ、居酒屋、ラーメン店など)のホームページ制作
+・個人事業主、小規模事業者向けのホームページ制作
+・AIを活用したキャッチコピーや紹介文の作成サポート
+・納品後、ご自身で写真やメニューを更新できる構成でのお渡し
+
+■大切にしていること
+何十万円もの制作費をかけずに、まずは形にしてお客様に伝わるホームページを持っていただくこと。そして納品して終わりではなく、公開後もご自身で気軽に更新していただけることを大切にしています。
+
+■出品したばかりです
+出品したばかりのため実績はまだ少ないですが、だからこそお一人おひとりのご要望を丁寧にヒアリングし、しっかりと向き合わせていただきます。ご不明な点やご不安な点があれば、ご購入前の「見積り相談」から遠慮なくお問い合わせください。できるだけ早くご返信するよう心がけております。
+
+最後までお読みいただきありがとうございます。皆様のお役に立てるよう誠実に対応いたしますので、どうぞよろしくお願いいたします。
+```
 
 ---
 
