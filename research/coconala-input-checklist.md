@@ -306,42 +306,50 @@ Web制作の実務経験があります(飲食店向けシステム開発に携�
 
 **①サムアップ**
 ```
-A bold modern banner ad design element: a cute simple flat-design mascot character of a
-friendly cheerful person (not an animal), simplified rounded human features, short hair,
-minimal flat vector illustration style, thick clean outlines, warm approachable smiling
-expression, wearing a simple casual outfit, giving a thumbs-up or OK sign pose, isolated on
-a plain white background, no text, navy blue and terracotta red color accents, consistent
-character design suitable for reuse across multiple marketing graphics, 4K
+A cute 3D-rendered mascot character of a friendly cheerful person (not an animal),
+semi-realistic Pixar-movie-style 3D character design, soft studio lighting, realistic material
+shading and depth on skin, hair, and clothing fabric, smooth rounded but believable proportions
+(not flat, not a 2D vector illustration, not flat cartoon colors), warm approachable smiling
+expression, wearing a simple casual outfit, giving a thumbs-up or OK sign pose, isolated on a
+plain white background, no text, navy blue and terracotta red color accents in the outfit,
+consistent character design suitable for reuse across multiple marketing graphics, octane
+render quality, 4K
 ```
 
 **②指差し**
 ```
-A bold modern banner ad design element: a cute simple flat-design mascot character of a
-friendly cheerful person (not an animal), simplified rounded human features, short hair,
-minimal flat vector illustration style, thick clean outlines, warm approachable smiling
-expression, wearing a simple casual outfit, pointing at something off to the side with one
-hand, isolated on a plain white background, no text, navy blue and terracotta red color
-accents, consistent character design suitable for reuse across multiple marketing graphics, 4K
+A cute 3D-rendered mascot character of a friendly cheerful person (not an animal),
+semi-realistic Pixar-movie-style 3D character design, soft studio lighting, realistic material
+shading and depth on skin, hair, and clothing fabric, smooth rounded but believable proportions
+(not flat, not a 2D vector illustration, not flat cartoon colors), warm approachable smiling
+expression, wearing a simple casual outfit, pointing at something off to the side with one hand,
+isolated on a plain white background, no text, navy blue and terracotta red color accents in the
+outfit, consistent character design suitable for reuse across multiple marketing graphics,
+octane render quality, 4K
 ```
 
 **③作業中**
 ```
-A bold modern banner ad design element: a cute simple flat-design mascot character of a
-friendly cheerful person (not an animal), simplified rounded human features, short hair,
-minimal flat vector illustration style, thick clean outlines, warm approachable smiling
-expression, wearing a simple casual outfit, sitting calmly with a laptop next to them,
-isolated on a plain white background, no text, navy blue and terracotta red color accents,
-consistent character design suitable for reuse across multiple marketing graphics, 4K
+A cute 3D-rendered mascot character of a friendly cheerful person (not an animal),
+semi-realistic Pixar-movie-style 3D character design, soft studio lighting, realistic material
+shading and depth on skin, hair, and clothing fabric, smooth rounded but believable proportions
+(not flat, not a 2D vector illustration, not flat cartoon colors), warm approachable smiling
+expression, wearing a simple casual outfit, sitting calmly with a laptop next to them, isolated
+on a plain white background, no text, navy blue and terracotta red color accents in the outfit,
+consistent character design suitable for reuse across multiple marketing graphics, octane render
+quality, 4K
 ```
 
 **④挨拶**
 ```
-A bold modern banner ad design element: a cute simple flat-design mascot character of a
-friendly cheerful person (not an animal), simplified rounded human features, short hair,
-minimal flat vector illustration style, thick clean outlines, warm approachable smiling
+A cute 3D-rendered mascot character of a friendly cheerful person (not an animal),
+semi-realistic Pixar-movie-style 3D character design, soft studio lighting, realistic material
+shading and depth on skin, hair, and clothing fabric, smooth rounded but believable proportions
+(not flat, not a 2D vector illustration, not flat cartoon colors), warm approachable smiling
 expression, wearing a simple casual outfit, waving one hand in a friendly greeting pose,
-isolated on a plain white background, no text, navy blue and terracotta red color accents,
-consistent character design suitable for reuse across multiple marketing graphics, 4K
+isolated on a plain white background, no text, navy blue and terracotta red color accents in the
+outfit, consistent character design suitable for reuse across multiple marketing graphics,
+octane render quality, 4K
 ```
 
 ---
@@ -353,7 +361,7 @@ background, large bold white Japanese headline text at the top reading "AI×低�
 main title, smaller Japanese subtitle text below reading "ホームページ制作", a gold circular
 badge in one corner containing the Japanese text "初回限定20,000円", four rounded pill-shaped
 buttons along the bottom edge each containing short Japanese text: "スマホ対応" "AI活用"
-"自分で更新OK" "最短7日", a friendly flat-design mascot character of a cheerful person (thumbs-up
+"自分で更新OK" "最短7日", a friendly 3D-rendered semi-realistic mascot character of a cheerful person (Pixar-movie-style, not flat vector art) (thumbs-up
 pose) positioned in the lower right corner, professional marketing banner style, high contrast,
 bold clean sans-serif Japanese typography, crisp readable text, plenty of clear background space
 around each text element so nothing overlaps, 4K
@@ -366,8 +374,9 @@ headline text at the top reading "料金", directly below it extremely large bol
 price text reading "初回限定20,000円" as the visual focal point, smaller Japanese text just
 below that reading "通常24,800円", below that a simple table-like list in smaller Japanese
 text reading: "更新代行 3,000円" then "1ヶ月保守サポート 8,000円" then "ページ追加 5,000円"
-then "特急対応 5,000円", each on its own line with clear spacing, a friendly flat-design
-mascot character of a cheerful person (sitting with a laptop) tucked in a corner, professional
+then "特急対応 5,000円", each on its own line with clear spacing, a friendly 3D-rendered
+semi-realistic mascot character of a cheerful person (Pixar-movie-style, soft studio lighting,
+realistic shading, not flat vector art) sitting with a laptop tucked in a corner, professional
 marketing banner style, high contrast, bold clean sans-serif Japanese typography, crisp
 readable text, plenty of clear background space around each text line so nothing overlaps, 4K
 ```
@@ -378,7 +387,7 @@ A bold modern banner ad, navy blue and terracotta red color scheme, large bold J
 headline text at the top reading "どこに頼もうか悩んでいる方へ", below it a clean 2x2 grid of
 four rounded rectangle boxes, each box containing short bold Japanese text: box one "AI活用で
 低価格", box two "最短7営業日", box three "納品後も自分で更新できる", box four "修正3回まで
-無料", a friendly flat-design mascot character of a cheerful person (waving pose) positioned
+無料", a friendly 3D-rendered semi-realistic mascot character of a cheerful person (Pixar-movie-style, not flat vector art) (waving pose) positioned
 near the headline, professional marketing banner style, high contrast, bold clean sans-serif
 Japanese typography, crisp readable text, plenty of clear background space inside each box so
 text does not overlap, 4K
@@ -438,25 +447,29 @@ typography, crisp readable text, 4K
 **サービスA用(飲食店)**
 ```
 A bold modern banner ad, navy blue and terracotta red color scheme, simple icons representing
-a restaurant (a bowl, chopsticks, a steaming cup) arranged decoratively, a friendly flat-design
-mascot character of a cheerful person (thumbs-up pose) in the center, professional marketing
-banner style, high contrast, no readable text needed, clean vector illustration, 4K
+a restaurant (a bowl, chopsticks, a steaming cup) arranged decoratively, a friendly
+3D-rendered semi-realistic mascot character of a cheerful person (Pixar-movie-style, soft
+studio lighting, realistic shading, not flat vector art) in a thumbs-up pose in the center,
+professional marketing banner style, high contrast, no readable text needed, 4K
 ```
 
 **サービスB用(中小企業)**
 ```
 A bold modern banner ad, navy blue and terracotta red color scheme, simple icons representing
 a small business office (a building, a briefcase, a desk) arranged decoratively, a friendly
-flat-design mascot character of a cheerful person (thumbs-up pose) in the center, professional
-marketing banner style, high contrast, no readable text needed, clean vector illustration, 4K
+3D-rendered semi-realistic mascot character of a cheerful person (Pixar-movie-style, soft
+studio lighting, realistic shading, not flat vector art) in a thumbs-up pose in the center,
+professional marketing banner style, high contrast, no readable text needed, 4K
 ```
 
 ## 3-11. #10 プロフィール(マスコット紹介)
 ```
-A bold modern banner ad, navy blue and terracotta red color scheme, a large friendly flat-design
-mascot character of a cheerful person (waving greeting pose) positioned prominently, bold
-Japanese headline text next to it reading "私について", smaller Japanese text below reading
-"Web制作の実務経験あり。AIノーコードで低価格・短納期に対応します。", professional marketing
+A bold modern banner ad, navy blue and terracotta red color scheme, a large friendly
+3D-rendered semi-realistic mascot character of a cheerful person (Pixar-movie-style, soft
+studio lighting, realistic shading, not flat vector art) in a waving greeting pose positioned
+prominently, bold Japanese headline text next to it reading "私について", smaller Japanese
+text below reading "Web制作の実務経験あり。AIノーコードで低価格・短納期に対応します。",
+professional marketing
 banner style, high contrast, bold clean sans-serif Japanese typography, crisp readable text,
 plenty of clear background space around the text so it does not overlap the mascot, 4K
 ```
