@@ -359,27 +359,30 @@ octane render quality, 4K
 
 ## 3-2. #1 メインサムネイル(1220×1240px)
 **必ず新規の会話で、参照画像なしで貼ってください。**
-**実例で判明した問題(確定版): 正方形で作っても、ココナラのアプリ内ギャラリー表示は上を基準に下側20%前後をトリミングして見せる(2回試して同じ箇所が切れたため、これが原因と確定)。「余白を足す」だけでは直らなかったので、今回は方針を変えて、下20%には最初から重要な要素(文字・ピル帯)を置かない構図にした。ピル帯は下端ではなく、画像の縦位置75%あたりに移動している。**
+**実例で判明した問題(確定版): 正方形で作っても、ココナラのアプリ内ギャラリー表示は上を基準に下側20%前後をトリミングして見せる(2回試して同じ箇所が切れたため、これが原因と確定)。「余白を足す」だけでは直らなかったので、下20%には最初から重要な要素(文字・ピル帯)を置かない構図にした。**
+**さらに判明した問題: 最初の修正版プロンプトでは「TOP 75%」「BOTTOM 25%」という比率の書き方を使ったところ、AIがそれを画像内に描く文字だと誤解し、実際に"TOP 75%"という英字が画像に描き込まれてしまった。今回は数字・パーセント表記を一切使わず、自然な文章で構図を説明する形に書き換えた。**
 ```
 Generate this as a completely new, standalone image. Square aspect ratio, 1:1, 1220x1240 pixels.
-Do not reference, reuse, or blend elements from any previous image or conversation.
+Do not reference, reuse, or blend elements from any previous image or conversation. Do not
+render any layout instructions, labels, percentages, or English words as visible text anywhere
+in the image — the only text allowed in the image is the Japanese text explicitly quoted below.
 A bold modern banner ad, vertical layout, navy blue and terracotta red diagonal split
 background, subtle glowing light particles and soft lens-flare accents radiating from behind
-the headline text for a high-tech premium feel. Treat the image in vertical zones: within the
-TOP 75% of the frame, place large bold white Japanese headline text near the top reading
-"AI×低価格" as the main title with a soft glow outline, smaller Japanese subtitle text below
-reading "ホームページ制作", a glossy gold circular badge with a subtle shine highlight
-containing the Japanese text "初回限定20,000円", a friendly 3D-rendered semi-realistic mascot
-character of a cheerful person (Pixar-movie-style, not flat vector art, thumbs-up pose), and
-four rounded pill-shaped buttons in a row each containing short Japanese text: "スマホ対応"
-"AI活用" "自分で更新OK" "7日で納品" — position this pill row so it ends (its bottom edge) at
-approximately 75% of the total image height, clearly above the vertical midpoint of the lower
-half. The BOTTOM 25% of the frame must contain only plain background color/gradient with no
-text, no pills, no badge, and no part of the mascot, because that area may be cropped or hidden
-in some display contexts. Professional marketing banner style, high contrast, bold clean
-sans-serif Japanese typography, crisp readable text, plenty of clear background space around
-each text element so nothing overlaps, do not add any other button row or badge beyond what is
-described here, 4K
+the headline text for a high-tech premium feel. In the upper portion of the frame, place large
+bold white Japanese headline text near the top reading "AI×低価格" as the main title with a
+soft glow outline, smaller Japanese subtitle text below reading "ホームページ制作", a glossy
+gold circular badge with a subtle shine highlight containing the Japanese text "初回限定
+20,000円", a friendly 3D-rendered semi-realistic mascot character of a cheerful person
+(Pixar-movie-style, not flat vector art, thumbs-up pose), and below that four rounded
+pill-shaped buttons in a row each containing short Japanese text: "スマホ対応" "AI活用"
+"自分で更新OK" "7日で納品". Keep all of the above content — headline, subtitle, badge, mascot,
+and pill row — clustered together in the upper and middle part of the image, well clear of the
+bottom edge. Leave a generous plain empty margin of background color/gradient along the entire
+bottom edge of the image below the pill row, with no text, no pills, no badge, and no part of
+the mascot inside that empty margin, because that area may be cropped or hidden in some display
+contexts. Professional marketing banner style, high contrast, bold clean sans-serif Japanese
+typography, crisp readable text, plenty of clear background space around each text element so
+nothing overlaps, do not add any other button row or badge beyond what is described here, 4K
 ```
 
 ## 3-3. #2 料金バナー
