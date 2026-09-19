@@ -359,8 +359,8 @@ octane render quality, 4K
 
 ## 3-2. #1 メインサムネイル(1220×1240px)
 **必ず新規の会話で、参照画像なしで貼ってください。**
-**実例で判明した問題(確定版): 正方形で作っても、ココナラのアプリ内ギャラリー表示は上を基準に下側20%前後をトリミングして見せる(2回試して同じ箇所が切れたため、これが原因と確定)。「余白を足す」だけでは直らなかったので、下20%には最初から重要な要素(文字・ピル帯)を置かない構図にした。**
-**さらに判明した問題: 最初の修正版プロンプトでは「TOP 75%」「BOTTOM 25%」という比率の書き方を使ったところ、AIがそれを画像内に描く文字だと誤解し、実際に"TOP 75%"という英字が画像に描き込まれてしまった。今回は数字・パーセント表記を一切使わず、自然な文章で構図を説明する形に書き換えた。**
+**実例で判明した問題(確定版): 生成のたびに切れる辺が変わる(1回目は下側のピル帯、2回目は#2で左端の文字)。原因は各プロンプトに正方形の指定が入っていなかったこと(#1のみ直していて、#2以降に入れ忘れていた)。今回、全プロンプトに正方形指定と、上下左右すべてに安全余白を持たせる指定を入れた。**
+**さらに判明した問題: 「TOP 75%」のようなパーセント表記を使うと、AIがそれを画像内に描く文字だと誤解し、実際に英字が描き込まれてしまった。数字・パーセント表記は使わず、自然な文章で構図を説明する。**
 ```
 Generate this as a completely new, standalone image. Square aspect ratio, 1:1, 1220x1240 pixels.
 Do not reference, reuse, or blend elements from any previous image or conversation. Do not
@@ -376,19 +376,20 @@ gold circular badge with a subtle shine highlight containing the Japanese text "
 (Pixar-movie-style, not flat vector art, thumbs-up pose), and below that four rounded
 pill-shaped buttons in a row each containing short Japanese text: "スマホ対応" "AI活用"
 "自分で更新OK" "7日で納品". Keep all of the above content — headline, subtitle, badge, mascot,
-and pill row — clustered together in the upper and middle part of the image, well clear of the
-bottom edge. Leave a generous plain empty margin of background color/gradient along the entire
-bottom edge of the image below the pill row, with no text, no pills, no badge, and no part of
-the mascot inside that empty margin, because that area may be cropped or hidden in some display
-contexts. Professional marketing banner style, high contrast, bold clean sans-serif Japanese
-typography, crisp readable text, plenty of clear background space around each text element so
-nothing overlaps, do not add any other button row or badge beyond what is described here, 4K
+and pill row — clustered together within the central safe area of the frame, leaving a generous
+empty margin of at least 12% of the image size along all four edges (top, bottom, left, and
+right), with no text, no pills, no badge, and no part of the mascot touching or crossing any
+edge, because any edge may be cropped or hidden in some display contexts. Professional
+marketing banner style, high contrast, bold clean sans-serif Japanese typography, crisp
+readable text, plenty of clear background space around each text element so nothing overlaps,
+do not add any other button row or badge beyond what is described here, 4K
 ```
 
 ## 3-3. #2 料金バナー
 **必ず新規の会話で、参照画像なしで貼ってください。**
 ```
-Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+Generate this as a completely new, standalone image. Square aspect ratio, 1:1, 1220x1240 pixels.
+Do not reference, reuse, or blend elements
 from any previous image or conversation. A bold modern banner ad, solid deep navy blue background with a glowing radial burst of warm
 terracotta-red light behind the center, large bold Japanese headline text at the top reading
 "料金", directly below it an extremely large bold Japanese price number reading "先行案内価格
@@ -400,14 +401,17 @@ spacing inside a semi-transparent rounded card, a friendly 3D-rendered semi-real
 character of a cheerful person (Pixar-movie-style, soft studio lighting, realistic shading, not
 flat vector art) sitting with a laptop tucked in a corner, professional marketing banner style,
 high contrast, bold clean sans-serif Japanese typography, crisp readable text, no button row, no
-diagonal split background, plenty of clear background space around each text line so nothing
-overlaps, 4K
+diagonal split background. Keep all text and the mascot within the central safe area of the
+frame, leaving a generous empty margin of at least 12% of the image size along all four edges
+(top, bottom, left, and right) with nothing touching or crossing the edges, since any edge may
+be cropped in some display contexts, 4K
 ```
 
 ## 3-4. #3 悩み訴求(4分割ボックス)
 **必ず新規の会話で、参照画像なしで貼ってください。**
 ```
-Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+Generate this as a completely new, standalone image. Square aspect ratio, 1:1, 1220x1240 pixels.
+Do not reference, reuse, or blend elements
 from any previous image or conversation. A bold modern banner ad, horizontal layout with a solid navy blue top third and a lighter
 off-white bottom two-thirds separated by a bold terracotta-red horizontal accent stripe (not a
 diagonal split), large bold white Japanese headline text in the navy top section reading
@@ -417,14 +421,17 @@ headline, below in the light section a clean 2x2 grid of four rounded rectangle 
 drop shadows for depth, each card containing short bold navy Japanese text: card one "AI活用で
 低価格", card two "7営業日で納品", card three "納品後も自分で更新できる", card four "修正3回
 まで無料", professional marketing banner style, high contrast, bold clean sans-serif Japanese
-typography, crisp readable text, no button row, plenty of clear background space inside each
-card so text does not overlap, 4K
+typography, crisp readable text, no button row. Keep all text and the mascot within the central
+safe area of the frame, leaving a generous empty margin of at least 12% of the image size along
+all four edges (top, bottom, left, and right) with nothing touching or crossing the edges, since
+any edge may be cropped in some display contexts, 4K
 ```
 
 ## 3-5. #4 対応内容アイコン一覧
 **必ず新規の会話で、参照画像なしで貼ってください。**
 ```
-Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+Generate this as a completely new, standalone image. Square aspect ratio, 1:1, 1220x1240 pixels.
+Do not reference, reuse, or blend elements
 from any previous image or conversation. A bold modern banner ad, deep navy blue background with a soft circular glow in the center,
 large bold white Japanese headline text at the top reading "対応内容", below it six simple
 white line icons arranged in a circular ring around a small central emblem, each icon paired
@@ -432,14 +439,17 @@ with a short Japanese label on a small terracotta-red rounded tag: "スマホ対
 "AIでキャッチコピー作成", "自分で更新OK", "無料修正3回", "操作マニュアル動画付き",
 "7営業日で納品", evenly spaced around the circle with consistent icon style, professional
 marketing banner style, high contrast, bold clean sans-serif Japanese typography, crisp
-readable text, no button row, no diagonal split background, plenty of clear background space
-around each item, 4K
+readable text, no button row, no diagonal split background. Keep all icons and labels within
+the central safe area of the frame, leaving a generous empty margin of at least 12% of the
+image size along all four edges (top, bottom, left, and right) with nothing touching or
+crossing the edges, since any edge may be cropped in some display contexts, 4K
 ```
 
 ## 3-6. #5 制作の流れ(作り直し版)
 **必ず新規の会話で、参照画像なしで貼ってください。**
 ```
-Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+Generate this as a completely new, standalone image. Square aspect ratio, 1:1, 1220x1240 pixels.
+Do not reference, reuse, or blend elements
 from any previous image or conversation. A bold modern banner ad, horizontal gradient background
 transitioning smoothly from navy blue on the left to terracotta red on the right, large bold
 white Japanese headline text at the top reading "ご利用の流れ", below it exactly 5 numbered
@@ -450,14 +460,17 @@ step 4 labeled "修正対応", step 5 labeled "納品". Render each Japanese lab
 above, character for character — do not add, remove, repeat, or invent any characters or any
 additional steps, labels, or rows beyond these 5. Each step has its own distinct icon.
 Professional marketing banner style, high contrast, bold clean sans-serif Japanese typography,
-crisp readable text, no button row, plenty of clear background space around each step so text
-does not overlap, 4K
+crisp readable text, no button row. Keep all 5 steps within the central safe area of the frame,
+leaving a generous empty margin of at least 12% of the image size along all four edges (top,
+bottom, left, and right) with nothing touching or crossing the edges, since any edge may be
+cropped in some display contexts, 4K
 ```
 
 ## 3-7. #6 Before/After(見出し追加版)
 **必ず新規の会話で、参照画像なしで貼ってください。**
 ```
-Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+Generate this as a completely new, standalone image. Square aspect ratio, 1:1, 1220x1240 pixels.
+Do not reference, reuse, or blend elements
 from any previous image or conversation. A bold modern banner ad, split-screen comparison layout,
 left half in dull muted flat gray tones with bold dark Japanese text "よくあるお悩み" at the top,
 below it a small simple icon of a confusing tangled website layout, and below that smaller bold
@@ -467,13 +480,18 @@ it a small simple icon of a clean smartphone website layout with a soft glow hig
 that smaller bold white Japanese text reading exactly "自分で無料で更新できる", a bold arrow
 shape with a glow effect pointing from the left half to the right half, render all Japanese text
 exactly as written with no added or repeated characters, professional marketing banner style,
-high contrast, bold clean sans-serif Japanese typography, crisp readable text, no button row, 4K
+high contrast, bold clean sans-serif Japanese typography, crisp readable text, no button row.
+Keep all text and icons within the central safe area of the frame, leaving a generous empty
+margin of at least 12% of the image size along all four edges (top, bottom, left, and right)
+with nothing touching or crossing the edges, since any edge may be cropped in some display
+contexts, 4K
 ```
 
 ## 3-8. #7 安心材料バッジ(見出し追加版)
 **必ず新規の会話で、参照画像なしで貼ってください。**
 ```
-Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+Generate this as a completely new, standalone image. Square aspect ratio, 1:1, 1220x1240 pixels.
+Do not reference, reuse, or blend elements
 from any previous image or conversation. A bold modern banner ad, deep navy blue background with
 a soft glowing terracotta-red radial burst behind the center, large bold white Japanese headline
 text at the top reading exactly "選ばれる3つの理由", below it three large circular badges
@@ -484,14 +502,17 @@ rendered exactly as written below, character for character, with no added or rep
 characters: badge one "3回" with smaller text below it "無料修正", badge two "7日" with smaller
 text below it "標準納期", badge three "20,000円" with smaller text below it "初回限定価格".
 Professional marketing banner style, high contrast, bold clean sans-serif Japanese typography,
-crisp readable text, no button row, no diagonal split background, plenty of clear space inside
-each badge so text does not overlap, 4K
+crisp readable text, no button row, no diagonal split background. Keep the headline and all
+three badges within the central safe area of the frame, leaving a generous empty margin of at
+least 12% of the image size along all four edges (top, bottom, left, and right) with nothing
+touching or crossing the edges, since any edge may be cropped in some display contexts, 4K
 ```
 
 ## 3-9. #8 購入前の注意事項バナー(誤字修正版)
 **必ず新規の会話で、参照画像なしで貼ってください。**
 ```
-Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+Generate this as a completely new, standalone image. Square aspect ratio, 1:1, 1220x1240 pixels.
+Do not reference, reuse, or blend elements
 from any previous image or conversation. A bold modern banner ad, solid deep navy blue
 background (calm and serious tone, not overly flashy since this is an important notice), a bold
 terracotta-red vertical accent bar on the left edge, large bold white Japanese headline text at
@@ -501,7 +522,10 @@ character for character — do not add, remove, or repeat any characters (in par
 duplicate the character "と"): "運用保守は含みません", "独自ドメインの場合はWixの有料プラン加入
 が必要です", "大幅な構成変更は別途お見積もりとなります", each bullet point on its own line with
 clear spacing. Professional marketing banner style, high contrast, bold clean sans-serif
-Japanese typography, crisp readable text, no button row, no glow effects, 4K
+Japanese typography, crisp readable text, no button row, no glow effects. Keep the headline and
+all bullet points within the central safe area of the frame, leaving a generous empty margin of
+at least 12% of the image size along all four edges (top, bottom, left, and right) with nothing
+touching or crossing the edges, since any edge may be cropped in some display contexts, 4K
 ```
 
 ## 3-10. #9 業種イメージ(見出し追加版)
@@ -509,7 +533,8 @@ Japanese typography, crisp readable text, no button row, no glow effects, 4K
 
 **サービスA用(飲食店)**
 ```
-Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+Generate this as a completely new, standalone image. Square aspect ratio, 1:1, 1220x1240 pixels.
+Do not reference, reuse, or blend elements
 from any previous image or conversation. A bold modern banner ad, deep navy background with a
 warm glowing terracotta-orange radial spotlight behind the center, large bold white Japanese
 headline text at the top reading exactly "飲食店様向け", simple white line icons representing a
@@ -517,12 +542,16 @@ restaurant (a bowl, chopsticks, a steaming cup) arranged decoratively around the
 friendly 3D-rendered semi-realistic mascot character of a cheerful person (Pixar-movie-style,
 soft studio lighting, realistic shading, not flat vector art) in a thumbs-up pose in the center
 within the spotlight, render the headline text exactly as written with no added or repeated
-characters, professional marketing banner style, high contrast, no button row, 4K
+characters, professional marketing banner style, high contrast, no button row. Keep the headline
+and mascot within the central safe area of the frame, leaving a generous empty margin of at
+least 12% of the image size along all four edges (top, bottom, left, and right) with nothing
+touching or crossing the edges, since any edge may be cropped in some display contexts, 4K
 ```
 
 **サービスB用(中小企業)**
 ```
-Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+Generate this as a completely new, standalone image. Square aspect ratio, 1:1, 1220x1240 pixels.
+Do not reference, reuse, or blend elements
 from any previous image or conversation. A bold modern banner ad, deep navy background with a
 cool glowing blue-white radial spotlight behind the center, large bold white Japanese headline
 text at the top reading exactly "個人事業主・中小企業様向け", simple white line icons
@@ -531,13 +560,17 @@ around the edges, a friendly 3D-rendered semi-realistic mascot character of a ch
 (Pixar-movie-style, soft studio lighting, realistic shading, not flat vector art) in a thumbs-up
 pose in the center within the spotlight, render the headline text exactly as written with no
 added or repeated characters, professional marketing banner style, high contrast, no button
-row, 4K
+row. Keep the headline and mascot within the central safe area of the frame, leaving a generous
+empty margin of at least 12% of the image size along all four edges (top, bottom, left, and
+right) with nothing touching or crossing the edges, since any edge may be cropped in some
+display contexts, 4K
 ```
 
 ## 3-11. #10 プロフィール(マスコット紹介、誤字修正版)
 **必ず新規の会話で、参照画像なしで貼ってください。**
 ```
-Generate this as a completely new, standalone image. Do not reference, reuse, or blend elements
+Generate this as a completely new, standalone image. Square aspect ratio, 1:1, 1220x1240 pixels.
+Do not reference, reuse, or blend elements
 from any previous image or conversation. A bold modern banner ad, deep navy blue background with
 a soft circular terracotta-red glow spotlight behind the subject, a large friendly 3D-rendered
 semi-realistic mascot character of a cheerful person (Pixar-movie-style, soft studio lighting,
@@ -547,14 +580,16 @@ characters: 私 に つ い て — do not add or repeat any character, especial
 Smaller Japanese text below, rendered exactly as written word for word, with no words dropped:
 "Web制作の実務経験あり。AIノーコードで低価格・短納期に対応します。". Professional marketing
 banner style, high contrast, bold clean sans-serif Japanese typography, crisp readable text, no
-button row, plenty of clear background space around the text so it does not overlap the mascot,
-4K
+button row. Keep the headline, subtext, and mascot within the central safe area of the frame,
+leaving a generous empty margin of at least 12% of the image size along all four edges (top,
+bottom, left, and right) with nothing touching or crossing the edges, since any edge may be
+cropped in some display contexts, 4K
 ```
 
 ---
 
 ## 作った後にやること
-1. サムネイル(#1)は**アスペクト比を合わせるだけでは直らないことが実例で確定した**(ココナラのアプリ内表示が正方形画像でも下20%前後を常にトリミングするため)。3-2のプロンプトは下25%に重要要素を置かない構図に変更済みなので、そのプロンプトで新規の会話からフル再生成する。生成後は、下25%が切れても問題ないか(文字・ピル帯・マスコットがすべて上75%に収まっているか)を目で確認してからアップロードする
+1. **#1〜#10全プロンプトに正方形指定(1:1)と、上下左右すべてに安全余白(12%以上)を持たせる指定を追加済み。** 実例で「毎回切れる辺が変わる」(#1は下、#2は左)ことが分かったため、どの1辺だけを気にしても直らない。全プロンプトを新規の会話からこの最新版で生成し直し、生成後は文字・アイコン・マスコットが画像の端(上下左右どこも)にギリギリ接していないか目で確認してからアップロードする
 2. 実績のスクリーンショットではなく「イメージ」なので、実績数字(「実績◯件」等)は絶対に入れない
 3. 文字化けや崩れが出たら編集せず同じプロンプトで再生成する(特に#5の5ステップは、ステップが重複したり抜けたりしやすいので要チェック)
 4. サービスA・Bで9枚のうち8枚(#9以外)は使い回してOK。#9だけ業種イメージを差し替える
