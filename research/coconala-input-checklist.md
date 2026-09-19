@@ -360,6 +360,7 @@ octane render quality, 4K
 ## 3-2. #1 メインサムネイル(1220×1240px)
 **必ず新規の会話で、参照画像なしで貼ってください。**
 **重要: 画像生成ツールに「アスペクト比」や「縦横比」を選べる設定(ボタンやドロップダウン)がある場合は、必ず「正方形」または「1:1」を選んでから生成してください。プロンプト文だけでは縦横比が正しく反映されないことがあります。**
+**実例で判明した問題: 公開済みの画像は下端ギリギリに配置していたピル帯(4つの白文字)が、ココナラのサムネイル表示で丸ごと切れて見えなくなっていた(上ではなく下側が切れる)。そのため下記プロンプトではピル帯の下に余白を持たせる指示を追加済み。**
 ```
 Generate this as a completely new, standalone image. Square aspect ratio, 1:1, 1220x1240 pixels.
 Do not crop or cut off any text or the headline — keep all text and the mascot fully inside the
@@ -370,7 +371,9 @@ the headline text for a high-tech premium feel, large bold white Japanese headli
 top reading "AI×低価格" as the main title with a soft glow outline, smaller Japanese subtitle
 text below reading "ホームページ制作", a glossy gold circular badge with a subtle shine
 highlight in one corner containing the Japanese text "初回限定20,000円", four rounded
-pill-shaped buttons along the bottom edge each containing short Japanese text: "スマホ対応"
+pill-shaped buttons positioned well above the bottom edge (leave at least 10% of the image
+height as empty margin below the pills, do not place them flush against the bottom edge) each
+containing short Japanese text: "スマホ対応"
 "AI活用" "自分で更新OK" "7日で納品", a friendly 3D-rendered semi-realistic mascot character of
 a cheerful person (Pixar-movie-style, not flat vector art, thumbs-up pose) positioned in the
 lower right corner, professional marketing banner style, high contrast, bold clean sans-serif
