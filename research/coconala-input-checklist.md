@@ -359,27 +359,27 @@ octane render quality, 4K
 
 ## 3-2. #1 メインサムネイル(1220×1240px)
 **必ず新規の会話で、参照画像なしで貼ってください。**
-**重要: 画像生成ツールに「アスペクト比」や「縦横比」を選べる設定(ボタンやドロップダウン)がある場合は、必ず「正方形」または「1:1」を選んでから生成してください。プロンプト文だけでは縦横比が正しく反映されないことがあります。**
-**実例で判明した問題: 公開済みの画像は下端ギリギリに配置していたピル帯(4つの白文字)が、ココナラのサムネイル表示で丸ごと切れて見えなくなっていた(上ではなく下側が切れる)。そのため下記プロンプトではピル帯の下に余白を持たせる指示を追加済み。**
+**実例で判明した問題(確定版): 正方形で作っても、ココナラのアプリ内ギャラリー表示は上を基準に下側20%前後をトリミングして見せる(2回試して同じ箇所が切れたため、これが原因と確定)。「余白を足す」だけでは直らなかったので、今回は方針を変えて、下20%には最初から重要な要素(文字・ピル帯)を置かない構図にした。ピル帯は下端ではなく、画像の縦位置75%あたりに移動している。**
 ```
 Generate this as a completely new, standalone image. Square aspect ratio, 1:1, 1220x1240 pixels.
-Do not crop or cut off any text or the headline — keep all text and the mascot fully inside the
-frame with margin on every side. Do not reference, reuse, or blend elements
-from any previous image or conversation. A bold modern banner ad, vertical layout, navy blue and terracotta red diagonal split
+Do not reference, reuse, or blend elements from any previous image or conversation.
+A bold modern banner ad, vertical layout, navy blue and terracotta red diagonal split
 background, subtle glowing light particles and soft lens-flare accents radiating from behind
-the headline text for a high-tech premium feel, large bold white Japanese headline text at the
-top reading "AI×低価格" as the main title with a soft glow outline, smaller Japanese subtitle
-text below reading "ホームページ制作", a glossy gold circular badge with a subtle shine
-highlight in one corner containing the Japanese text "初回限定20,000円", four rounded
-pill-shaped buttons positioned well above the bottom edge (leave at least 10% of the image
-height as empty margin below the pills, do not place them flush against the bottom edge) each
-containing short Japanese text: "スマホ対応"
-"AI活用" "自分で更新OK" "7日で納品", a friendly 3D-rendered semi-realistic mascot character of
-a cheerful person (Pixar-movie-style, not flat vector art, thumbs-up pose) positioned in the
-lower right corner, professional marketing banner style, high contrast, bold clean sans-serif
-Japanese typography, crisp readable text, plenty of clear background space around each text
-element so nothing overlaps, do not add any other button row or badge beyond what is described
-here, 4K
+the headline text for a high-tech premium feel. Treat the image in vertical zones: within the
+TOP 75% of the frame, place large bold white Japanese headline text near the top reading
+"AI×低価格" as the main title with a soft glow outline, smaller Japanese subtitle text below
+reading "ホームページ制作", a glossy gold circular badge with a subtle shine highlight
+containing the Japanese text "初回限定20,000円", a friendly 3D-rendered semi-realistic mascot
+character of a cheerful person (Pixar-movie-style, not flat vector art, thumbs-up pose), and
+four rounded pill-shaped buttons in a row each containing short Japanese text: "スマホ対応"
+"AI活用" "自分で更新OK" "7日で納品" — position this pill row so it ends (its bottom edge) at
+approximately 75% of the total image height, clearly above the vertical midpoint of the lower
+half. The BOTTOM 25% of the frame must contain only plain background color/gradient with no
+text, no pills, no badge, and no part of the mascot, because that area may be cropped or hidden
+in some display contexts. Professional marketing banner style, high contrast, bold clean
+sans-serif Japanese typography, crisp readable text, plenty of clear background space around
+each text element so nothing overlaps, do not add any other button row or badge beyond what is
+described here, 4K
 ```
 
 ## 3-3. #2 料金バナー
@@ -551,16 +551,7 @@ button row, plenty of clear background space around the text so it does not over
 ---
 
 ## 作った後にやること
-1. サムネイル(#1)は生成直後、アップロードする前に正方形(縦横比1:1)になっているか目で確認する。**ココナラにアップロードした後に「切れている」と気づいても、そこから直すのは手遅れ**(ココナラ側が表示エリアに合わせて自動トリミングするだけで、元画像を編集する機能はない)。ズレていた場合は次の順で直す:
-   - **① まずアスペクト比変更プロンプトを試す**(今ある画像を選択して以下を貼る。既存の文字・キャラクターを再描画せず、余白だけ足してくれる可能性が高く、リスクが低い)
-     ```
-     この画像を正方形(1:1、1220×1240px)のアスペクト比に拡張してください。
-     既存の文字・キャラクター・配置は一切変更・移動・縮小せず、そのまま保持してください。
-     新しく生じた余白部分にのみ、同じ配色・質感の背景を自然に描き足してください。
-     文字やキャラクターを切り取ったり、隠したりしないでください。
-     ```
-     生成後、**元のテキストが一文字も変わっていないか、キャラクターの位置・表情が変わっていないかを必ず確認する。** 少しでも変わっていたら再描画されてしまっている(=アウトペイントになっていない)ので②に進む
-   - **② ①で文字が崩れた・変わってしまった場合のみ**、3-2の指示(プロンプト本文にアスペクト比1:1を明記済み)で新規の会話からフル再生成する
+1. サムネイル(#1)は**アスペクト比を合わせるだけでは直らないことが実例で確定した**(ココナラのアプリ内表示が正方形画像でも下20%前後を常にトリミングするため)。3-2のプロンプトは下25%に重要要素を置かない構図に変更済みなので、そのプロンプトで新規の会話からフル再生成する。生成後は、下25%が切れても問題ないか(文字・ピル帯・マスコットがすべて上75%に収まっているか)を目で確認してからアップロードする
 2. 実績のスクリーンショットではなく「イメージ」なので、実績数字(「実績◯件」等)は絶対に入れない
 3. 文字化けや崩れが出たら編集せず同じプロンプトで再生成する(特に#5の5ステップは、ステップが重複したり抜けたりしやすいので要チェック)
 4. サービスA・Bで9枚のうち8枚(#9以外)は使い回してOK。#9だけ業種イメージを差し替える
