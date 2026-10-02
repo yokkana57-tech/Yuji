@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>畑のとなり</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root {
+    --bg: #EFEADF;
+    --surface: #FAF7F0;
+    --surface-2: #FFFFFF;
+    --text: #24301F;
+    --text-dim: #5F6B57;
+    --line: #DCD5C4;
+    --accent: #3F7A3A;
+    --accent-ink: #FBFFF8;
+    --accent-soft: #E1ECD8;
+    --earth: #9A5B2E;
+    --earth-soft: #F3E3D3;
+    --sun: #D99A1E;
+    --danger: #B23B3B;
+    --shadow: 0 8px 24px -14px rgba(36,48,31,0.4);
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 22px;
+    --font-display: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+    --font-body: "Hiragino Sans", "Yu Gothic Medium", "Yu Gothic", "Noto Sans JP", -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151A13;
+      --surface: #1D241A;
+      --surface-2: #242C20;
+      --text: #E9EFE2;
+      --text-dim: #A6B29C;
+      --line: #344030;
+      --accent: #7CC36F;
+      --accent-ink: #12180F;
+      --accent-soft: #263822;
+      --earth: #D9965F;
+      --earth-soft: #3A2A1D;
+      --sun: #E9B44C;
+      --danger: #E36A6A;
+      --shadow: 0 10px 28px -14px rgba(0,0,0,0.7);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151A13;
+    --surface: #1D241A;
+    --surface-2: #242C20;
+    --text: #E9EFE2;
+    --text-dim: #A6B29C;
+    --line: #344030;
+    --accent: #7CC36F;
+    --accent-ink: #12180F;
+    --accent-soft: #263822;
+    --earth: #D9965F;
+    --earth-soft: #3A2A1D;
+    --sun: #E9B44C;
+    --danger: #E36A6A;
+    --shadow: 0 10px 28px -14px rgba(0,0,0,0.7);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: 76px;
+  }
+  a { color: var(--accent); }
+  button, input, select, textarea { font: inherit; color: inherit; }
+
+  header.top {
+    position: sticky; top: 0; z-index: 1000;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .top-inner {
+    max-width: 1080px; margin: 0 auto; padding: 10px 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .brand { font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; letter-spacing: .08em; text-decoration: none; color: var(--text); }
+  .brand small { display: block; font-family: var(--font-body); font-size: .68rem; letter-spacing: .04em; color: var(--text-dim); font-weight: 400; margin-top: -4px; }
+  .top-inner .spacer { flex: 1; }
+  .theme-btn { background: none; border: 1px solid var(--line); border-radius: 999px; width: 36px; height: 36px; cursor: pointer; }
+
+  nav.tabs {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
+    background: var(--surface); border-top: 1px solid var(--line);
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  nav.tabs a {
+    text-decoration: none; color: var(--text-dim);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 8px 4px; font-size: .72rem; gap: 2px;
+  }
+  nav.tabs a .ic { font-size: 1.25rem; line-height: 1; }
+  nav.tabs a.on { color: var(--accent); font-weight: 700; }
+
+  main { max-width: 1080px; margin: 0 auto; padding: 16px; }
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.4; margin: 0; }
+  h2.sec { font-size: 1.15rem; margin: 28px 0 12px; display: flex; align-items: center; gap: 8px; }
+  h2.sec::before { content: ""; width: 6px; height: 1.1em; background: var(--accent); border-radius: 3px; }
+  .dim { color: var(--text-dim); }
+  .small { font-size: .82rem; }
+
+  .hero-intro { padding: 8px 0 4px; }
+  .hero-intro h1 { font-size: clamp(1.4rem, 4.5vw, 2rem); }
+  .hero-intro p { margin: 6px 0 0; color: var(--text-dim); }
+
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 12px; }
+  .filters input[type=search] {
+    flex: 1 1 220px; min-width: 0;
+    padding: 10px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2);
+  }
+  .filters select { padding: 10px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); max-width: 100%; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px;
+    padding: 6px 12px; cursor: pointer; font-size: .85rem;
+  }
+  .chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+  .map {
+    height: 340px; border-radius: var(--radius-md); border: 1px solid var(--line);
+    background: var(--accent-soft); overflow: hidden; z-index: 0;
+  }
+  .map.small { height: 220px; }
+  .map-fallback { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-dim); padding: 16px; text-align: center; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-top: 16px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
+    overflow: hidden; box-shadow: var(--shadow); text-decoration: none; color: inherit; display: flex; flex-direction: column;
+    transition: transform .15s ease;
+  }
+  .card:hover { transform: translateY(-2px); }
+  .thumb {
+    height: 110px; display: flex; align-items: center; justify-content: center; font-size: 3rem; position: relative;
+  }
+  .thumb .loc {
+    position: absolute; left: 10px; bottom: 8px; font-size: .75rem; background: rgba(255,255,255,.88); color: #24301F;
+    padding: 2px 10px; border-radius: 999px;
+  }
+  .card-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .card-body h3 { font-size: 1.05rem; }
+  .card-body .catch { font-family: var(--font-display); font-size: .95rem; color: var(--text); }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tag { font-size: .72rem; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+  .tag.earth { background: var(--earth-soft); color: var(--earth); }
+  .tag.plain { background: transparent; border: 1px solid var(--line); color: var(--text-dim); }
+  .empty { padding: 40px 16px; text-align: center; color: var(--text-dim); }
+
+  /* farm detail */
+  .back { display: inline-block; margin-bottom: 10px; text-decoration: none; font-size: .9rem; }
+  .farm-hero {
+    border-radius: var(--radius-lg); padding: 28px 20px 22px; position: relative; overflow: hidden; color: #1E2A1A;
+  }
+  .farm-hero .big-emoji { font-size: 4.2rem; position: absolute; right: 16px; top: 10px; opacity: .9; }
+  .farm-hero .pref { font-size: .82rem; background: rgba(255,255,255,.8); display: inline-block; padding: 2px 10px; border-radius: 999px; }
+  .farm-hero h1 { font-size: clamp(1.5rem, 5vw, 2.1rem); margin-top: 10px; padding-right: 70px; }
+  .farm-hero .who { margin-top: 4px; font-size: .95rem; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .btn {
+    border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink);
+    border-radius: 999px; padding: 9px 18px; cursor: pointer; font-weight: 700; font-size: .9rem; text-decoration: none; display: inline-block;
+  }
+  .btn.ghost { background: var(--surface-2); color: var(--accent); }
+  .btn.small { padding: 5px 12px; font-size: .8rem; }
+  .btn.danger { border-color: var(--danger); background: transparent; color: var(--danger); }
+
+  .story {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
+    padding: 30px 20px 20px; font-family: var(--font-display); font-size: 1.02rem; line-height: 2; white-space: pre-wrap; position: relative;
+  }
+  .story::before { content: "“"; position: absolute; top: -22px; left: 12px; font-size: 3.6rem; color: var(--earth); opacity: .6; }
+  .story-sign { text-align: right; font-size: .9rem; margin-top: 8px; color: var(--text-dim); }
+
+  .two-col { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  @media (min-width: 760px) { .two-col { grid-template-columns: 1fr 1fr; } }
+
+  .method { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 6px 16px; }
+  .method dl { margin: 0; }
+  .method .row { display: grid; grid-template-columns: 96px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+  .method .row:last-child { border-bottom: none; }
+  .method dt { color: var(--text-dim); font-size: .85rem; }
+  .method dd { margin: 0; }
+
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .fact { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px; text-align: center; }
+  .fact b { display: block; font-size: 1.1rem; font-family: var(--font-display); }
+  .fact span { font-size: .72rem; color: var(--text-dim); }
+
+  /* season calendar */
+  .cal { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 12px; overflow-x: auto; }
+  .cal table { border-collapse: collapse; width: 100%; min-width: 520px; font-size: .82rem; }
+  .cal th { font-weight: 400; color: var(--text-dim); padding: 2px; text-align: center; }
+  .cal th.now { color: var(--accent); font-weight: 700; }
+  .cal td { padding: 3px 1px; }
+  .cal td.name { white-space: nowrap; padding-right: 10px; font-weight: 700; text-align: left; }
+  .cal td.name small { display: block; font-weight: 400; color: var(--text-dim); font-size: .72rem; }
+  .cal .bar { height: 14px; border-radius: 3px; background: transparent; }
+  .cal .bar.on { background: var(--accent); }
+  .cal .bar.on.now { background: var(--sun); }
+  .cal td.cur { background: color-mix(in srgb, var(--sun) 12%, transparent); }
+  .legend { font-size: .75rem; color: var(--text-dim); margin-top: 6px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 12px; height: 10px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
+
+  /* posts */
+  .posts { display: flex; flex-direction: column; gap: 12px; }
+  .post { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 14px 16px; display: grid; grid-template-columns: 52px 1fr; gap: 12px; }
+  .post .pic { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; }
+  .post h3 { font-size: 1rem; }
+  .post .meta { font-size: .78rem; color: var(--text-dim); }
+  .post .meta a { text-decoration: none; }
+  .post p { margin: 4px 0 0; white-space: pre-wrap; }
+  .post .del { margin-top: 6px; }
+
+  .cheers { display: flex; flex-direction: column; gap: 8px; }
+  .cheer { background: var(--earth-soft); border-radius: var(--radius-md); padding: 10px 14px; }
+  .cheer .meta { font-size: .75rem; color: var(--text-dim); }
+  .cheer p { margin: 2px 0 0; white-space: pre-wrap; }
+
+  /* forms */
+  form.panel, .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 16px; }
+  .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+  .field label { font-size: .85rem; font-weight: 700; }
+  .field .hint { font-size: .75rem; color: var(--text-dim); }
+  .field input, .field select, .field textarea {
+    padding: 9px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); width: 100%;
+  }
+  .field textarea { min-height: 96px; resize: vertical; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .months { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+  .months label { font-size: .8rem; font-weight: 400; display: flex; align-items: center; justify-content: center; gap: 2px;
+    border: 1px solid var(--line); border-radius: 6px; padding: 4px 0; cursor: pointer; background: var(--surface-2); }
+  .months input { width: auto; margin: 0; }
+  .months label:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .emoji-pick { display: flex; flex-wrap: wrap; gap: 4px; }
+  .emoji-pick label { font-size: 1.4rem; border: 1px solid var(--line); border-radius: 8px; padding: 2px 6px; cursor: pointer; background: var(--surface-2); }
+  .emoji-pick input { display: none; }
+  .emoji-pick label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .prod-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .prod-item { display: flex; align-items: center; gap: 8px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 6px 10px; font-size: .9rem; }
+  .prod-item span { flex: 1; min-width: 0; }
+
+  .notice { font-size: .8rem; color: var(--text-dim); background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius-sm); padding: 10px 12px; margin-top: 16px; }
+  .toast {
+    position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%) translateY(20px); opacity: 0;
+    background: var(--text); color: var(--bg); padding: 10px 18px; border-radius: 999px; font-size: .88rem; transition: all .25s ease; z-index: 2000;
+    pointer-events: none; max-width: calc(100% - 32px);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .seg button { border: none; background: var(--surface-2); padding: 6px 14px; cursor: pointer; font-size: .85rem; }
+  .seg button.on { background: var(--accent); color: var(--accent-ink); }
+
+  .leaflet-popup-content { font-family: var(--font-body); }
+  .pin { font-size: 22px; line-height: 1; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+  .pin-wrap { background: transparent; border: none; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <a class="brand" href="#/">畑のとなり<small>つくる人の顔と想いが見える</small></a>
+    <span class="spacer"></span>
+    <button class="theme-btn" id="themeBtn" title="表示テーマ切替" aria-label="表示テーマ切替">◐</button>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<nav class="tabs" id="tabs">
+  <a href="#/" data-tab="explore"><span class="ic">🗾</span>さがす</a>
+  <a href="#/feed" data-tab="feed"><span class="ic">📰</span>畑だより</a>
+  <a href="#/follows" data-tab="follows"><span class="ic">💚</span>フォロー</a>
+  <a href="#/mine" data-tab="mine"><span class="ic">👩‍🌾</span>農家の方</a>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- 定数 ----------
+  const MONTHS = [1,2,3,4,5,6,7,8,9,10,11,12];
+  const NOW_MONTH = new Date().getMonth() + 1;
+  const CATS = { veg: '野菜', fruit: '果物', rice: '米・穀物', other: 'その他' };
+  // 表示は農林水産省「特別栽培農産物に係る表示ガイドライン」に沿った言い回しにする（「無農薬」等の表示は不可）
+  const PESTICIDE = {
+    none: { label: '栽培期間中 不使用', short: '農薬不使用', cls: '' },
+    reduced: { label: '節減対象農薬を地域慣行の5割以上減', short: '農薬節減', cls: '' },
+    conventional: { label: '地域の慣行基準に沿って使用', short: '', cls: '' }
+  };
+  const FERTILIZER = {
+    none: '化学肥料 栽培期間中 不使用',
+    reduced: '化学肥料（窒素成分）を地域慣行の5割以上減',
+    conventional: '地域の慣行基準に沿って使用'
+  };
+  const STYLES = ['露地', 'ハウス', '露地＋ハウス', '水田', '果樹園', '放牧・畜産'];
+  // 都道府県と県庁所在地付近の座標（地図が使えない時の仮位置・地図の初期表示に使う）
+  const PREF_CENTER = {
+    '北海道':[43.06,141.35],'青森県':[40.82,140.74],'岩手県':[39.70,141.15],'宮城県':[38.27,140.87],'秋田県':[39.72,140.10],
+    '山形県':[38.24,140.36],'福島県':[37.75,140.47],'茨城県':[36.34,140.45],'栃木県':[36.57,139.88],'群馬県':[36.39,139.06],
+    '埼玉県':[35.86,139.65],'千葉県':[35.61,140.12],'東京都':[35.69,139.69],'神奈川県':[35.45,139.64],'新潟県':[37.90,139.02],
+    '富山県':[36.70,137.21],'石川県':[36.59,136.63],'福井県':[36.07,136.22],'山梨県':[35.66,138.57],'長野県':[36.65,138.18],
+    '岐阜県':[35.39,136.72],'静岡県':[34.98,138.38],'愛知県':[35.18,136.91],'三重県':[34.73,136.51],'滋賀県':[35.00,135.87],
+    '京都府':[35.02,135.76],'大阪府':[34.69,135.52],'兵庫県':[34.69,135.18],'奈良県':[34.69,135.83],'和歌山県':[34.23,135.17],
+    '鳥取県':[35.50,134.24],'島根県':[35.47,133.05],'岡山県':[34.66,133.93],'広島県':[34.40,132.46],'山口県':[34.19,131.47],
+    '徳島県':[34.07,134.56],'香川県':[34.34,134.04],'愛媛県':[33.84,132.77],'高知県':[33.56,133.53],'福岡県':[33.61,130.42],
+    '佐賀県':[33.25,130.30],'長崎県':[32.74,129.87],'熊本県':[32.79,130.74],'大分県':[33.24,131.61],'宮崎県':[31.91,131.42],
+    '鹿児島県':[31.56,130.56],'沖縄県':[26.21,127.68]
+  };
+  const PREFS = Object.keys(PREF_CENTER);
+  const EMOJIS = ['🥬','🥕','🍅','🥒','🌽','🍆','🫑','🥔','🧅','🍠','🌾','🍚','🍎','🍊','🍓','🍇','🍑','🍈','🍐','🫐','🍵','🥚','🍯','🌻'];
+  const HUES = ['#CFE3BF','#F2D9B5','#F6C9B8','#D7E4F0','#E9DDF0','#F3E7A9','#C9E6DC','#EFD0D6'];
+
+  // ---------- サンプルデータ（架空の農家です） ----------
+  const SAMPLE_FARMS = [
+    {
+      id: 's1', farmName: 'あさぎり農園', farmer: '佐藤 健一', pref: '長野県', city: '上田市', lat: 36.40, lng: 138.25,
+      since: 2012, area: '2.5ha', emoji: '🥬', hue: 0,
+      catch: '標高700mの寒暖差が、野菜を甘くしてくれる。',
+      story: '会社員を辞めて、祖父の畑を継いだのが36歳のとき。\n最初の3年は虫にやられてばかりで、正直何度もやめようと思いました。\n\nそれでも続けられたのは、直売所で「去年のレタスがおいしかったから」と声をかけてくれた一人のお客さんのおかげです。\n\n土の中の微生物が元気なら、野菜は勝手に育つ。だから僕の仕事は、野菜を育てることより、土を育てること。食べる人の顔を思い浮かべながら、今日も畑に出ています。',
+      methods: { pesticide: 'none', fertilizer: 'none', style: '露地', soil: '落ち葉と米ぬかの堆肥を毎年秋に投入。緑肥（ライ麦）で土を休ませる輪作。' },
+      certs: [],
+      products: [
+        { name: 'レタス', cat: 'veg', months: [6,7,8,9], note: '朝どれ。シャキッと甘い' },
+        { name: 'ほうれん草', cat: 'veg', months: [10,11,12,1], note: '霜にあたって甘みが増す冬が旬' },
+        { name: 'ズッキーニ', cat: 'veg', months: [6,7,8], note: '' },
+        { name: 'じゃがいも（男爵）', cat: 'veg', months: [7,8,9], note: '' }
+      ],
+      posts: [
+        { id: 's1p1', date: '2026-09-28', emoji: '🥬', title: '秋のほうれん草、種まき完了', body: '今年は残暑が長く、1週間遅らせての種まき。発芽そろうかドキドキです。' },
+        { id: 's1p2', date: '2026-09-12', emoji: '🍂', title: '堆肥づくりの季節', body: '近所の公園から落ち葉をいただいて、米ぬかと混ぜて積み込み。これが来年の畑の栄養になります。' }
+      ]
+    },
+    {
+      id: 's2', farmName: '小島みかん園', farmer: '小島 美和', pref: '愛媛県', city: '八幡浜市', lat: 33.46, lng: 132.42,
+      since: 1978, area: '1.8ha', emoji: '🍊', hue: 5,
+      catch: '海と太陽と石垣。三つの光で育つみかんです。',
+      story: '父から園を受け継いで10年。段々畑の石垣は、120年前にご先祖さまが一つずつ積んだものです。\n\n「三つの太陽」――空からの光、海からの照り返し、石垣からの熱。この土地でしか出せない味があると信じています。\n\n急な斜面での作業は大変だけど、収穫期に海を見下ろしながら、ひとつずつハサミを入れる時間が好きです。皮をむいたときの香りまで、楽しんでもらえたらうれしいです。',
+      methods: { pesticide: 'reduced', fertilizer: 'reduced', style: '果樹園', soil: '草生栽培（下草を刈って土に還す）。有機質肥料中心で、木の様子を見て施肥量を調整。' },
+      certs: ['エコファーマー'],
+      products: [
+        { name: '温州みかん（早生）', cat: 'fruit', months: [10,11,12], note: '' },
+        { name: '河内晩柑', cat: 'fruit', months: [4,5,6], note: '初夏の和製グレープフルーツ' },
+        { name: '甘夏', cat: 'fruit', months: [3,4], note: '' }
+      ],
+      posts: [
+        { id: 's2p1', date: '2026-09-30', emoji: '🍊', title: '早生みかん、色づき始めました', body: '青い実のなかに、ところどころ黄色。収穫まであと少し。今年は雨が少なく、味が濃くなりそうです。' }
+      ]
+    },
+    {
+      id: 's3', farmName: 'たかはし農場', farmer: '高橋 大地', pref: '新潟県', city: '南魚沼市', lat: 37.07, lng: 138.88,
+      since: 1965, area: '6ha', emoji: '🌾', hue: 5,
+      catch: '雪解け水で育てる、三代目のコシヒカリ。',
+      story: '冬は3mの雪に埋まる町です。その雪がゆっくり溶けて、春から夏にかけて田んぼを潤してくれる。この水があるから、うちのお米はおいしいんだと祖父がよく言っていました。\n\n田んぼにはカエルやトンボがたくさんいます。生き物がいる田んぼは、いい田んぼ。\n\nお米は毎日食べるもの。だからこそ「いつもの味」を、毎年変わらず届けることを大事にしています。',
+      methods: { pesticide: 'reduced', fertilizer: 'reduced', style: '水田', soil: '稲わらを田んぼにすき込み、冬は水を張って生き物のすみかに（冬期湛水）。' },
+      certs: ['特別栽培米（県認証）'],
+      products: [
+        { name: 'コシヒカリ（新米）', cat: 'rice', months: [9,10,11], note: '' },
+        { name: 'コシヒカリ', cat: 'rice', months: [1,2,3,4,5,6,7,8,12], note: '低温倉庫で保管' },
+        { name: 'もち米（こがねもち）', cat: 'rice', months: [11,12], note: '' }
+      ],
+      posts: [
+        { id: 's3p1', date: '2026-09-20', emoji: '🌾', title: '稲刈り終わりました！', body: '天気に恵まれて、予定どおり刈り取り完了。いま乾燥機がフル稼働中です。新米、もうすぐです。' }
+      ]
+    },
+    {
+      id: 's4', farmName: 'いちごハウス はるか', farmer: '中村 遥', pref: '栃木県', city: '真岡市', lat: 36.44, lng: 140.01,
+      since: 2019, area: '30a', emoji: '🍓', hue: 7,
+      catch: '完熟まで待つ。それだけは譲れません。',
+      story: '市場に出すいちごは、運ぶ間に傷まないよう少し早めに摘むのが普通です。\nでも、本当においしいのは、へたの際まで真っ赤になった完熟のいちご。\n\n農業大学校を出て、28歳で独立しました。ハウスの温度は毎朝4時にチェック。いちごは寒さにも暑さにも正直に反応します。\n\n天敵の虫（ハダニを食べるダニ）を放して、なるべく農薬に頼らないようにしています。',
+      methods: { pesticide: 'reduced', fertilizer: 'conventional', style: 'ハウス', soil: '天敵昆虫による害虫対策。高設栽培で土壌病害を防ぐ。' },
+      certs: [],
+      products: [
+        { name: 'とちあいか', cat: 'fruit', months: [12,1,2,3,4], note: '酸味控えめで甘い' },
+        { name: 'スカイベリー', cat: 'fruit', months: [1,2,3], note: '大粒' }
+      ],
+      posts: [
+        { id: 's4p1', date: '2026-09-25', emoji: '🌱', title: '苗の定植をしました', body: '夏の間に育てた苗を、ハウスに植え付け。ここから12月の初収穫まで、毎日が勝負です。' }
+      ]
+    },
+    {
+      id: 's5', farmName: 'ひだまりファーム', farmer: '山口 夫妻（亮・さくら）', pref: '熊本県', city: '阿蘇郡 南阿蘇村', lat: 32.82, lng: 131.03,
+      since: 2016, area: '1.2ha', emoji: '🍅', hue: 2,
+      catch: '阿蘇の火山灰土で、少量多品目。',
+      story: '東京から夫婦で移住して10年になります。2016年の地震の年に就農して、畑も家もぐちゃぐちゃになったところからのスタートでした。\n\nそのとき近所の農家さんが、機械も知恵も貸してくれた。今度は自分たちが、この土地のおいしさを外に伝える番だと思っています。\n\n年間50種類以上の野菜を育てています。「この野菜、初めて食べた！」という声が一番の励みです。',
+      methods: { pesticide: 'none', fertilizer: 'none', style: '露地＋ハウス', soil: '近所の牧場の牛ふん堆肥と、もみ殻くん炭。固定種・在来種の自家採種にも挑戦中。' },
+      certs: ['有機JAS'],
+      products: [
+        { name: 'ミニトマト（ミックス）', cat: 'veg', months: [5,6,7,8,9,10], note: '赤・黄・緑・黒の4色' },
+        { name: 'なす', cat: 'veg', months: [6,7,8,9], note: '' },
+        { name: 'さつまいも（紅はるか）', cat: 'veg', months: [10,11,12,1,2], note: '熟成させて甘く' },
+        { name: '季節の野菜セット', cat: 'veg', months: MONTHS.slice(), note: 'その時期の旬を5〜7品' }
+      ],
+      posts: [
+        { id: 's5p1', date: '2026-09-27', emoji: '🍠', title: 'さつまいも試し掘り', body: 'つるをめくって試し掘り。いい太さです！掘ってから1か月寝かせると、ぐっと甘くなります。' },
+        { id: 's5p2', date: '2026-09-05', emoji: '🍅', title: 'ミニトマト、秋の第二弾', body: '夏の暑さで一度実がつかなくなったけど、涼しくなってまた花が咲き始めました。' }
+      ]
+    },
+    {
+      id: 's6', farmName: '北の大地 中島ファーム', farmer: '中島 誠', pref: '北海道', city: '富良野市', lat: 43.34, lng: 142.38,
+      since: 1952, area: '18ha', emoji: '🌽', hue: 5,
+      catch: '朝4時の収穫で、甘さをそのまま閉じ込める。',
+      story: 'とうもろこしは、もいだ瞬間から甘さが落ちていく野菜です。だからうちは、夜明け前に収穫して、その日のうちに出荷します。\n\n広い畑だからこそ、一本一本に目が届かないこともある。それでも、息子と二人で毎日畑を歩いて、葉の色や実の太り具合を見て回っています。\n\n北海道の短い夏に、ぎゅっと詰まった甘さを味わってください。',
+      methods: { pesticide: 'conventional', fertilizer: 'reduced', style: '露地', soil: '小麦・豆・じゃがいも・とうもろこしの4年輪作で連作障害を防ぐ。' },
+      certs: [],
+      products: [
+        { name: 'とうもろこし（ゴールドラッシュ）', cat: 'veg', months: [8,9], note: '生でも食べられる甘さ' },
+        { name: 'じゃがいも（キタアカリ）', cat: 'veg', months: [8,9,10,11], note: '' },
+        { name: 'かぼちゃ（えびす）', cat: 'veg', months: [9,10,11], note: '' },
+        { name: '小豆', cat: 'other', months: [10,11,12], note: '' }
+      ],
+      posts: [
+        { id: 's6p1', date: '2026-09-29', emoji: '🎃', title: 'かぼちゃの風乾中', body: '収穫したかぼちゃを畑に並べて、2週間ほど乾かします。この工程でデンプンが糖に変わって、ほくほく甘くなります。' }
+      ]
+    }
+  ];
+
+  // ---------- 保存（この試作版は端末内の localStorage に保存） ----------
+  const KEY = { mine: 'hatake.myfarm', follows: 'hatake.follows', cheers: 'hatake.cheers', theme: 'hatake.theme' };
+  const store = {
+    get(k, fallback) {
+      try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
+    },
+    set(k, v) {
+      try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { toast('保存できませんでした（ブラウザの保存領域が使えません）'); return false; }
+    }
+  };
+
+  const state = {
+    q: '', cat: 'all', pref: 'all', pest: 'all', inSeason: false,
+    feedMode: 'all'
+  };
+
+  function myFarm() { return store.get(KEY.mine, null); }
+  function allFarms() {
+    const m = myFarm();
+    return m && m.farmName ? [m, ...SAMPLE_FARMS] : SAMPLE_FARMS.slice();
+  }
+  function findFarm(id) { return allFarms().find(f => f.id === id); }
+  function follows() { return store.get(KEY.follows, []); }
+  function isFollowing(id) { return follows().includes(id); }
+  function toggleFollow(id) {
+    const f = follows();
+    const i = f.indexOf(id);
+    if (i >= 0) f.splice(i, 1); else f.push(id);
+    store.set(KEY.follows, f);
+    return i < 0;
+  }
+  function cheersFor(id) { return (store.get(KEY.cheers, {})[id] || []); }
+  function addCheer(id, cheer) {
+    const all = store.get(KEY.cheers, {});
+    (all[id] = all[id] || []).unshift(cheer);
+    store.set(KEY.cheers, all);
+  }
+
+  // ---------- ユーティリティ ----------
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  function hue(f) { return HUES[(f.hue || 0) % HUES.length]; }
+  function fmtDate(d) {
+    const t = new Date(d + 'T00:00:00');
+    if (isNaN(t)) return esc(d);
+    return `${t.getFullYear()}年${t.getMonth() + 1}月${t.getDate()}日`;
+  }
+  function today() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  function uid() { return Math.random().toString(36).slice(2, 10); }
+  let toastTimer;
+  function toast(msg) {
+    const t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+  function inSeasonNow(f) { return (f.products || []).some(p => (p.months || []).includes(NOW_MONTH)); }
+  function seasonalNames(f) { return (f.products || []).filter(p => (p.months || []).includes(NOW_MONTH)).map(p => p.name); }
+  function cats(f) { return [...new Set((f.products || []).map(p => p.cat))]; }
+  function yearsFarming(f) { return f.since ? Math.max(0, new Date().getFullYear() - Number(f.since)) : null; }
+
+  // ---------- 地図 ----------
+  let maps = [];
+  function clearMaps() { maps.forEach(m => { m.stop(); m.remove(); }); maps = []; }
+  function makeMap(el, opts) {
+    if (!window.L) {
+      el.innerHTML = '<div class="map-fallback">地図を読み込めませんでした（オフラインの可能性があります）。<br>一覧からお選びください。</div>';
+      return null;
+    }
+    const m = L.map(el, Object.assign({ scrollWheelZoom: false }, opts));
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(m);
+    maps.push(m);
+    return m;
+  }
+  function pinIcon(emoji) {
+    return L.divIcon({ className: 'pin-wrap', html: `<div class="pin">${emoji}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] });
+  }
+
+  // ---------- 画面: さがす ----------
+  function filtered() {
+    const q = state.q.trim().toLowerCase();
+    return allFarms().filter(f => {
+      if (state.cat !== 'all' && !cats(f).includes(state.cat)) return false;
+      if (state.pref !== 'all' && f.pref !== state.pref) return false;
+      if (state.pest !== 'all' && f.methods?.pesticide !== state.pest) return false;
+      if (state.inSeason && !inSeasonNow(f)) return false;
+      if (q) {
+        const hay = [f.farmName, f.farmer, f.pref, f.city, f.catch, f.story, ...(f.products || []).map(p => p.name)].join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  function farmCard(f) {
+    const pest = PESTICIDE[f.methods?.pesticide];
+    const season = seasonalNames(f);
+    const mine = myFarm()?.id === f.id;
+    return `
+      <a class="card" href="#/farm/${esc(f.id)}">
+        <div class="thumb" style="background:${hue(f)}">${esc(f.emoji)}<span class="loc">📍 ${esc(f.pref)} ${esc(f.city)}</span></div>
+        <div class="card-body">
+          <h3>${esc(f.farmName)}${mine ? ' <span class="tag earth">あなたの農園</span>' : ''}</h3>
+          <div class="small dim">${esc(f.farmer)}${yearsFarming(f) !== null ? `・就農${yearsFarming(f)}年` : ''}</div>
+          <div class="catch">${esc(f.catch)}</div>
+          <div class="tags">
+            ${(f.products || []).slice(0, 4).map(p => `<span class="tag plain">${esc(p.name)}</span>`).join('')}
+          </div>
+          <div class="tags">
+            ${season.length ? `<span class="tag earth">いま旬：${esc(season.slice(0, 2).join('・'))}</span>` : ''}
+            ${pest && pest.short ? `<span class="tag">${esc(pest.short)}</span>` : ''}
+            ${(f.certs || []).map(c => `<span class="tag">${esc(c)}</span>`).join('')}
+          </div>
+        </div>
+      </a>`;
+  }
+
+  function renderExplore() {
+    const prefsInData = [...new Set(allFarms().map(f => f.pref))];
+    app.innerHTML = `
+      <section class="hero-intro">
+        <h1>どこで、誰が、どんな想いで。</h1>
+        <p>畑の場所、育て方、つくる人の言葉。食べものの「向こう側」が見えるマルシェです。</p>
+      </section>
+      <div class="filters">
+        <input type="search" id="q" placeholder="野菜の名前・地域・農園名でさがす" value="${esc(state.q)}">
+        <select id="pref" aria-label="都道府県">
+          <option value="all">全国</option>
+          ${prefsInData.map(p => `<option ${state.pref === p ? 'selected' : ''}>${esc(p)}</option>`).join('')}
+        </select>
+        <select id="pest" aria-label="農薬">
+          <option value="all">育て方：すべて</option>
+          <option value="none" ${state.pest === 'none' ? 'selected' : ''}>農薬 栽培期間中不使用</option>
+          <option value="reduced" ${state.pest === 'reduced' ? 'selected' : ''}>農薬節減（特別栽培相当）</option>
+        </select>
+      </div>
+      <div class="chips" id="catChips">
+        <button class="chip ${state.cat === 'all' ? 'on' : ''}" data-cat="all">すべて</button>
+        ${Object.entries(CATS).map(([k, v]) => `<button class="chip ${state.cat === k ? 'on' : ''}" data-cat="${k}">${v}</button>`).join('')}
+        <button class="chip ${state.inSeason ? 'on' : ''}" id="seasonChip">🌟 ${NOW_MONTH}月が旬</button>
+      </div>
+      <h2 class="sec">畑の地図</h2>
+      <div class="map" id="map"></div>
+      <h2 class="sec">農家さん <span class="dim small" id="count"></span></h2>
+      <div class="grid" id="list"></div>
+      <p class="notice">※ 掲載している農家はすべて試作用の架空データです。</p>
+    `;
+    const map = makeMap($('#map'), { center: [36.5, 137.5], zoom: 5 });
+    let layer = map ? L.layerGroup().addTo(map) : null;
+
+    function update() {
+      const list = filtered();
+      $('#count').textContent = `${list.length}件`;
+      $('#list').innerHTML = list.length ? list.map(farmCard).join('') : '<div class="empty">条件に合う農家さんが見つかりませんでした。</div>';
+      if (layer) {
+        layer.clearLayers();
+        const pts = [];
+        list.forEach(f => {
+          if (typeof f.lat !== 'number' || typeof f.lng !== 'number') return;
+          pts.push([f.lat, f.lng]);
+          L.marker([f.lat, f.lng], { icon: pinIcon(f.emoji) })
+            .bindPopup(`<b>${esc(f.farmName)}</b><br>${esc(f.pref)} ${esc(f.city)}<br><a href="#/farm/${esc(f.id)}">農家さんのページへ →</a>`)
+            .addTo(layer);
+        });
+        if (pts.length > 1) map.fitBounds(pts, { padding: [30, 30], maxZoom: 9, animate: false });
+        else if (pts.length === 1) map.setView(pts[0], 9, { animate: false });
+      }
+    }
+
+    $('#q').addEventListener('input', e => { state.q = e.target.value; update(); });
+    $('#pref').addEventListener('change', e => { state.pref = e.target.value; update(); });
+    $('#pest').addEventListener('change', e => { state.pest = e.target.value; update(); });
+    $$('#catChips [data-cat]').forEach(b => b.addEventListener('click', () => {
+      state.cat = b.dataset.cat;
+      $$('#catChips [data-cat]').forEach(x => x.classList.toggle('on', x === b));
+      update();
+    }));
+    $('#seasonChip').addEventListener('click', e => {
+      state.inSeason = !state.inSeason;
+      e.currentTarget.classList.toggle('on', state.inSeason);
+      update();
+    });
+    update();
+  }
+
+  // ---------- 画面: 農家さん詳細 ----------
+  function seasonCalendar(products) {
+    if (!products || !products.length) return '<div class="empty">まだ登録がありません。</div>';
+    return `
+      <div class="cal">
+        <table>
+          <thead><tr><th></th>${MONTHS.map(m => `<th class="${m === NOW_MONTH ? 'now' : ''}">${m}月</th>`).join('')}</tr></thead>
+          <tbody>
+            ${products.map(p => `
+              <tr>
+                <td class="name">${esc(p.name)}${p.note ? `<small>${esc(p.note)}</small>` : ''}</td>
+                ${MONTHS.map(m => {
+                  const on = (p.months || []).includes(m);
+                  return `<td class="${m === NOW_MONTH ? 'cur' : ''}"><div class="bar ${on ? 'on' : ''} ${on && m === NOW_MONTH ? 'now' : ''}" title="${on ? `${m}月 収穫` : ''}"></div></td>`;
+                }).join('')}
+              </tr>`).join('')}
+          </tbody>
+        </table>
+        <div class="legend"><span><i style="background:var(--accent)"></i>収穫・お届けできる時期</span><span><i style="background:var(--sun)"></i>いま（${NOW_MONTH}月）</span></div>
+      </div>`;
+  }
+
+  function postItem(p, f, opts = {}) {
+    return `
+      <article class="post">
+        <div class="pic" style="background:${hue(f)}">${esc(p.emoji || f.emoji)}</div>
+        <div>
+          <div class="meta">${fmtDate(p.date)}${opts.showFarm ? ` ・ <a href="#/farm/${esc(f.id)}">${esc(f.farmName)}</a>（${esc(f.pref)}）` : ''}</div>
+          <h3>${esc(p.title)}</h3>
+          <p>${esc(p.body)}</p>
+          ${opts.deletable ? `<button class="btn danger small del" data-del-post="${esc(p.id)}">削除</button>` : ''}
+        </div>
+      </article>`;
+  }
+
+  function renderFarm(id) {
+    const f = findFarm(id);
+    if (!f) {
+      app.innerHTML = '<a class="back" href="#/">← もどる</a><div class="empty">この農家さんは見つかりませんでした。</div>';
+      return;
+    }
+    const m = f.methods || {};
+    const pest = PESTICIDE[m.pesticide];
+    const years = yearsFarming(f);
+    const mine = myFarm()?.id === f.id;
+    const cheers = cheersFor(f.id);
+    const posts = (f.posts || []).slice().sort((a, b) => b.date.localeCompare(a.date));
+
+    app.innerHTML = `
+      <a class="back" href="#/">← 農家さん一覧へ</a>
+      <section class="farm-hero" style="background:${hue(f)}">
+        <span class="big-emoji">${esc(f.emoji)}</span>
+        <span class="pref">📍 ${esc(f.pref)} ${esc(f.city)}</span>
+        <h1>${esc(f.farmName)}</h1>
+        <div class="who">${esc(f.farmer)}</div>
+        <div class="actions">
+          ${mine ? '<a class="btn" href="#/mine">農園ページを編集</a>' : `
+            <button class="btn ${isFollowing(f.id) ? 'ghost' : ''}" id="followBtn">${isFollowing(f.id) ? '✓ フォロー中' : '＋ フォロー'}</button>
+            <a class="btn ghost" href="#cheerForm" id="toCheer">💌 声を届ける</a>`}
+        </div>
+      </section>
+
+      <h2 class="sec">つくる人の想い</h2>
+      <div class="story">${esc(f.story)}</div>
+      <div class="story-sign">― ${esc(f.farmer)}</div>
+
+      <div class="facts" style="margin-top:16px">
+        <div class="fact"><b>${years !== null ? years + '年' : '―'}</b><span>就農・創業から</span></div>
+        <div class="fact"><b>${esc(f.area || '―')}</b><span>畑の広さ</span></div>
+        <div class="fact"><b>${(f.products || []).length}品目</b><span>育てているもの</span></div>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <h2 class="sec">どんなふうに育てているか</h2>
+          <div class="method"><dl>
+            <div class="row"><dt>農薬</dt><dd>${esc(pest ? pest.label : '―')}</dd></div>
+            <div class="row"><dt>化学肥料</dt><dd>${esc(FERTILIZER[m.fertilizer] || '―')}</dd></div>
+            <div class="row"><dt>栽培方式</dt><dd>${esc(m.style || '―')}</dd></div>
+            <div class="row"><dt>土づくり・<br>こだわり</dt><dd>${esc(m.soil || '―')}</dd></div>
+            ${(f.certs || []).length ? `<div class="row"><dt>認証</dt><dd><div class="tags">${f.certs.map(c => `<span class="tag">${esc(c)}</span>`).join('')}</div></dd></div>` : ''}
+          </dl></div>
+          <p class="small dim" style="margin-top:6px">農薬・化学肥料の表記は、農家さん本人の申告です。</p>
+        </div>
+        <div>
+          <h2 class="sec">畑はここにあります</h2>
+          <div class="map small" id="farmMap"></div>
+          <p class="small dim" style="margin-top:6px">${esc(f.pref)} ${esc(f.city)}（地図上の位置はおおよそです）</p>
+        </div>
+      </div>
+
+      <h2 class="sec">育てているもの・旬の時期</h2>
+      ${seasonCalendar(f.products)}
+
+      <h2 class="sec">畑だより</h2>
+      <div class="posts">${posts.length ? posts.map(p => postItem(p, f)).join('') : '<div class="empty">まだ投稿がありません。</div>'}</div>
+
+      <h2 class="sec">届いた声</h2>
+      <div class="cheers" id="cheerList">
+        ${cheers.length ? cheers.map(c => `<div class="cheer"><div class="meta">${esc(c.name || '匿名')} ・ ${fmtDate(c.date)}</div><p>${esc(c.text)}</p></div>`).join('') : '<div class="small dim">まだ声は届いていません。最初のひとことを送ってみませんか。</div>'}
+      </div>
+      ${mine ? '' : `
+      <form class="panel" id="cheerForm" style="margin-top:12px">
+        <div class="field"><label for="cName">お名前（ニックネーム可）</label><input id="cName" maxlength="30" placeholder="例：東京のはなこ"></div>
+        <div class="field"><label for="cText">${esc(f.farmer)}さんへのメッセージ</label><textarea id="cText" maxlength="400" required placeholder="食べた感想、応援のことば、育て方についての質問など"></textarea></div>
+        <button class="btn" type="submit">送る</button>
+        <p class="small dim" style="margin:8px 0 0">試作版のため、メッセージはこの端末の中にだけ保存されます。</p>
+      </form>`}
+    `;
+
+    const cal = $('.cal'), nowTh = $('.cal th.now');
+    if (cal && nowTh && cal.scrollWidth > cal.clientWidth) cal.scrollLeft = nowTh.offsetLeft - cal.clientWidth / 2;
+
+    const fm = makeMap($('#farmMap'), { center: [f.lat || 36.5, f.lng || 137.5], zoom: f.lat ? 10 : 5 });
+    if (fm && typeof f.lat === 'number') L.marker([f.lat, f.lng], { icon: pinIcon(f.emoji) }).addTo(fm);
+
+    const fb = $('#followBtn');
+    if (fb) fb.addEventListener('click', () => {
+      const now = toggleFollow(f.id);
+      fb.textContent = now ? '✓ フォロー中' : '＋ フォロー';
+      fb.classList.toggle('ghost', now);
+      toast(now ? `${f.farmName}をフォローしました` : 'フォローを外しました');
+    });
+    const tc = $('#toCheer');
+    if (tc) tc.addEventListener('click', e => { e.preventDefault(); $('#cheerForm').scrollIntoView({ behavior: 'smooth' }); $('#cText').focus(); });
+    const cf = $('#cheerForm');
+    if (cf) cf.addEventListener('submit', e => {
+      e.preventDefault();
+      const text = $('#cText').value.trim();
+      if (!text) return;
+      addCheer(f.id, { name: $('#cName').value.trim(), text, date: today() });
+      toast('声を届けました');
+      renderFarm(f.id);
+      $('#cheerList').scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
+  // ---------- 画面: 畑だより ----------
+  function renderFeed() {
+    const fl = follows();
+    const items = [];
+    allFarms().forEach(f => (f.posts || []).forEach(p => items.push({ p, f })));
+    const shown = items
+      .filter(x => state.feedMode === 'all' || fl.includes(x.f.id))
+      .sort((a, b) => b.p.date.localeCompare(a.p.date));
+    app.innerHTML = `
+      <section class="hero-intro">
+        <h1>畑だより</h1>
+        <p>いま、畑で起きていること。農家さんから届く日々の便りです。</p>
+      </section>
+      <div style="margin:14px 0">
+        <div class="seg" id="feedSeg">
+          <button data-mode="all" class="${state.feedMode === 'all' ? 'on' : ''}">すべて</button>
+          <button data-mode="follow" class="${state.feedMode === 'follow' ? 'on' : ''}">フォロー中</button>
+        </div>
+      </div>
+      <div class="posts">
+        ${shown.length ? shown.map(x => postItem(x.p, x.f, { showFarm: true })).join('')
+          : `<div class="empty">${state.feedMode === 'follow' ? 'フォロー中の農家さんの便りはまだありません。<br><a href="#/">農家さんをさがす →</a>' : 'まだ便りがありません。'}</div>`}
+      </div>`;
+    $$('#feedSeg button').forEach(b => b.addEventListener('click', () => { state.feedMode = b.dataset.mode; renderFeed(); }));
+  }
+
+  // ---------- 画面: フォロー ----------
+  function renderFollows() {
+    const list = follows().map(findFarm).filter(Boolean);
+    app.innerHTML = `
+      <section class="hero-intro">
+        <h1>フォロー中の農家さん</h1>
+        <p>気になる農家さんをフォローすると、畑だよりで近況を追いかけられます。</p>
+      </section>
+      <div class="grid">${list.length ? list.map(farmCard).join('') : '<div class="empty">まだフォローしている農家さんはいません。<br><a href="#/">さがしにいく →</a></div>'}</div>`;
+  }
+
+  // ---------- 画面: 農家の方（登録・編集・投稿） ----------
+  let draftProducts = null;
+
+  function blankFarm() {
+    return {
+      id: 'mine-' + uid(), farmName: '', farmer: '', pref: '', city: '', lat: null, lng: null,
+      since: '', area: '', emoji: '🥬', hue: 0, catch: '', story: '',
+      methods: { pesticide: 'conventional', fertilizer: 'conventional', style: '露地', soil: '' },
+      certs: [], products: [], posts: []
+    };
+  }
+
+  function renderMine() {
+    const existing = myFarm();
+    const f = existing || blankFarm();
+    if (!draftProducts) draftProducts = (f.products || []).map(p => Object.assign({}, p));
+    const cheers = existing ? cheersFor(f.id) : [];
+    const posts = (f.posts || []).slice().sort((a, b) => b.date.localeCompare(a.date));
+
+    app.innerHTML = `
+      <section class="hero-intro">
+        <h1>${existing ? 'あなたの農園' : '農園を登録する'}</h1>
+        <p>${existing ? `<a href="#/farm/${esc(f.id)}">公開ページを見る →</a>` : '畑の場所と、育てているもの、そしてあなたの想いを書いてください。上手な文章でなくて大丈夫です。'}</p>
+      </section>
+
+      ${existing ? `
+      <h2 class="sec">畑だよりを書く</h2>
+      <form class="panel" id="postForm">
+        <div class="field"><label for="pTitle">ひとこと（タイトル）</label><input id="pTitle" maxlength="40" required placeholder="例：きゅうりの初収穫！"></div>
+        <div class="field"><label for="pBody">本文</label><textarea id="pBody" maxlength="600" placeholder="今日の畑のようす、作業のこと、天気のこと…"></textarea></div>
+        <div class="field"><label>アイコン</label>
+          <div class="emoji-pick">${EMOJIS.map((e, i) => `<label><input type="radio" name="pEmoji" value="${e}" ${i === EMOJIS.indexOf(f.emoji) || (EMOJIS.indexOf(f.emoji) < 0 && i === 0) ? 'checked' : ''}>${e}</label>`).join('')}</div>
+        </div>
+        <button class="btn" type="submit">投稿する</button>
+      </form>
+      <div class="posts" style="margin-top:12px" id="myPosts">${posts.map(p => postItem(p, f, { deletable: true })).join('')}</div>
+
+      <h2 class="sec">届いた声（${cheers.length}件）</h2>
+      <div class="cheers">${cheers.length ? cheers.map(c => `<div class="cheer"><div class="meta">${esc(c.name || '匿名')} ・ ${fmtDate(c.date)}</div><p>${esc(c.text)}</p></div>`).join('') : '<div class="small dim">まだ届いていません。</div>'}</div>
+      ` : ''}
+
+      <h2 class="sec">${existing ? '農園のプロフィールを編集' : '基本情報'}</h2>
+      <form class="panel" id="farmForm">
+        <div class="row2">
+          <div class="field"><label for="fName">農園名 *</label><input id="fName" required maxlength="40" value="${esc(f.farmName)}" placeholder="例：さとう農園"></div>
+          <div class="field"><label for="fFarmer">お名前 *</label><input id="fFarmer" required maxlength="40" value="${esc(f.farmer)}" placeholder="例：佐藤 太郎"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="fPref">都道府県 *</label>
+            <select id="fPref" required><option value="">選択</option>${PREFS.map(p => `<option ${f.pref === p ? 'selected' : ''}>${p}</option>`).join('')}</select></div>
+          <div class="field"><label for="fCity">市区町村 *</label><input id="fCity" required maxlength="40" value="${esc(f.city)}" placeholder="例：上田市"></div>
+        </div>
+        <div class="field">
+          <label>畑の位置</label>
+          <span class="hint">地図をタップして畑のだいたいの位置を指定してください。ご自宅が特定されないよう、少しずらしても構いません。指定しない場合は、都道府県の中心付近に表示されます。</span>
+          <div class="map small" id="pickMap"></div>
+          <span class="hint" id="pickInfo">${typeof f.lat === 'number' ? `指定済み（${f.lat.toFixed(3)}, ${f.lng.toFixed(3)}）` : 'まだ指定されていません'}</span>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="fSince">就農・創業した年</label><input id="fSince" type="number" min="1800" max="${new Date().getFullYear()}" value="${esc(f.since)}" placeholder="例：2015"></div>
+          <div class="field"><label for="fArea">畑の広さ</label><input id="fArea" maxlength="20" value="${esc(f.area)}" placeholder="例：1.5ha / 30a"></div>
+        </div>
+        <div class="field"><label>農園のアイコン</label>
+          <div class="emoji-pick">${EMOJIS.map(e => `<label><input type="radio" name="fEmoji" value="${e}" ${f.emoji === e ? 'checked' : ''}>${e}</label>`).join('')}</div>
+        </div>
+
+        <h3 style="margin:18px 0 8px;font-size:1rem">あなたの想い</h3>
+        <div class="field"><label for="fCatch">ひとことで言うと？ *</label><input id="fCatch" required maxlength="50" value="${esc(f.catch)}" placeholder="例：完熟まで待つ。それだけは譲れません。"></div>
+        <div class="field"><label for="fStory">どんな想いで作っていますか？ *</label>
+          <span class="hint">農業を始めたきっかけ、大切にしていること、食べる人に伝えたいこと。</span>
+          <textarea id="fStory" required maxlength="1500" style="min-height:160px">${esc(f.story)}</textarea></div>
+
+        <h3 style="margin:18px 0 8px;font-size:1rem">どんなふうに育てていますか</h3>
+        <div class="row2">
+          <div class="field"><label for="fPest">農薬</label>
+            <select id="fPest">${Object.entries(PESTICIDE).map(([k, v]) => `<option value="${k}" ${f.methods.pesticide === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></div>
+          <div class="field"><label for="fFert">化学肥料</label>
+            <select id="fFert">${Object.entries(FERTILIZER).map(([k, v]) => `<option value="${k}" ${f.methods.fertilizer === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="fStyle">栽培方式</label>
+            <select id="fStyle">${STYLES.map(s => `<option ${f.methods.style === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
+          <div class="field"><label for="fCerts">認証（あれば・カンマ区切り）</label><input id="fCerts" maxlength="80" value="${esc((f.certs || []).join(', '))}" placeholder="例：有機JAS, エコファーマー"></div>
+        </div>
+        <div class="field"><label for="fSoil">土づくり・こだわり</label><textarea id="fSoil" maxlength="400" placeholder="例：落ち葉堆肥で土づくり。天敵昆虫で害虫対策。">${esc(f.methods.soil)}</textarea></div>
+
+        <h3 style="margin:18px 0 8px;font-size:1rem">育てているもの *</h3>
+        <div class="prod-list" id="prodList"></div>
+        <div class="panel" style="background:var(--surface-2)">
+          <div class="row2">
+            <div class="field"><label for="nName">品目名</label><input id="nName" maxlength="30" placeholder="例：ミニトマト"></div>
+            <div class="field"><label for="nCat">種類</label><select id="nCat">${Object.entries(CATS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>
+          </div>
+          <div class="field"><label>収穫・お届けできる月</label>
+            <div class="months" id="nMonths">${MONTHS.map(m => `<label><input type="checkbox" value="${m}">${m}月</label>`).join('')}</div></div>
+          <div class="field"><label for="nNote">ひとことメモ</label><input id="nNote" maxlength="40" placeholder="例：皮ごと食べられます"></div>
+          <button class="btn ghost small" type="button" id="addProd">＋ この品目を追加</button>
+        </div>
+
+        <div class="actions">
+          <button class="btn" type="submit">${existing ? '変更を保存' : '登録して公開する'}</button>
+          ${existing ? '<button class="btn danger" type="button" id="deleteFarm">登録を削除</button>' : ''}
+        </div>
+      </form>
+      <p class="notice">試作版のため、登録内容はこの端末のブラウザ内にだけ保存され、他の人には見えません。本番版ではサーバーに保存し、本人確認を行う想定です。</p>
+    `;
+
+    let picked = typeof f.lat === 'number' ? [f.lat, f.lng] : null;
+    const pm = makeMap($('#pickMap'), { center: picked || [36.5, 137.5], zoom: picked ? 10 : 5 });
+    let pmMarker = null;
+    if (pm) {
+      if (picked) pmMarker = L.marker(picked, { icon: pinIcon(f.emoji) }).addTo(pm);
+      pm.on('click', e => {
+        picked = [Math.round(e.latlng.lat * 1000) / 1000, Math.round(e.latlng.lng * 1000) / 1000];
+        if (pmMarker) pmMarker.setLatLng(picked); else pmMarker = L.marker(picked, { icon: pinIcon(f.emoji) }).addTo(pm);
+        $('#pickInfo').textContent = `指定済み（${picked[0].toFixed(3)}, ${picked[1].toFixed(3)}）`;
+      });
+    }
+
+    $('#fPref').addEventListener('change', e => {
+      const c = PREF_CENTER[e.target.value];
+      if (pm && c && !picked) pm.setView(c, 8, { animate: false });
+    });
+
+    function drawProducts() {
+      $('#prodList').innerHTML = draftProducts.length ? draftProducts.map((p, i) => `
+        <div class="prod-item"><span><b>${esc(p.name)}</b> <span class="dim small">${CATS[p.cat] || ''}・${p.months.length === 12 ? '通年' : p.months.map(m => m + '月').join(' ')}</span></span>
+        <button class="btn danger small" type="button" data-rm="${i}">削除</button></div>`).join('')
+        : '<div class="small dim">まだ品目がありません。下のフォームから追加してください。</div>';
+      $$('#prodList [data-rm]').forEach(b => b.addEventListener('click', () => { draftProducts.splice(Number(b.dataset.rm), 1); drawProducts(); }));
+    }
+    drawProducts();
+
+    $('#addProd').addEventListener('click', () => {
+      const name = $('#nName').value.trim();
+      const months = $$('#nMonths input:checked').map(i => Number(i.value));
+      if (!name) { toast('品目名を入力してください'); return; }
+      if (!months.length) { toast('収穫できる月を1つ以上選んでください'); return; }
+      draftProducts.push({ name, cat: $('#nCat').value, months, note: $('#nNote').value.trim() });
+      $('#nName').value = ''; $('#nNote').value = '';
+      $$('#nMonths input').forEach(i => { i.checked = false; });
+      drawProducts();
+    });
+
+    $('#farmForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const pos = picked || PREF_CENTER[$('#fPref').value];
+      if (!pos) { toast('都道府県を選んでください'); return; }
+      if (!draftProducts.length) { toast('育てているものを1つ以上追加してください'); $('#nName').focus(); return; }
+      const emoji = ($('input[name=fEmoji]:checked') || {}).value || '🥬';
+      const saved = Object.assign({}, f, {
+        farmName: $('#fName').value.trim(),
+        farmer: $('#fFarmer').value.trim(),
+        pref: $('#fPref').value,
+        city: $('#fCity').value.trim(),
+        lat: pos[0], lng: pos[1],
+        since: $('#fSince').value ? Number($('#fSince').value) : '',
+        area: $('#fArea').value.trim(),
+        emoji, hue: Math.max(0, EMOJIS.indexOf(emoji)) % HUES.length,
+        catch: $('#fCatch').value.trim(),
+        story: $('#fStory').value.trim(),
+        methods: { pesticide: $('#fPest').value, fertilizer: $('#fFert').value, style: $('#fStyle').value, soil: $('#fSoil').value.trim() },
+        certs: $('#fCerts').value.split(/[,、，]/).map(s => s.trim()).filter(Boolean),
+        products: draftProducts.slice()
+      });
+      if (store.set(KEY.mine, saved)) {
+        draftProducts = null;
+        toast(existing ? '保存しました' : '登録しました！畑だよりも書いてみましょう');
+        location.hash = existing ? '#/mine' : `#/farm/${saved.id}`;
+        if (existing) renderMine();
+      }
+    });
+
+    const del = $('#deleteFarm');
+    if (del) del.addEventListener('click', () => {
+      if (!confirm('農園の登録と、畑だよりをすべて削除します。よろしいですか？')) return;
+      try { localStorage.removeItem(KEY.mine); } catch (err) { /* noop */ }
+      draftProducts = null;
+      toast('削除しました');
+      renderMine();
+    });
+
+    const pf = $('#postForm');
+    if (pf) pf.addEventListener('submit', e => {
+      e.preventDefault();
+      const cur = myFarm();
+      const title = $('#pTitle').value.trim();
+      if (!cur || !title) return;
+      cur.posts = cur.posts || [];
+      cur.posts.push({ id: uid(), date: today(), emoji: ($('input[name=pEmoji]:checked') || {}).value || cur.emoji, title, body: $('#pBody').value.trim() });
+      if (store.set(KEY.mine, cur)) { toast('畑だよりを投稿しました'); renderMine(); }
+    });
+    $$('[data-del-post]').forEach(b => b.addEventListener('click', () => {
+      if (!confirm('この投稿を削除しますか？')) return;
+      const cur = myFarm();
+      cur.posts = (cur.posts || []).filter(p => p.id !== b.dataset.delPost);
+      if (store.set(KEY.mine, cur)) renderMine();
+    }));
+  }
+
+  // ---------- ルーティング ----------
+  const app = $('#app');
+  function route() {
+    clearMaps();
+    const h = location.hash.replace(/^#/, '') || '/';
+    const parts = h.split('/').filter(Boolean);
+    let tab = 'explore';
+    if (parts[0] !== 'mine') draftProducts = null;
+    if (parts[0] === 'farm' && parts[1]) { renderFarm(decodeURIComponent(parts[1])); tab = ''; }
+    else if (parts[0] === 'feed') { renderFeed(); tab = 'feed'; }
+    else if (parts[0] === 'follows') { renderFollows(); tab = 'follows'; }
+    else if (parts[0] === 'mine') { renderMine(); tab = 'mine'; }
+    else renderExplore();
+    $$('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.tab === tab));
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', route);
+
+  // ---------- テーマ ----------
+  function applyTheme(t) {
+    if (t) document.documentElement.setAttribute('data-theme', t); else document.documentElement.removeAttribute('data-theme');
+  }
+  applyTheme(store.get(KEY.theme, null));
+  $('#themeBtn').addEventListener('click', () => {
+    const cur = document.documentElement.getAttribute('data-theme')
+      || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    store.set(KEY.theme, next);
+  });
+
+  route();
+})();
+</script>
+</body>
+</html>
