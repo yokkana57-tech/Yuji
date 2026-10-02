@@ -1,0 +1,8 @@
+{
+  "appId": "jp.yamaguchi.hatakenotonari",
+  "appName": "畑のとなり",
+  "webDir": "www",
+  "backgroundColor": "#FFF6E3",
+  "ios": { "contentInset": "never" },
+  "android": { "allowMixedContent": false }
+}

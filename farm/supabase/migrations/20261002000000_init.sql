@@ -22,6 +22,7 @@ create table public.farms (
   hue int not null default 0 check (hue between 0 and 31),
   catch text not null default '' check (char_length(catch) <= 50),
   story text not null default '' check (char_length(story) <= 1500),
+  cover_url text check (cover_url is null or cover_url ~ '^https://'),
   methods jsonb not null default '{}'::jsonb,
   certs text[] not null default '{}',
   -- {"enabled":bool,"place":text,"days":[0-6],"from":int,"to":int,"note":text}
@@ -61,6 +62,7 @@ create table public.posts (
   emoji text not null default '🌱' check (char_length(emoji) <= 8),
   title text not null check (char_length(title) between 1 and 40),
   body text not null default '' check (char_length(body) <= 600),
+  photo_url text check (photo_url is null or photo_url ~ '^https://'),
   created_at timestamptz not null default now()
 );
 create index posts_farm_idx on public.posts(farm_id, created_at desc);
@@ -79,8 +81,10 @@ create index cheers_farm_idx on public.cheers(farm_id, created_at desc);
 -- ---------- 注文 ----------
 create table public.orders (
   id uuid primary key default gen_random_uuid(),
-  farm_id uuid not null references public.farms(id) on delete restrict,
-  buyer_id uuid not null references auth.users(id) on delete restrict,
+  -- 農家さん・お客さんがアカウントを削除しても、売上の記録として注文は残す（参照だけ外す）
+  farm_id uuid references public.farms(id) on delete set null,
+  farm_name text not null default '',
+  buyer_id uuid references auth.users(id) on delete set null,
   code text not null,
   method text not null check (method in ('ship','pickup')),
   -- [{"product_id","name","unit","qty","price"}]（注文時点の内容を保存）
@@ -145,9 +149,9 @@ create policy orders_read on public.orders for select to authenticated using (bu
 
 -- Stripe の口座情報など、農家さん本人にも書き換えさせない列を守る
 revoke insert, update on public.farms from anon, authenticated;
-grant insert (farm_name, farmer, city, lat, lng, lat_picked, since, area, emoji, hue, catch, story, methods, certs, pickup, cancel_days, published)
+grant insert (farm_name, farmer, city, lat, lng, lat_picked, since, area, emoji, hue, catch, story, cover_url, methods, certs, pickup, cancel_days, published)
   on public.farms to authenticated;
-grant update (farm_name, farmer, city, lat, lng, lat_picked, since, area, emoji, hue, catch, story, methods, certs, pickup, cancel_days, published)
+grant update (farm_name, farmer, city, lat, lng, lat_picked, since, area, emoji, hue, catch, story, cover_url, methods, certs, pickup, cancel_days, published)
   on public.farms to authenticated;
 revoke insert, update, delete on public.orders from anon, authenticated;
 
@@ -220,9 +224,9 @@ begin
     deadline := least(deadline, (pdate::timestamp) at time zone 'Asia/Tokyo');
   end if;
 
-  insert into public.orders (farm_id, buyer_id, code, method, items, total, pickup, ship, buyer_name, buyer_tel, cancel_deadline)
+  insert into public.orders (farm_id, farm_name, buyer_id, code, method, items, total, pickup, ship, buyer_name, buyer_tel, cancel_deadline)
   values (
-    p_farm, p_buyer, lpad((floor(random() * 9000) + 1000)::int::text, 4, '0'), p_method, lines, total,
+    p_farm, f.farm_name, p_buyer, lpad((floor(random() * 9000) + 1000)::int::text, 4, '0'), p_method, lines, total,
     case when p_method = 'pickup' then jsonb_build_object(
       'date', pdate, 'hour', phour, 'time', phour || ':00〜' || (phour + 1) || ':00',
       'place', coalesce(nullif(f.pickup->>'place',''), f.city), 'msg', left(coalesce(p_pickup->>'msg',''), 100)) end,
@@ -293,3 +297,80 @@ grant execute on function public.restore_stock(jsonb), public.create_order(uuid,
   public.mark_order_paid(uuid, text), public.release_order(uuid), public.begin_cancel(uuid, uuid) to service_role;
 revoke execute on function public.farmer_update_order(uuid, text, text) from public, anon;
 grant execute on function public.farmer_update_order(uuid, text, text) to authenticated;
+
+-- ======================================================================
+--  なかま市（農家どうしの譲り合い・売買）
+--  農園を登録した人だけが見られる。お金のやりとりはアプリの外（受け渡し時に直接）。
+-- ======================================================================
+create function public.is_farmer() returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.farms where owner_id = auth.uid());
+$$;
+
+create table public.market_items (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references auth.users(id) on delete cascade default auth.uid(),
+  farm_id uuid not null references public.farms(id) on delete cascade,
+  kind text not null check (kind in ('give','sell','want')),
+  cat text not null check (cat in ('tool','machine','material','seed','other')),
+  title text not null check (char_length(title) between 1 and 40),
+  body text not null default '' check (char_length(body) <= 800),
+  price int check (price is null or price between 0 and 10000000),
+  condition text not null default '' check (char_length(condition) <= 30),
+  photos text[] not null default '{}' check (cardinality(photos) <= 3),
+  status text not null default 'open' check (status in ('open','reserved','closed')),
+  created_at timestamptz not null default now(),
+  constraint price_matches_kind check (
+    (kind = 'sell' and price > 0) or (kind = 'give' and coalesce(price, 0) = 0) or (kind = 'want' and price is null))
+);
+create index market_items_created_idx on public.market_items(created_at desc);
+
+create table public.market_messages (
+  id uuid primary key default gen_random_uuid(),
+  item_id uuid not null references public.market_items(id) on delete cascade,
+  -- 出品者とやりとりしている相手（スレッドの単位）
+  buyer_id uuid not null references auth.users(id) on delete cascade,
+  sender_id uuid not null references auth.users(id) on delete cascade default auth.uid(),
+  text text not null check (char_length(text) between 1 and 500),
+  created_at timestamptz not null default now()
+);
+create index market_messages_item_idx on public.market_messages(item_id, created_at);
+
+create function public.item_owner(i uuid) returns uuid language sql stable security definer set search_path = public as $$
+  select owner_id from public.market_items where id = i;
+$$;
+
+alter table public.market_items enable row level security;
+alter table public.market_messages enable row level security;
+
+create policy market_items_read on public.market_items for select to authenticated using (public.is_farmer());
+create policy market_items_insert on public.market_items for insert to authenticated
+  with check (owner_id = auth.uid() and public.owns_farm(farm_id));
+create policy market_items_update on public.market_items for update to authenticated using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+create policy market_items_delete on public.market_items for delete to authenticated using (owner_id = auth.uid());
+
+-- メッセージは、出品者とその相手だけが読める
+create policy market_messages_read on public.market_messages for select to authenticated
+  using (buyer_id = auth.uid() or public.item_owner(item_id) = auth.uid());
+-- 相手は自分のスレッドにだけ、出品者はどのスレッドにも書ける（自分の出品に自分で問い合わせはできない）
+create policy market_messages_insert on public.market_messages for insert to authenticated
+  with check (sender_id = auth.uid() and public.is_farmer() and (
+    (buyer_id = auth.uid() and public.item_owner(item_id) <> auth.uid()) or
+    (public.item_owner(item_id) = auth.uid() and buyer_id <> auth.uid())));
+
+revoke update on public.market_items from authenticated;
+grant update (kind, cat, title, body, price, condition, photos, status) on public.market_items to authenticated;
+revoke update on public.market_messages from authenticated;
+
+-- ======================================================================
+--  写真の保存場所（Supabase Storage）
+--  だれでも見られる。アップロード・削除は本人のフォルダ（ユーザーID/…）だけ。
+-- ======================================================================
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('photos', 'photos', true, 5242880, array['image/jpeg','image/png','image/webp'])
+on conflict (id) do nothing;
+
+create policy photos_read on storage.objects for select using (bucket_id = 'photos');
+create policy photos_insert on storage.objects for insert to authenticated
+  with check (bucket_id = 'photos' and (storage.foldername(name))[1] = auth.uid()::text);
+create policy photos_delete on storage.objects for delete to authenticated
+  using (bucket_id = 'photos' and (storage.foldername(name))[1] = auth.uid()::text);

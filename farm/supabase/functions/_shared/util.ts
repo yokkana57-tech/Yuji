@@ -17,15 +17,24 @@ export const SITE_URL = (Deno.env.get('SITE_URL') ?? '').replace(/#.*$/, '');
 // プラットフォーム手数料（%）。0 なら売上は全額農家さんへ（Stripe の決済手数料は別途かかる）
 export const FEE_PERCENT = Math.max(0, Number(Deno.env.get('PLATFORM_FEE_PERCENT') ?? '0') || 0);
 
-const allowOrigin = SITE_URL ? new URL(SITE_URL).origin : '*';
-export const cors = {
-  'Access-Control-Allow-Origin': allowOrigin,
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// 呼び出しを許可する画面：公開サイトと、iPhone・Android アプリ（Capacitor）
+const ALLOWED_ORIGINS = new Set([
+  SITE_URL ? new URL(SITE_URL).origin : '',
+  'capacitor://localhost', // iPhone アプリ
+  'https://localhost',     // Android アプリ
+].filter(Boolean));
+function corsFor(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') ?? '';
+  return {
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.has(origin) ? origin : [...ALLOWED_ORIGINS][0] ?? '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  };
+}
 
 export function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 }
 
 export async function requireUser(req: Request): Promise<User> {
@@ -72,12 +81,16 @@ export function friendly(err: unknown): { status: number; message: string } {
 
 export function handler(fn: (req: Request) => Promise<Response>) {
   return async (req: Request) => {
+    const cors = corsFor(req);
     if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+    let res: Response;
     try {
-      return await fn(req);
+      res = await fn(req);
     } catch (err) {
       const { status, message } = friendly(err);
-      return json({ error: message }, status);
+      res = json({ error: message }, status);
     }
+    for (const [k, v] of Object.entries(cors)) res.headers.set(k, v);
+    return res;
   };
 }
