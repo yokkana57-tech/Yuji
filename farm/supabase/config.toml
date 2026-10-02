@@ -1,0 +1,9 @@
+project_id = "yamaguchi-hatake"
+
+[auth]
+# GitHub Pages で公開する URL に合わせて変更してください
+site_url = "https://yokkana57-tech.github.io/Yuji/farm/"
+
+# Stripe からの通知は Supabase のログイン情報を持たないので、JWT 検証を外して Stripe の署名で検証する
+[functions.stripe-webhook]
+verify_jwt = false

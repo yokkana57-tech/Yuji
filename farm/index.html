@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>やまぐち畑のとなり</title>
+<meta name="description" content="山口県の農家さんと、山口に住む人をまっすぐつなぐアプリ。">
+<meta name="theme-color" content="#3FA34D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="畑のとなり">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
+<link rel="stylesheet" href="app.css">
+<script>
+  // 読み込みに失敗したときに「よみこみ中…」のまま止まらないよう、原因を画面に出す
+  window.__bootError = function (msg) {
+    if (window.__booted) return;
+    var el = document.getElementById('app');
+    if (el) el.innerHTML = '<div class="empty boot-error">アプリを読み込めませんでした。<br>通信状況を確認して、開きなおしてください。<br><small>' +
+      String(msg || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }) + '</small></div>';
+  };
+  window.addEventListener('error', function (e) { window.__bootError((e.message || 'エラー') + (e.filename ? '（' + e.filename.split('/').pop() + ':' + e.lineno + '）' : '')); });
+  setTimeout(function () { window.__bootError('時間がかかりすぎています。'); }, 12000);
+</script>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <a class="brand" href="#/"><span class="veg">🥕</span> やまぐち畑のとなり<small>山口の農家さんと、まっすぐつながる</small></a>
+    <span class="spacer"></span>
+    <span class="mode-tag" id="modeTag" hidden>お試し版</span>
+    <button class="theme-btn" id="themeBtn" title="表示テーマ切替" aria-label="表示テーマ切替">◐</button>
+  </div>
+</header>
+
+<main id="app"><div class="loading">よみこみ中…</div></main>
+<div id="cartbarSlot"></div>
+
+<nav class="tabs" id="tabs">
+  <a href="#/" data-tab="explore"><span class="ic">🗾</span>さがす</a>
+  <a href="#/feed" data-tab="feed"><span class="ic">📰</span>畑だより</a>
+  <a href="#/follows" data-tab="follows"><span class="ic">💚</span>フォロー</a>
+  <a href="#/orders" data-tab="orders"><span class="ic">🧺</span>注文</a>
+  <a href="#/mine" data-tab="mine"><span class="ic">👩‍🌾</span>農家の方</a>
+</nav>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- 本番接続の設定（Supabase の URL と公開キー）。無い・空ならお試し版として端末内だけで動く -->
+<script src="config.js"></script>
+<script src="geo.js" onerror="__bootError('地図データ（geo.js）を読み込めませんでした')"></script>
+<script src="app.js" onerror="__bootError('アプリ本体（app.js）を読み込めませんでした')"></script>
+</body>
+</html>

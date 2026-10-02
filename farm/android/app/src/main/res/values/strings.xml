@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">畑のとなり</string>
+    <string name="title_activity_main">畑のとなり</string>
+    <string name="package_name">jp.yamaguchi.hatakenotonari</string>
+    <string name="custom_url_scheme">jp.yamaguchi.hatakenotonari</string>
+</resources>
