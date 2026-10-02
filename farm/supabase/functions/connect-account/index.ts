@@ -1,9 +1,10 @@
 // 農家さんの売上受け取り口座（Stripe Connect Express）の登録と状態確認。
 // body: { action: 'onboard' } → 登録画面の URL を返す
 //       { action: 'status' }  → Stripe に問い合わせて、注文を受けられるかを更新して返す
-import { admin, handler, HttpError, json, requireUser, SITE_URL, stripe } from '../_shared/util.ts';
+import { admin, requireStripe, handler, HttpError, json, requireUser, SITE_URL, stripe } from '../_shared/util.ts';
 
 Deno.serve(handler(async (req) => {
+  requireStripe();
   const user = await requireUser(req);
   const { action } = (await req.json()) as { action: 'onboard' | 'status' };
 

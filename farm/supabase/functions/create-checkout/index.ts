@@ -1,6 +1,6 @@
 // 注文を作って在庫を確保し、Stripe Checkout（決済画面）の URL を返す。
 // 価格はブラウザから受け取らず、必ずデータベースの値で計算する。
-import { admin, FEE_PERCENT, handler, HttpError, json, requireUser, SITE_URL, stripe } from '../_shared/util.ts';
+import { admin, requireStripe, FEE_PERCENT, handler, HttpError, json, requireUser, SITE_URL, stripe } from '../_shared/util.ts';
 
 type Body = {
   farm_id: string;
@@ -12,6 +12,7 @@ type Body = {
 };
 
 Deno.serve(handler(async (req) => {
+  requireStripe();
   const user = await requireUser(req);
   const body = (await req.json()) as Body;
   if (!SITE_URL) throw new Error('SITE_URL is not set');
