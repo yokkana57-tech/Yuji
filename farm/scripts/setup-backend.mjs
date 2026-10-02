@@ -70,12 +70,16 @@ const codeMail = `<h2>やまぐち畑のとなり ログインコード</h2>
 const auth = {
   site_url: SITE_URL,
   uri_allow_list: [SITE_URL, 'capacitor://localhost', 'https://localhost'].join(','),
-  mailer_subjects_magic_link: '【やまぐち畑のとなり】ログインコード',
-  mailer_templates_magic_link_content: codeMail,
-  mailer_subjects_confirmation: '【やまぐち畑のとなり】ログインコード',
-  mailer_templates_confirmation_content: codeMail,
 };
+// 無料プランの標準メール送信では文面を変えられないので、文面はメール送信サービス（SMTP）をつないだときだけ設定する。
+// それまでは、メールに届くリンクを開いてログインする。
 if (RESEND) {
+  Object.assign(auth, {
+    mailer_subjects_magic_link: '【やまぐち畑のとなり】ログインコード',
+    mailer_templates_magic_link_content: codeMail,
+    mailer_subjects_confirmation: '【やまぐち畑のとなり】ログインコード',
+    mailer_templates_confirmation_content: codeMail,
+  });
   if (!MAIL_FROM) throw new Error('RESEND_API_KEY を使うときは MAIL_FROM（送信元アドレス）も必要です');
   Object.assign(auth, {
     smtp_host: 'smtp.resend.com', smtp_port: '465', smtp_user: 'resend', smtp_pass: RESEND,
@@ -83,7 +87,7 @@ if (RESEND) {
   });
 }
 await sb('/config/auth', 'PATCH', auth);
-console.log(`  ログインコードのメール文面と公開URLを設定しました${RESEND ? '。メール送信は Resend を使います' : '（メール送信サービスは未設定）'}`);
+console.log(RESEND ? '  公開URL・メール送信（Resend）・ログインコードの文面を設定しました' : '  公開URLを設定しました（メール送信サービスは未設定のため、ログインはメールのリンクで行います）');
 
 // ---- 4. Stripe ----
 const secrets = [

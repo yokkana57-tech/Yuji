@@ -953,17 +953,17 @@
     return `
       <div class="panel" id="loginPanel">
         <h3 style="font-size:1.05rem">🔑 ログイン</h3>
-        <p class="small dim" style="margin:4px 0 12px">${esc(reason)}メールに届く6桁のコードでログインします。パスワードは不要です。</p>
+        <p class="small dim" style="margin:4px 0 12px">${esc(reason)}メールアドレスに届くログイン用のメールで、パスワードなしでログインできます。</p>
         <form id="loginForm" class="field" style="margin:0">
           <label for="lgEmail">メールアドレス</label>
           <input id="lgEmail" type="email" autocomplete="email" required placeholder="you@example.com">
           <button class="btn leaf" type="submit" style="margin-top:8px">ログイン用のメールを送る</button>
         </form>
         <form id="codeForm" class="field" style="margin:12px 0 0" hidden>
-          <label for="lgCode">メールに書かれた6桁のコード</label>
+          <p class="small" style="margin:0 0 6px"><b>📩 メールを送りました。</b>${NATIVE ? 'メールに書かれた6桁のコードを入力してください。' : 'このブラウザで、メールの中のリンクを開いてください。メールに6桁のコードが書かれていれば、下に入力してもログインできます。'}</p>
+          <label for="lgCode">メールに書かれた6桁のコード（ある場合）</label>
           <input id="lgCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="123456">
           <button class="btn" type="submit" style="margin-top:8px">ログインする</button>
-          ${NATIVE ? '' : '<span class="hint">メールのリンクを開いてもログインできます。</span>'}
         </form>
       </div>`;
   }
