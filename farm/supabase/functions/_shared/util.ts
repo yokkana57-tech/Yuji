@@ -78,6 +78,11 @@ const MESSAGES: Record<string, string> = {
 };
 export function friendly(err: unknown): { status: number; message: string } {
   if (err instanceof HttpError) return { status: err.status, message: MESSAGES[err.message] ?? err.message };
+  // Stripe のエラーは、原因が分かるように内容をそのまま伝える
+  if ((err as { type?: string })?.type?.startsWith?.('Stripe')) {
+    console.error(err);
+    return { status: 502, message: '決済サービスでエラーが起きました：' + ((err as { message?: string }).message ?? '') };
+  }
   const raw = (err as { message?: string })?.message ?? String(err);
   const [code, detail] = raw.split(':');
   if (MESSAGES[code]) return { status: 400, message: MESSAGES[code] + (detail ? `（${detail}）` : '') };
