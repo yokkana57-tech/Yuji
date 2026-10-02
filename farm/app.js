@@ -222,6 +222,24 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
   }
+
+  // アプリ内の確認ダイアログ（ブラウザ標準の確認ダイアログは、アプリや一部の画面では表示されないため）
+  function ask(message, okLabel = 'はい', danger = false) {
+    return new Promise(resolve => {
+      const wrap = document.createElement('div');
+      wrap.className = 'modal';
+      wrap.innerHTML = `<div class="modal-card" role="alertdialog" aria-modal="true" aria-labelledby="askMsg">
+        <p id="askMsg">${esc(message).replace(/\n/g, '<br>')}</p>
+        <div class="modal-actions"><button type="button" class="btn ghost" data-a="no">やめる</button><button type="button" class="btn ${danger ? '' : 'leaf'}" data-a="yes">${esc(okLabel)}</button></div>
+      </div>`;
+      const done = v => { wrap.remove(); document.removeEventListener('keydown', onKey); resolve(v); };
+      const onKey = e => { if (e.key === 'Escape') done(false); };
+      wrap.addEventListener('click', e => { if (e.target === wrap) done(false); const a = e.target.closest && e.target.closest('[data-a]'); if (a) done(a.dataset.a === 'yes'); });
+      document.addEventListener('keydown', onKey);
+      document.body.appendChild(wrap);
+      $('[data-a=yes]', wrap).focus();
+    });
+  }
   const inSeason = p => (p.months || []).includes(NOW_MONTH);
   const inSeasonNow = f => (f.products || []).some(inSeason);
   const seasonalNames = f => (f.products || []).filter(inSeason).map(p => p.name);
@@ -981,7 +999,7 @@
   let installEvt = null;
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; });
   function installBanner() {
-    if (STANDALONE || store.get(KEY.install, false)) return '';
+    if (STANDALONE || CFG.preview || store.get(KEY.install, false)) return '';
     if (IOS) return `<div class="install" id="installBar"><img src="icons/icon-192.png" alt=""><span class="tx">ホーム画面に追加すると、アプリとして使えます。<br>Safari の共有ボタン <b>□↑</b> →「<b>ホーム画面に追加</b>」</span><button class="x" aria-label="閉じる">×</button></div>`;
     if (installEvt) return `<div class="install" id="installBar"><img src="icons/icon-192.png" alt=""><span class="tx">アプリとしてホーム画面に追加できます。</span><button class="btn small leaf" id="installBtn">追加</button><button class="x" aria-label="閉じる">×</button></div>`;
     return '';
@@ -1358,13 +1376,13 @@
       if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }));
 
-    function changeQty(pid, d) {
+    async function changeQty(pid, d) {
       const p = f.products.find(x => x.id === pid);
       if (!p) return;
       if (cart.farmId !== f.id) {
         if (cart.farmId && Object.values(cart.items).some(Boolean)) {
           const other = findFarm(cart.farmId);
-          if (!confirm(`カートに「${other ? other.farmName : '別の農家さん'}」の商品があります。\n注文は1回につき1軒の農家さんずつです。カートを入れ替えますか？`)) return;
+          if (!(await ask(`カートに「${other ? other.farmName : '別の農家さん'}」の商品があります。\n注文は1回につき1軒の農家さんずつです。カートを入れ替えますか？`, '入れ替える'))) return;
         }
         cart = { farmId: f.id, items: {} };
       }
@@ -1620,7 +1638,7 @@
       const msg = api.mode === 'live'
         ? 'アカウントを削除すると、農園・畑だより・なかま市の出品もすべて消え、元に戻せません。\n（進行中の注文がある場合は削除できません）\n本当に削除しますか？'
         : 'この端末に保存したお試し版のデータ（農園・注文・メッセージなど）をすべて消します。よろしいですか？';
-      if (!confirm(msg)) return;
+      if (!(await ask(msg, api.mode === 'live' ? '削除する' : '消す', true))) return;
       try { await api.deleteAccount(); cart = { farmId: null, items: {} }; await reload(); draftProducts = null; toast(api.mode === 'live' ? 'アカウントを削除しました' : 'データを消しました'); go('#/'); }
       catch (err) { toast(err.message); }
     }));
@@ -1697,7 +1715,7 @@
     if (pa) pa.addEventListener('click', () => openExternal(o.checkoutUrl, () => renderOrder(o.id, true)));
     const cb = $('#cancelBtn');
     if (cb) cb.addEventListener('click', async () => {
-      if (!confirm(o.status === 'pending_payment' ? 'この注文をやめますか？' : 'この注文をキャンセルしますか？\n代金は全額返金されます。')) return;
+      if (!(await ask(o.status === 'pending_payment' ? 'この注文をやめますか？' : 'この注文をキャンセルしますか？\n代金は全額返金されます。', 'キャンセルする', true))) return;
       cb.disabled = true;
       try {
         await api.cancelOrder(o.id);
@@ -1830,7 +1848,7 @@
     });
     function bindOrders() {
       $$('[data-adv]').forEach(b => b.addEventListener('click', async () => {
-        if (b.dataset.to !== 'done' && !confirm('準備を始めると、お客さんはキャンセルできなくなります。よろしいですか？')) return;
+        if (b.dataset.to !== 'done' && !(await ask('準備を始めると、お客さんはキャンセルできなくなります。よろしいですか？', b.dataset.to === 'ready' ? '準備できた' : '発送した'))) return;
         try { await api.updateOrder(b.dataset.adv, b.dataset.to); toast('更新しました'); } catch (err) { toast(err.message); }
         $('#farmerOrders').innerHTML = farmerOrderCards(await api.farmOrders(f.id)); bindOrders(); updateBadge();
       }));
@@ -1878,7 +1896,7 @@
       } catch (err) { toast('投稿できませんでした：' + (err.message || '')); }
     });
     $$('[data-del-post]').forEach(b => b.addEventListener('click', async () => {
-      if (!confirm('この投稿を削除しますか？')) return;
+      if (!(await ask('この投稿を削除しますか？', '削除する', true))) return;
       await api.deletePost(b.dataset.delPost);
       await reload();
       route();
@@ -2036,7 +2054,7 @@
     }));
     const del = $('#mkDel');
     if (del) del.addEventListener('click', async () => {
-      if (!confirm('この出品を削除しますか？メッセージも消えます。')) return;
+      if (!(await ask('この出品を削除しますか？メッセージも消えます。', '削除する', true))) return;
       try { await api.marketDelete(it.id); toast('削除しました'); go('#/mine/market'); } catch (err) { toast(err.message); }
     });
   }
@@ -2264,7 +2282,7 @@
 
     const del = $('#deleteFarm');
     if (del) del.addEventListener('click', async () => {
-      if (!confirm('農園の登録と、畑だよりをすべて削除します。よろしいですか？')) return;
+      if (!(await ask('農園の登録と、畑だよりをすべて削除します。よろしいですか？', '削除する', true))) return;
       const r = await api.deleteFarm(f);
       draftProducts = null;
       await reload();

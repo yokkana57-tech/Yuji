@@ -395,3 +395,11 @@
   .install img { width: 44px; height: 44px; border-radius: 10px; flex: none; }
   .install .tx { flex: 1; line-height: 1.5; }
   .install .x { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 4px; color: var(--text-dim); }
+
+  /* ---------- 確認ダイアログ ---------- */
+  .modal { position: fixed; inset: 0; z-index: 3000; background: rgba(20, 18, 14, .55); display: flex; align-items: center; justify-content: center; padding: 16px; animation: fade .15s ease; }
+  .modal-card { background: var(--surface); border: 3px solid var(--ink); border-radius: var(--radius-lg); box-shadow: 5px 5px 0 var(--ink); padding: 20px 18px 16px; width: 100%; max-width: 360px; }
+  .modal-card p { margin: 0 0 16px; font-weight: 700; line-height: 1.7; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .modal { animation: none; } }
