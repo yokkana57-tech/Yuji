@@ -9,7 +9,7 @@
 //   SUPABASE_PROJECT_REF   省略時 gjjenadfrmtwibvyrsdb（「山口畑」）
 //   SITE_URL               省略時 https://yokkana57-tech.github.io/Yuji/farm/
 //   STRIPE_SECRET_KEY      任意。あれば Stripe の通知先（Webhook）作成と、決済用の秘密キー登録まで行う
-//   PLATFORM_FEE_PERCENT   任意。運営の手数料（%）。省略時 0
+//   PLATFORM_FEE_PERCENT   任意。カード払いで農家さんの売上から差し引く決済手数料（%）。省略時 3.6（Stripe の実費）
 //   RESEND_API_KEY         任意。あればログイン用メールの送信（SMTP）を設定する
 //   MAIL_FROM              RESEND_API_KEY を使うときの送信元（例: no-reply@example.jp）
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -19,7 +19,7 @@ const TOKEN = process.env.SUPABASE_ACCESS_TOKEN;
 const REF = process.env.SUPABASE_PROJECT_REF || 'gjjenadfrmtwibvyrsdb';
 const SITE_URL = process.env.SITE_URL || 'https://yokkana57-tech.github.io/Yuji/farm/';
 const STRIPE = process.env.STRIPE_SECRET_KEY || '';
-const FEE = process.env.PLATFORM_FEE_PERCENT || '0';
+const FEE = process.env.PLATFORM_FEE_PERCENT || '3.6'; // Stripe の決済手数料の実費。運営の取り分はなし
 const RESEND = process.env.RESEND_API_KEY || '';
 const MAIL_FROM = process.env.MAIL_FROM || '';
 if (!TOKEN) { console.error('SUPABASE_ACCESS_TOKEN がありません'); process.exit(1); }
