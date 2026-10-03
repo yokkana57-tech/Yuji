@@ -257,6 +257,9 @@
   }
   const fmtKm = d => d < 1 ? '1km以内' : `約${Math.round(d)}km`;
   const gmapUrl = f => `https://www.google.com/maps/search/?api=1&query=${f.lat},${f.lng}`;
+  // 住所が分かるときは住所で、分からないときは地図で選んだ位置で Google マップを開く
+  const fullAddr = a => (/^山口県/.test(a) ? a : '山口県' + a);
+  const gmapAddrUrl = (addr, ll) => addr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddr(addr))}` : gmapUrl(ll);
   function loadScript(src) {
     return new Promise((ok, ng) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => ng(new Error('読み込めませんでした: ' + src)); document.head.appendChild(s); });
   }
@@ -433,8 +436,10 @@
     },
     async myFarm() {
       if (!this.user) return null;
-      const { data } = await this.sb.from('farms').select('*, products(*), posts(*)').eq('owner_id', this.user.id).maybeSingle();
-      return data ? this.farmFrom(data) : null;
+      const { data } = await this.sb.from('farms').select('*, products(*), posts(*), farm_private(pickup_addr)').eq('owner_id', this.user.id).maybeSingle();
+      if (!data) return null;
+      const priv = Array.isArray(data.farm_private) ? data.farm_private[0] : data.farm_private;
+      return Object.assign(this.farmFrom(data), { pickupAddr: (priv && priv.pickup_addr) || '' });
     },
     async saveFarm(f) {
       const row = {
@@ -450,6 +455,10 @@
         const { data, error } = await this.sb.from('farms').insert(row).select('id').single();
         if (error) throw error;
         farmId = data.id;
+      }
+      {
+        const { error } = await this.sb.from('farm_private').upsert({ farm_id: farmId, pickup_addr: f.pickupAddr || '', updated_at: new Date().toISOString() });
+        if (error) throw error;
       }
       const { data: existing } = await this.sb.from('products').select('id').eq('farm_id', farmId);
       const keep = new Set(f.products.filter(p => !String(p.id).startsWith('new-')).map(p => p.id));
@@ -629,7 +638,7 @@
         code: String(Math.floor(1000 + Math.random() * 9000)),
         farmId: f.id, farmName: f.farmName, farmEmoji: f.emoji, farmCity: f.city, farmLat: f.lat, farmLng: f.lng,
         items: lines, method: pl.method, total: lines.reduce((s, l) => s + l.qty * l.price, 0),
-        pickup: pl.method === 'pickup' ? { date: pl.pickup.date, hour: pl.pickup.hour, time: `${pl.pickup.hour}:00〜${pl.pickup.hour + 1}:00`, place: f.pickup.place || f.city, msg: pl.pickup.msg } : null,
+        pickup: pl.method === 'pickup' ? { date: pl.pickup.date, hour: pl.pickup.hour, time: `${pl.pickup.hour}:00〜${pl.pickup.hour + 1}:00`, place: f.pickup.place || f.city, addr: f.pickupAddr || f.pickup.addr || '', msg: pl.pickup.msg } : null,
         ship: pl.method === 'ship' ? { zip: pl.ship.zip, pref: '山口県', addr: pl.ship.addr } : null,
         buyer: pl.buyer, status: 'paid', cancelDeadline: new Date(deadline).toISOString(), createdAt: new Date().toISOString()
       };
@@ -1302,13 +1311,21 @@
     return `
       <div class="method"><dl>
         <div class="row"><dt>場所</dt><dd>${esc(pk.place || f.city)}</dd></div>
+        <div class="row"><dt>住所</dt><dd>${pk.addr
+          ? `${esc(fullAddr(pk.addr))}<br><a class="small" href="${gmapAddrUrl(pk.addr, f)}" target="_blank" rel="noopener">Googleマップで道順を見る</a>`
+          : '<span class="dim">ご注文後に、注文画面でお知らせします</span>'}</dd></div>
         <div class="row"><dt>受け取り日</dt><dd>${pk.days.slice().sort().map(d => WEEK[d]).join('・')}曜日</dd></div>
         <div class="row"><dt>時間</dt><dd>${pk.from}:00〜${pk.to}:00</dd></div>
         ${pk.note ? `<div class="row"><dt>ひとこと</dt><dd>${esc(pk.note)}</dd></div>` : ''}
       </dl></div>`;
   }
   // 受け取り方法（発送 / 畑で受け取り）。カートと一緒に覚えておき、注文手続きでも最初から選ばれた状態にする
-  const howOf = f => (canPickup(f) && cart.farmId === f.id && cart.method === 'pickup') ? 'pickup' : 'ship';
+  // 農家さんに会いに行くのがこのアプリの良さなので、受け取りができる農家さんでは「畑で受け取る」を最初に選んでおく
+  const howOf = f => {
+    if (!canPickup(f)) return 'ship';
+    if (cart.farmId === f.id && cart.method) return cart.method;
+    return pickupDates(f).length ? 'pickup' : 'ship';
+  };
   function productCard(f, p, how = howOf(f)) {
     const season = inSeason(p);
     const qty = cart.farmId === f.id ? (cart.items[p.id] || 0) : 0;
@@ -1413,7 +1430,9 @@
         <div>
           <h2 class="sec"><span class="ic">📍</span>畑はここ</h2>
           <div id="farmMap"></div>
-          <p class="small dim" style="margin-top:8px">${esc(f.city)}（位置はおおよそです）・<a href="${gmapUrl(f)}" target="_blank" rel="noopener">Googleマップで開く</a></p>
+          ${canPickup(f) && f.pickup.addr
+            ? `<p class="small" style="margin-top:8px">🚗 受け取り場所：<b>${esc(fullAddr(f.pickup.addr))}</b>${f.pickup.place ? `（${esc(f.pickup.place)}）` : ''}<br><a href="${gmapAddrUrl(f.pickup.addr, f)}" target="_blank" rel="noopener">Googleマップで道順を見る</a></p>`
+            : `<p class="small dim" style="margin-top:8px">${esc(f.city)}（位置はおおよそです）・<a href="${gmapUrl(f)}" target="_blank" rel="noopener">Googleマップで開く</a>${canPickup(f) ? '<br>🚗 受け取り場所のくわしい住所は、ご注文後にお知らせします。' : ''}</p>`}
         </div>
       </div>
 
@@ -1591,7 +1610,7 @@
               <div class="field"><label for="pDate">日にち</label><select id="pDate">${dates.map(d => `<option value="${d}">${fmtDay(d)}</option>`).join('')}</select></div>
               <div class="field"><label for="pTime">時間</label><select id="pTime">${hours.map(h => `<option value="${h}">${h}:00〜${h + 1}:00</option>`).join('')}</select></div>
             </div>
-            <div class="small"><b>📍 ${esc(pick ? (f.pickup.place || f.city) : '')}</b></div>
+            <div class="small"><b>📍 ${esc(pick ? (f.pickup.place || f.city) : '')}</b>${pick && f.pickup.addr ? `<br>${esc(fullAddr(f.pickup.addr))}` : '<br><span class="dim">くわしい住所は、ご注文後の画面でお知らせします。</span>'}</div>
             ${pick && f.pickup.note ? `<div class="small dim">${esc(f.pickup.note)}</div>` : ''}
             <div class="field" style="margin:12px 0 0"><label for="pMsg">農家さんへひとこと（任意）</label><input id="pMsg" maxlength="100" placeholder="例：子どもと一緒に行きます！"></div>
           </div>
@@ -1777,7 +1796,7 @@
         ${statusSteps(o)}
         ${pickup ? `
           <p style="margin:8px 0 4px"><b>${fmtDay(o.pickup.date)} ${esc(o.pickup.time)}</b></p>
-          <p class="small" style="margin:0">📍 ${esc(o.pickup.place)}${typeof loc.lat === 'number' ? ` ・ <a href="${gmapUrl(loc)}" target="_blank" rel="noopener">Googleマップで道順を見る</a>` : ''}</p>
+          <p class="small" style="margin:0">📍 ${esc(o.pickup.place)}${o.pickup.addr ? `<br>${esc(fullAddr(o.pickup.addr))}` : ''}${o.pickup.addr || typeof loc.lat === 'number' ? `<br><a href="${gmapAddrUrl(o.pickup.addr, loc)}" target="_blank" rel="noopener">Googleマップで道順を見る</a>` : ''}</p>
           ${['paid', 'ready'].includes(o.status) ? `<p class="small dim" style="margin:12px 0 6px">受け取りのときに、この番号を農家さんに伝えてください。</p><div class="code" aria-label="受け取りコード">${esc(o.code)}</div>` : ''}`
         : `<p class="small" style="margin:8px 0 0">お届け先：〒${esc(o.ship.zip)} ${esc(o.ship.pref)} ${esc(o.ship.addr)}</p>
            <p class="small dim" style="margin:4px 0 0">発送されたら、ここの状況が「発送済み」に変わります。</p>`}
@@ -1919,6 +1938,12 @@
           <h3 style="font-size:1rem">🏦 売上の受け取り口座を登録してください</h3>
           <p class="small" style="margin:6px 0 10px">注文を受けるには、売上を受け取る銀行口座の登録が必要です（Stripe という決済サービスの画面で、本人確認と口座を登録します）。</p>
           <button class="btn leaf" id="connectBtn">${f.stripeLinked ? '口座登録のつづきをする' : '受け取り口座を登録する'}</button>
+        </div>` : ''}
+      ${canPickup(f) && !f.pickupAddr && !f.pickup.addr ? `
+        <div class="panel" style="margin:8px 0 16px">
+          <h3 style="font-size:1rem">📍 受け取り場所の住所を登録してください</h3>
+          <p class="small" style="margin:6px 0 10px">畑で受け取るお客さんが迷わないよう、注文画面に住所をお知らせします。</p>
+          <a class="btn leaf" href="#/mine/profile">住所を登録する</a>
         </div>` : ''}
       <h2 class="sec" style="margin-top:12px"><span class="ic">🧾</span>届いた注文</h2>
       <div class="order-list" id="farmerOrders">${farmerOrderCards(list)}</div>
@@ -2206,7 +2231,11 @@
         <div class="field"><label style="display:flex;gap:8px;align-items:center;font-weight:900"><input type="checkbox" id="pkOn" style="width:auto" ${f.pickup.enabled ? 'checked' : ''}> 畑での受け取りを受け付ける</label>
           <span class="hint">お客さんが畑まで取りに来ます。送料がかからない分、配送より安い価格を設定できます。</span></div>
         <div id="pkFields">
-          <div class="field"><label for="pkPlace">受け取り場所</label><input id="pkPlace" maxlength="80" value="${esc(f.pickup.place)}" placeholder="例：畑の横の直売小屋"><span class="hint">ご自宅の住所は書かなくて大丈夫です。</span></div>
+          <div class="field"><label for="pkAddr">受け取り場所の住所 *</label><input id="pkAddr" maxlength="120" autocomplete="street-address" value="${esc(f.pickupAddr || f.pickup.addr || '')}" placeholder="例：山口市徳地堀 1234">
+            <span class="hint">畑で受け取る注文をしたお客さんにだけ、注文画面でお知らせします。</span>
+            <label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:700"><input type="checkbox" id="pkAddrPublic" style="width:auto" ${f.pickup.addr ? 'checked' : ''}> 農園ページにも住所をのせる（誰でも見られます）</label>
+            <span class="hint">ご自宅の場合は、のせないことをおすすめします。のせると、注文前のお客さんにも場所が分かります。</span></div>
+          <div class="field"><label for="pkPlace">場所の目印</label><input id="pkPlace" maxlength="80" value="${esc(f.pickup.place)}" placeholder="例：畑の横の直売小屋（青い屋根）"></div>
           <div class="field"><span class="field-label">受け取りできる曜日</span>
             <div class="weekdays">${WEEK.map((w, i) => `<label><input type="checkbox" name="pkDay" value="${i}" ${(f.pickup.days || []).includes(i) ? 'checked' : ''}>${w}</label>`).join('')}</div></div>
           <div class="row2">
@@ -2339,6 +2368,8 @@
       const pkOn = $('#pkOn').checked;
       const pkDays = $$('input[name=pkDay]:checked').map(i => Number(i.value));
       const from = Number($('#pkFrom').value), to = Number($('#pkTo').value);
+      const pkAddr = $('#pkAddr').value.trim();
+      if (pkOn && !pkAddr) { toast('受け取り場所の住所を入力してください'); $('#pkAddr').focus(); return; }
       if (pkOn && !pkDays.length) { toast('受け取りできる曜日を選んでください'); return; }
       if (pkOn && to <= from) { toast('受け取り時間の「まで」は「から」より後にしてください'); $('#pkTo').focus(); return; }
       if (pkOn && draftProducts.some(p => !(p.pickupPrice > 0) || p.pickupPrice > p.shipPrice)) { toast('畑で受け取りの価格が未設定の品目があります。「編集」から設定してください'); return; }
@@ -2353,7 +2384,8 @@
         catch: $('#fCatch').value.trim(), story: $('#fStory').value.trim(),
         methods: { pesticide: $('#fPest').value, fertilizer: $('#fFert').value, style: $('#fStyle').value, soil: $('#fSoil').value.trim() },
         certs: $('#fCerts').value.split(/[,、，]/).map(s => s.trim()).filter(Boolean),
-        pickup: { enabled: pkOn, place: $('#pkPlace').value.trim(), days: pkDays, from, to, note: $('#pkNote').value.trim() },
+        pickup: { enabled: pkOn, place: $('#pkPlace').value.trim(), addr: $('#pkAddrPublic').checked ? pkAddr : '', days: pkDays, from, to, note: $('#pkNote').value.trim() },
+        pickupAddr: pkAddr,
         cancelDays: Number($('#fCancel').value),
         products: draftProducts.map(p => Object.assign({}, p, pkOn ? {} : { pickupPrice: p.shipPrice }))
       });

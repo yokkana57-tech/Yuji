@@ -1,6 +1,6 @@
 // オフラインでも開けるように、画面のファイルを端末に保存しておく。
 // アプリを更新したら VERSION を上げる（古い保存を消して新しいものに入れ替える）。
-const VERSION = 'hatake-v5';
+const VERSION = 'hatake-v6';
 const SHELL = ['./', 'index.html', 'app.css', 'app.js', 'geo.js', 'config.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 const TILES = 'hatake-tiles';
