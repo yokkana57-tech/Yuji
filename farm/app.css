@@ -412,3 +412,20 @@
   .modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
   @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .modal { animation: none; } }
+
+/* ---- 利用規約・プライバシーポリシー・特定商取引法に基づく表記 ---- */
+.legal { line-height: 1.8; font-size: .92rem; }
+.legal h1 { font-size: 1.25rem; margin: 0 0 4px; }
+.legal h2 { font-size: 1rem; margin: 20px 0 6px; }
+.legal p { margin: 0 0 8px; }
+.legal ol, .legal ul { margin: 0 0 8px; padding-left: 1.4em; }
+.legal li { margin: 2px 0; }
+.legal .dim { color: var(--text-dim); }
+.legal-foot { text-align: center; font-size: .75rem; color: var(--text-dim); margin: 28px 0 8px; }
+.legal-foot a { color: var(--text-dim); }
+.confirm ul { margin: 0; padding-left: 1.2em; line-height: 1.7; }
+.confirm li { margin: 4px 0; }
+.modal.sheet { align-items: flex-end; padding: 0; }
+.sheet-card { position: relative; max-width: 640px; max-height: 88vh; max-height: 88dvh; overflow-y: auto; border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 22px 18px calc(16px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; }
+.sheet-card .modal-actions { position: sticky; bottom: calc(-16px - env(safe-area-inset-bottom)); background: var(--surface); margin: 0 -18px calc(-16px - env(safe-area-inset-bottom)); padding: 10px 18px calc(16px + env(safe-area-inset-bottom)); border-top: 2px solid var(--line, #ddd); }
+.sheet-close { position: absolute; right: 10px; top: 10px; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--ink); background: var(--surface); font-weight: 900; cursor: pointer; }
