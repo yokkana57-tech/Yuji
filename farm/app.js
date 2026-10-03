@@ -41,6 +41,11 @@
   const HUES = ['#B9E4A6','#FFC98F','#FFB3A7','#FFE38A','#D7BCEB','#A9E0D3','#FFD1E0','#CDE7A0'];
   const ZIP_RE = /^7[45]\d-?\d{4}$/;           // 山口県の郵便番号（740〜759）
   const TEL_RE = /^0\d{1,4}-?\d{1,4}-?\d{3,4}$/;
+  // 利用規約・プライバシーポリシーへのリンク（App Store の審査でも、アプリ内から見られることが必要）
+  const legalFoot = extra => `<p class="legal-foot">${extra || ''}<a href="#/legal/terms">利用規約</a> ・ <a href="#/legal/privacy">プライバシーポリシー</a></p>`;
+  const sellerOf = f => f.sellerName || f.farmer;
+  const shipDaysOf = f => f.shipDays || 3;
+  const FEE_PERCENT = Number((window.HATAKE_CONFIG || {}).feePercent) || 0;
   const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
   // なかま市（農家どうしの譲り合い・売買）
   const MK_KIND = { give: '譲ります', sell: '売ります', want: 'さがしてます' };
@@ -412,6 +417,7 @@
         coverUrl: r.cover_url || '',
         methods: Object.assign({ pesticide: 'conventional', fertilizer: 'conventional', style: '露地', soil: '' }, r.methods || {}),
         certs: r.certs || [], pickup: r.pickup || {}, cancelDays: r.cancel_days, published: r.published,
+        sellerName: r.seller_name || '', shipDays: r.ship_days || 3,
         chargesEnabled: r.charges_enabled, stripeLinked: !!r.stripe_account_id,
         products: (r.products || []).slice().sort((a, b) => a.sort - b.sort).map(p => ({
           id: p.id, name: p.name, cat: p.cat, months: p.months, note: p.note, unit: p.unit,
@@ -436,16 +442,17 @@
     },
     async myFarm() {
       if (!this.user) return null;
-      const { data } = await this.sb.from('farms').select('*, products(*), posts(*), farm_private(pickup_addr)').eq('owner_id', this.user.id).maybeSingle();
+      const { data } = await this.sb.from('farms').select('*, products(*), posts(*), farm_private(pickup_addr, seller_tel, seller_addr)').eq('owner_id', this.user.id).maybeSingle();
       if (!data) return null;
       const priv = Array.isArray(data.farm_private) ? data.farm_private[0] : data.farm_private;
-      return Object.assign(this.farmFrom(data), { pickupAddr: (priv && priv.pickup_addr) || '' });
+      return Object.assign(this.farmFrom(data), { pickupAddr: (priv && priv.pickup_addr) || '', sellerTel: (priv && priv.seller_tel) || '', sellerAddr: (priv && priv.seller_addr) || '' });
     },
     async saveFarm(f) {
       const row = {
         farm_name: f.farmName, farmer: f.farmer, city: f.city, lat: f.lat, lng: f.lng, lat_picked: f.latPicked,
         since: f.since || null, area: f.area, emoji: f.emoji, hue: f.hue, catch: f.catch, story: f.story, cover_url: f.coverUrl || null,
-        methods: f.methods, certs: f.certs, pickup: f.pickup, cancel_days: f.cancelDays, published: true
+        methods: f.methods, certs: f.certs, pickup: f.pickup, cancel_days: f.cancelDays, published: true,
+        seller_name: f.sellerName || '', ship_days: f.shipDays || 3
       };
       let farmId = f.ownerId ? f.id : null;
       if (farmId) {
@@ -457,7 +464,7 @@
         farmId = data.id;
       }
       {
-        const { error } = await this.sb.from('farm_private').upsert({ farm_id: farmId, pickup_addr: f.pickupAddr || '', updated_at: new Date().toISOString() });
+        const { error } = await this.sb.from('farm_private').upsert({ farm_id: farmId, pickup_addr: f.pickupAddr || '', seller_tel: f.sellerTel || '', seller_addr: f.sellerAddr || '', updated_at: new Date().toISOString() });
         if (error) throw error;
       }
       const { data: existing } = await this.sb.from('products').select('id').eq('farm_id', farmId);
@@ -1041,6 +1048,7 @@
             <button class="btn leaf" type="submit" data-mode="login">ログイン</button>
             <button class="btn ghost" type="submit" data-mode="register">新しく登録する</button>
           </div>
+          <p class="small dim" style="margin:10px 0 0">登録すると、<a href="#/legal/terms" data-sheet>利用規約</a>と<a href="#/legal/privacy" data-sheet>プライバシーポリシー</a>に同意したものとみなします。</p>
         </form>
       </div>`;
   }
@@ -1102,7 +1110,8 @@
           ${getHome() ? '<button class="linkbtn" type="button" id="cancelHome">変更しないでもどる</button>' : '<button class="linkbtn" type="button" id="skipHome">あとで決める（県内ぜんぶ見る）</button>'}
         </div>
         <p class="small dim" style="margin:14px 0 0;font-size:.68rem">地名データ：Geolonia 住所データ（CC BY 4.0）／ 地図：国土数値情報（行政区域データ）を加工</p>
-      </section>`;
+      </section>
+      ${legalFoot()}`;
     bindInstall();
     let results = [];
     const draw = () => {
@@ -1219,6 +1228,7 @@
         <div class="grid" id="farList"></div>
       </div>
       ${api.mode === 'demo' ? '<p class="notice">※ お試し版です。掲載している農家さんは、山口の特産品をもとにした架空のデータです。</p>' : ''}
+      ${legalFoot()}
     `;
     bindInstall();
 
@@ -1448,6 +1458,7 @@
       <h2 class="sec" id="cheerSec"><span class="ic">💌</span>届いた声</h2>
       <div class="cheers" id="cheerList"><div class="small dim">よみこみ中…</div></div>
       <div id="cheerFormSlot" style="margin-top:14px"></div>
+      ${legalFoot(`<a href="#/law/${esc(f.id)}">特定商取引法に基づく表記</a> ・ `)}
     `;
 
     const cal = $('.cal'), nowTh = $('.cal th.now');
@@ -1635,7 +1646,17 @@
           </div>
         </div>
 
-        <div class="notice" id="cancelNote"></div>
+        <h2 class="sec"><span class="ic">✅</span>ご注文前にご確認ください</h2>
+        <div class="panel confirm small">
+          <ul>
+            <li>販売者：${esc(sellerOf(f))}（${esc(f.farmName)}）・<a href="#/law/${esc(f.id)}" data-sheet>特定商取引法に基づく表記</a></li>
+            <li>お支払い：クレジットカードなど・ご注文時にお支払い（決済画面を開いてから30分以内）</li>
+            <li id="whenNote"></li>
+            <li id="cancelNote"></li>
+            <li>返品：生鮮食品のため、お客さまのご都合による返品はできません。傷みなどがあった場合は、受け取りから2日以内にご連絡ください。</li>
+            <li>お名前・電話番号・お届け先は、ご注文の準備のため農家さんにお伝えします（<a href="#/legal/privacy" data-sheet>プライバシーポリシー</a>）。</li>
+          </ul>
+        </div>
         ${api.mode === 'demo'
           ? '<p class="notice">🧪 お試し版です。ボタンを押しても<b>実際の請求は発生しません</b>（支払ったことにして注文が入ります）。</p>'
           : '<p class="notice">💳 次の画面（Stripe）で、クレジットカードなどでお支払いいただきます。カード情報はこのアプリには保存されません。</p>'}
@@ -1654,7 +1675,8 @@
       $('#saveNote').innerHTML = mtd === 'pickup' && other > total ? `<span class="save">🚗 受け取りで ${yen(other - total)} おトク</span>` : '';
       $('#pickupFields').hidden = mtd !== 'pickup';
       $('#shipFields').hidden = mtd === 'pickup';
-      $('#cancelNote').innerHTML = `↩️ キャンセルは、注文から<b>${f.cancelDays || 2}日以内</b>${mtd === 'pickup' ? '（受け取り日の前日まで）' : ''}、農家さんが準備を始める前までできます。全額返金します。`;
+      $('#cancelNote').innerHTML = `キャンセル：注文から<b>${f.cancelDays || 2}日以内</b>${mtd === 'pickup' ? '（受け取り日の前日まで）' : ''}、農家さんが準備を始める前までできます。全額返金します。`;
+      $('#whenNote').innerHTML = mtd === 'pickup' ? 'お渡し：上で選んだ受け取り日時に、畑でお渡しします。' : `お届け：ご注文から<b>${shipDaysOf(f)}日以内</b>に発送します。`;
       $('#payBtn').textContent = api.mode === 'demo' ? `${yen(total)} で注文する（お試し）` : `${yen(total)} のお支払いへ進む`;
     }
     $$('input[name=method]').forEach(r => r.addEventListener('change', () => { cart.method = method(); saveCart(); refresh(); }));
@@ -1734,6 +1756,7 @@
       ? `<p class="small dim" style="margin-top:24px">${esc(api.user.email)} でログイン中 ・ <button class="linkbtn" data-logout>ログアウト</button> ・ <button class="linkbtn" data-delacct style="color:var(--tomato)">アカウントを削除</button></p>`
       : '<p class="small dim" style="margin-top:24px"><button class="linkbtn" data-delacct style="color:var(--tomato)">お試し版のデータをすべて消す</button></p>';
   }
+  const accountFooterWithLegal = () => accountFooter() + legalFoot();
   function bindAccount(after) {
     $$('[data-logout]').forEach(b => b.addEventListener('click', async () => { await api.signOut(); await reload(); draftProducts = null; toast('ログアウトしました'); after(); }));
     $$('[data-delacct]').forEach(b => b.addEventListener('click', async () => {
@@ -1756,7 +1779,7 @@
     app.innerHTML = `
       <section class="hero-intro simple"><h1>注文したもの</h1><p>注文の状況・受け取りコード・キャンセルはここから。</p></section>
       <div class="order-list" style="margin-top:18px">${list.length ? list.map(orderCard).join('') : '<div class="empty">まだ注文はありません。<br><a href="#/">農家さんをさがす →</a></div>'}</div>
-      ${accountFooter()}`;
+      ${accountFooterWithLegal()}`;
     bindAccount(renderOrders);
   }
 
@@ -1799,7 +1822,7 @@
           <p class="small" style="margin:0">📍 ${esc(o.pickup.place)}${o.pickup.addr ? `<br>${esc(fullAddr(o.pickup.addr))}` : ''}${o.pickup.addr || typeof loc.lat === 'number' ? `<br><a href="${gmapAddrUrl(o.pickup.addr, loc)}" target="_blank" rel="noopener">Googleマップで道順を見る</a>` : ''}</p>
           ${['paid', 'ready'].includes(o.status) ? `<p class="small dim" style="margin:12px 0 6px">受け取りのときに、この番号を農家さんに伝えてください。</p><div class="code" aria-label="受け取りコード">${esc(o.code)}</div>` : ''}`
         : `<p class="small" style="margin:8px 0 0">お届け先：〒${esc(o.ship.zip)} ${esc(o.ship.pref)} ${esc(o.ship.addr)}</p>
-           <p class="small dim" style="margin:4px 0 0">発送されたら、ここの状況が「発送済み」に変わります。</p>`}
+           <p class="small dim" style="margin:4px 0 0">${f ? `ご注文から${shipDaysOf(f)}日以内に発送します。` : ''}発送されたら、ここの状況が「発送済み」に変わります。</p>`}
         ${cancelHtml}
       </div>
       <h2 class="sec"><span class="ic">🧾</span>ご注文内容</h2>
@@ -1939,12 +1962,17 @@
           <p class="small" style="margin:6px 0 10px">注文を受けるには、売上を受け取る銀行口座の登録が必要です（Stripe という決済サービスの画面で、本人確認と口座を登録します）。</p>
           <button class="btn leaf" id="connectBtn">${f.stripeLinked ? '口座登録のつづきをする' : '受け取り口座を登録する'}</button>
         </div>` : ''}
-      ${canPickup(f) && !f.pickupAddr && !f.pickup.addr ? `
+      ${(() => {
+        const missing = [];
+        if (!f.sellerName || !f.sellerTel || !f.sellerAddr) missing.push('🧾 販売者情報（特定商取引法の表示に必要です）');
+        if (canPickup(f) && !f.pickupAddr && !f.pickup.addr) missing.push('📍 受け取り場所の住所（受け取りのお客さんにお知らせします）');
+        return missing.length ? `
         <div class="panel" style="margin:8px 0 16px">
-          <h3 style="font-size:1rem">📍 受け取り場所の住所を登録してください</h3>
-          <p class="small" style="margin:6px 0 10px">畑で受け取るお客さんが迷わないよう、注文画面に住所をお知らせします。</p>
-          <a class="btn leaf" href="#/mine/profile">住所を登録する</a>
-        </div>` : ''}
+          <h3 style="font-size:1rem">農園の情報を追加してください</h3>
+          <ul class="small" style="margin:6px 0 10px;padding-left:1.2em">${missing.map(m => `<li>${m}</li>`).join('')}</ul>
+          <a class="btn leaf" href="#/mine/profile">登録する</a>
+        </div>` : '';
+      })()}
       <h2 class="sec" style="margin-top:12px"><span class="ic">🧾</span>届いた注文</h2>
       <div class="order-list" id="farmerOrders">${farmerOrderCards(list)}</div>
       <p class="small dim" style="margin-top:16px"><a href="#/farm/${esc(f.id)}">お客さんから見た農園ページ →</a></p>`;
@@ -2245,6 +2273,20 @@
           <div class="field"><label for="pkNote">お客さんへひとこと</label><input id="pkNote" maxlength="80" value="${esc(f.pickup.note)}" placeholder="例：収穫体験もできます！"></div>
         </div>
 
+        <h3 style="margin:20px 0 8px;font-size:1rem">📦 配送</h3>
+        <div class="field"><label for="fShipDays">注文から発送までの目安</label>
+          <select id="fShipDays">${[1, 2, 3, 4, 5, 7, 10, 14].map(d => `<option value="${d}" ${shipDaysOf(f) === d ? 'selected' : ''}>注文から${d}日以内に発送</option>`).join('')}</select>
+          <span class="hint">注文手続きの画面と「特定商取引法に基づく表記」に表示します。</span></div>
+
+        <h3 style="margin:20px 0 8px;font-size:1rem">🧾 販売者情報（特定商取引法の表示） *</h3>
+        <p class="small dim" style="margin:0 0 10px">ネットで販売するときに法律で必要な情報です。<b>氏名だけ</b>農園ページに表示します。住所・電話番号は公開せず、お客さんから請求があったときに運営からお伝えします。</p>
+        <div class="field"><label for="sName">販売者の氏名（法人の場合は法人名）</label><input id="sName" maxlength="60" autocomplete="name" value="${esc(f.sellerName || '')}" placeholder="例：山口 太郎"></div>
+        <div class="row2">
+          <div class="field"><label for="sTel">電話番号</label><input id="sTel" type="tel" maxlength="13" autocomplete="tel" value="${esc(f.sellerTel || '')}" placeholder="090-0000-0000"></div>
+          <div class="field"><label for="sAddr">住所</label><input id="sAddr" maxlength="120" autocomplete="street-address" value="${esc(f.sellerAddr || '')}" placeholder="山口市徳地堀 1234"></div>
+        </div>
+        ${api.mode === 'live' ? `<p class="small dim" style="margin:0 0 6px">販売手数料：売上の<b>${FEE_PERCENT}%</b>${FEE_PERCENT ? '' : '（現在無料）'}。売上は Stripe を通じて、登録した口座に振り込まれます。</p>` : ''}
+
         <h3 style="margin:20px 0 8px;font-size:1rem">↩️ キャンセルの受け付け</h3>
         <div class="field"><label for="fCancel">お客さんが自分でキャンセルできる期間</label>
           <select id="fCancel">${[1, 2, 3].map(d => `<option value="${d}" ${Number(f.cancelDays || 2) === d ? 'selected' : ''}>注文から${d}日以内</option>`).join('')}</select>
@@ -2278,7 +2320,7 @@
         </div>
       </form>
       ${api.mode === 'demo' ? '<p class="notice">お試し版のため、登録内容と注文はこの端末のブラウザ内にだけ保存されます。</p>' : ''}
-      ${accountFooter()}
+      ${accountFooterWithLegal()}
     `;
     bindAccount(() => route());
     const cover = photoPicker($('#coverPick'), f.coverUrl ? [f.coverUrl] : [], 1, '畑の写真');
@@ -2368,6 +2410,10 @@
       const pkOn = $('#pkOn').checked;
       const pkDays = $$('input[name=pkDay]:checked').map(i => Number(i.value));
       const from = Number($('#pkFrom').value), to = Number($('#pkTo').value);
+      const sellerName = $('#sName').value.trim(), sellerTel = $('#sTel').value.trim(), sellerAddr = $('#sAddr').value.trim();
+      if (!sellerName) { toast('販売者の氏名を入力してください'); $('#sName').focus(); return; }
+      if (!TEL_RE.test(sellerTel)) { toast('販売者の電話番号を確認してください'); $('#sTel').focus(); return; }
+      if (!sellerAddr) { toast('販売者の住所を入力してください'); $('#sAddr').focus(); return; }
       const pkAddr = $('#pkAddr').value.trim();
       if (pkOn && !pkAddr) { toast('受け取り場所の住所を入力してください'); $('#pkAddr').focus(); return; }
       if (pkOn && !pkDays.length) { toast('受け取りできる曜日を選んでください'); return; }
@@ -2385,7 +2431,7 @@
         methods: { pesticide: $('#fPest').value, fertilizer: $('#fFert').value, style: $('#fStyle').value, soil: $('#fSoil').value.trim() },
         certs: $('#fCerts').value.split(/[,、，]/).map(s => s.trim()).filter(Boolean),
         pickup: { enabled: pkOn, place: $('#pkPlace').value.trim(), addr: $('#pkAddrPublic').checked ? pkAddr : '', days: pkDays, from, to, note: $('#pkNote').value.trim() },
-        pickupAddr: pkAddr,
+        pickupAddr: pkAddr, sellerName, sellerTel, sellerAddr, shipDays: Number($('#fShipDays').value),
         cancelDays: Number($('#fCancel').value),
         products: draftProducts.map(p => Object.assign({}, p, pkOn ? {} : { pickupPrice: p.shipPrice }))
       });
@@ -2425,6 +2471,66 @@
   // 同じ画面への移動でも描き直す（hashchange が起きないため）
   function go(hash) { if (location.hash === hash) route(); else location.hash = hash; }
   let routeSeq = 0;
+  // ---------- 画面: 利用規約・プライバシーポリシー・特定商取引法に基づく表記 ----------
+  function renderLegal(kind) {
+    const L = window.HATAKE_LEGAL;
+    if (!L) { app.innerHTML = '<div class="empty">読み込めませんでした。アプリを開きなおしてください。</div>'; return; }
+    const body = kind === 'privacy' ? L.privacy() : L.terms();
+    app.innerHTML = `<a class="back" href="#/">← もどる</a><article class="legal panel">${body}</article>
+      ${legalFoot()}`;
+  }
+  function renderLaw(id) {
+    const f = findFarm(id);
+    if (!f) { app.innerHTML = '<a class="back" href="#/">← もどる</a><div class="empty">この農家さんは見つかりませんでした。</div>'; return; }
+    app.innerHTML = `
+      <a class="back" href="#/farm/${esc(f.id)}">← ${esc(f.farmName)}にもどる</a>
+      <article class="legal panel">${lawHtml(f)}</article>
+      ${legalFoot()}`;
+  }
+  function lawHtml(f) {
+    const o = window.HATAKE_LEGAL ? window.HATAKE_LEGAL.operator() : { name: '運営者', contact: '' };
+    const row = (k, v) => `<div class="row"><dt>${k}</dt><dd>${v}</dd></div>`;
+    return `
+        <h1>特定商取引法に基づく表記</h1>
+        <p class="dim">${esc(f.farmName)}（やまぐち畑のとなり 出店者）</p>
+        <div class="method"><dl>
+          ${row('販売業者', `${esc(sellerOf(f))}（${esc(f.farmName)}）`)}
+          ${row('所在地・電話番号', `ご請求があれば、遅滞なくお知らせします。<br>運営窓口（${o.contact}）までご連絡ください。`)}
+          ${row('販売価格', '各商品に表示しています（税込）。')}
+          ${row('商品代金以外の費用', `配送：送料込みの価格です（山口県内のみ）。<br>畑で受け取り：送料はかかりません。${canPickup(f) ? '' : '<br>（この農家さんは現在、受け取りをしていません）'}`)}
+          ${row('お支払い方法', 'クレジットカードなど（Stripe の決済画面でお支払い）')}
+          ${row('お支払いの時期', 'ご注文時にお支払いいただきます。')}
+          ${row('お届けの時期', `配送：ご注文から${shipDaysOf(f)}日以内に発送します。${canPickup(f) ? '<br>畑で受け取り：ご注文時に選んだ日時にお渡しします。' : ''}`)}
+          ${row('お申し込みの有効期限', '決済画面を開いてから30分以内にお支払いください。')}
+          ${row('キャンセル', `ご注文から${f.cancelDays || 2}日以内（畑で受け取りの場合は受け取り日の前日まで）で、農家が準備を始める前であれば、アプリからキャンセルできます。代金は全額返金します。`)}
+          ${row('返品・交換', '生鮮食品のため、お客さまのご都合による返品・交換はできません。<br>傷み・破損・品違いがあった場合は、受け取りから2日以内に運営窓口までご連絡ください。返金または交換で対応します。')}
+        </dl></div>
+        <p class="small dim" style="margin-top:12px">このアプリの運営者：${o.name}。売買契約は、上記の販売業者とお客さまの間で成立します。</p>`;
+  }
+  // 入力中の画面（注文手続きなど）を離れずに読めるよう、規約などは重ねて表示する
+  function openSheet(html) {
+    const wrap = document.createElement('div');
+    wrap.className = 'modal sheet';
+    wrap.innerHTML = `<div class="modal-card sheet-card" role="dialog" aria-modal="true"><button type="button" class="sheet-close" aria-label="閉じる">✕</button><article class="legal">${html}</article>
+      <div class="modal-actions"><button type="button" class="btn leaf" data-close>閉じる</button></div></div>`;
+    const done = () => { wrap.remove(); document.removeEventListener('keydown', onKey); };
+    const onKey = e => { if (e.key === 'Escape') done(); };
+    wrap.addEventListener('click', e => {
+      if (e.target === wrap || e.target.closest('.sheet-close, [data-close]')) done();
+      else if (e.target.closest('a[href^="#/legal/"]')) { e.preventDefault(); e.stopPropagation(); const k = e.target.closest('a').getAttribute('href').split('/')[2]; $('.legal', wrap).innerHTML = k === 'privacy' ? window.HATAKE_LEGAL.privacy() : window.HATAKE_LEGAL.terms(); $('.sheet-card', wrap).scrollTop = 0; }
+    });
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(wrap);
+  }
+  document.addEventListener('click', e => {
+    const a = e.target.closest && e.target.closest('a[data-sheet]');
+    if (!a || !window.HATAKE_LEGAL) return;
+    e.preventDefault();
+    const [, kind, id] = a.getAttribute('href').replace(/^#/, '').split('/');
+    const f = kind === 'law' ? findFarm(decodeURIComponent(id)) : null;
+    openSheet(kind === 'law' ? (f ? lawHtml(f) : '') : kind === 'privacy' ? window.HATAKE_LEGAL.privacy() : window.HATAKE_LEGAL.terms());
+  });
+
   async function route() {
     const seq = ++routeSeq;
     $('#cartbarSlot').innerHTML = '';
@@ -2433,7 +2539,7 @@
     const parts = path.split('/').filter(Boolean);
     if (parts[0] !== 'mine' || parts[1] !== 'profile') { draftProducts = null; editingIdx = -1; }
     if (parts[0]) state.changingHome = false;
-    const tab = parts[0] === 'farm' || parts[0] === 'checkout' ? '' : (parts[0] === 'order' ? 'orders' : (parts[0] || 'explore'));
+    const tab = ['farm', 'checkout', 'legal', 'law'].includes(parts[0]) ? '' : (parts[0] === 'order' ? 'orders' : (parts[0] || 'explore'));
     $$('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.tab === tab));
     window.scrollTo(0, 0);
     try {
@@ -2444,6 +2550,8 @@
       else if (parts[0] === 'feed') renderFeed();
       else if (parts[0] === 'follows') renderFollows();
       else if (parts[0] === 'mine') await renderMine(parts[1], parts.slice(2), query);
+      else if (parts[0] === 'legal') renderLegal(parts[1]);
+      else if (parts[0] === 'law' && parts[1]) renderLaw(decodeURIComponent(parts[1]));
       else renderExplore();
     } catch (err) {
       console.error(err);

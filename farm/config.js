@@ -4,5 +4,12 @@
 window.HATAKE_CONFIG = {
   supabaseUrl: 'https://gjjenadfrmtwibvyrsdb.supabase.co',
   supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqamVuYWRmcm10d2lidnlyc2RiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5NDg0NzUsImV4cCI6MjEwNjUyNDQ3NX0.Ey2PRvrTOmM-67JpZRfMT-dRuzp9NB5t-rtsr0kHyv0',  // 例: 'eyJhbGciOi...'（anon public キー）
-  siteUrl: 'https://yokkana57-tech.github.io/Yuji/farm/'
+  siteUrl: 'https://yokkana57-tech.github.io/Yuji/farm/',
+  // 運営者の情報。利用規約・プライバシーポリシー・特定商取引法の表記に表示する（空なら「準備中」と表示）
+  operator: {
+    name: '',     // 例: '山口 太郎' または屋号・会社名
+    contact: ''   // 例: 'info@example.jp'（お問い合わせ用のメールアドレス）
+  },
+  // 販売手数料（%）。サーバーの PLATFORM_FEE_PERCENT と必ず同じ値にする（農家さんの画面に表示する）
+  feePercent: 0
 };
