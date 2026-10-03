@@ -493,3 +493,10 @@
 .chat-toggle summary { cursor: pointer; font-weight: 900; font-size: .85rem; }
 .chat-toggle .chat-slot { margin-top: 8px; }
 .prod .origin { font-size: .68rem; color: var(--text-dim); margin: -2px 0 6px; }
+
+/* ---- お手伝い（援農）・お店の相談 ---- */
+.help-list { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.help-card { display: block; padding: 12px 14px; color: var(--text); text-decoration: none; }
+.help-card .when { font-weight: 900; font-size: .85rem; color: var(--tomato); }
+.help-card h3 { margin: 4px 0; font-size: 1.05rem; }
+.entry { border-top: 2px dashed var(--line, #ddd); margin-top: 8px; padding-top: 8px; }
