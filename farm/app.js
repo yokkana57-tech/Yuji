@@ -6,7 +6,7 @@
   if (!GEO) throw new Error('地図データ（geo.js）を読み込めませんでした');
 
   // ---------- 実行環境 ----------
-  const APP_VERSION = '1.1.0';
+  const APP_VERSION = '1.2.0';
   const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   const STANDALONE = NATIVE || (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
   const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -186,6 +186,14 @@
       posts: [{ id: 's8p1', date: '2026-09-24', emoji: '🍐', title: '新高、今年は大玉です', body: '一つで1kg近いのもあります。今年の梨は豊作！' }]
     }
   ];
+  // お試し版の、お手伝い募集の見本（架空）
+  const SAMPLE_HELPS = (() => {
+    const d = n => { const t = new Date(); t.setDate(t.getDate() + n); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; };
+    return [
+      { id: 'sh1', farmId: 's1', title: 'ミニトマトの収穫', body: '朝のうちに収穫して、パック詰めまで一緒にやりましょう。はじめての方も大歓迎です。', date: d(6), from: 8, to: 11, capacity: 3, filled: 0, place: '萩市・畑の横の直売小屋', thanks: '収穫したトマトのおすそわけ', bring: '軍手・帽子・飲み物', beginner: true, meal: false, status: 'open' },
+      { id: 'sh2', farmId: 's4', title: 'りんごの葉摘み', body: '実に日が当たるように、まわりの葉を摘む作業です。脚立は使いません。', date: d(9), from: 9, to: 15, capacity: 5, filled: 0, place: '山口市阿東徳佐・りんご園の受付', thanks: 'りんご1袋', bring: '軍手・汚れてもいい服', beginner: true, meal: true, status: 'open' }
+    ];
+  })();
   const SAMPLE_MARKET = [
     { id: 'm1', farmId: 's7', kind: 'give', cat: 'material', title: '育苗トレイ（128穴）30枚', body: '新しいのを買ったので、前のを譲ります。少し日焼けしていますが、まだまだ使えます。取りに来てもらえる方。', price: 0, condition: 'やや使用感あり', status: 'open', date: '2026-09-28', photos: [] },
     { id: 'm2', farmId: 's1', kind: 'sell', cat: 'machine', title: '管理機（ミニ耕うん機）', body: '畝立てに使っていました。エンジンは快調で、春にメンテナンス済みです。軽トラで運べます。', price: 35000, condition: '中古・動作良好', status: 'open', date: '2026-09-25', photos: [] },
@@ -199,7 +207,8 @@
     mine: 'yamahata.myfarm', follows: 'yamahata.follows', cheers: 'yamahata.cheers', theme: 'yamahata.theme',
     orders: 'yamahata.orders', stock: 'yamahata.stock', buyer: 'yamahata.buyer', home: 'yamahata.home',
     cart: 'yamahata.cart', next: 'yamahata.next', market: 'yamahata.market', mkmsg: 'yamahata.mkmsg', install: 'yamahata.install',
-    intro: 'yamahata.intro', inquiries: 'yamahata.inquiries', omsg: 'yamahata.omsg'
+    intro: 'yamahata.intro', inquiries: 'yamahata.inquiries', omsg: 'yamahata.omsg',
+    helps: 'yamahata.helps', entries: 'yamahata.entries', biz: 'yamahata.biz', talk: 'yamahata.talk'
   };
   const store = {
     get(k, fallback) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; } },
@@ -268,6 +277,9 @@
     product_not_found: '商品が見つかりませんでした。', out_of_season: 'いまはお届けできない時期の商品があります', out_of_stock: '在庫が足りない商品があります',
     cannot_cancel: 'この予約は取り消せません（期限切れ、または農家さんが準備を始めています）。',
     too_early: '受け取りの時間が過ぎてから押してください。',
+    help_not_found: 'このお手伝いの募集は見つかりませんでした。', help_closed: 'この募集は締め切られました。',
+    own_help: '自分の募集には申し込めません。', already_applied: 'すでに申し込んでいます。', help_full: '募集人数がいっぱいです。',
+    not_allowed: 'この操作はできません。', bad_transition: 'この申し込みはもう変更できません。',
     too_many_posts: '短い時間にたくさん送られたため、いったん止めています。時間をおいてお試しください。'
   };
   const rpcError = e => { const [code, detail] = String(e.message || '').split(':'); return new Error(RPC_MSG[code] ? RPC_MSG[code] + (detail ? `（${detail}）` : '') : (e.message || 'エラーが起きました')); };
@@ -437,7 +449,7 @@
         coverUrl: r.cover_url || '',
         methods: Object.assign({ pesticide: 'conventional', fertilizer: 'conventional', style: '露地', soil: '' }, r.methods || {}),
         certs: r.certs || [], pickup: r.pickup || {}, cancelDays: r.cancel_days, published: r.published,
-        sellerName: r.seller_name || '', shipDays: r.ship_days || 3,
+        sellerName: r.seller_name || '', shipDays: r.ship_days || 3, bizOk: !!r.biz_ok, bizNote: r.biz_note || '',
         chargesEnabled: r.charges_enabled, stripeLinked: !!r.stripe_account_id,
         products: (r.products || []).slice().sort((a, b) => a.sort - b.sort).map(p => ({
           id: p.id, name: p.name, cat: p.cat, months: p.months, note: p.note, unit: p.unit,
@@ -472,7 +484,7 @@
         farm_name: f.farmName, farmer: f.farmer, city: f.city, lat: f.lat, lng: f.lng, lat_picked: f.latPicked,
         since: f.since || null, area: f.area, emoji: f.emoji, hue: f.hue, catch: f.catch, story: f.story, cover_url: f.coverUrl || null,
         methods: f.methods, certs: f.certs, pickup: f.pickup, cancel_days: f.cancelDays, published: true,
-        seller_name: f.sellerName || '', ship_days: f.shipDays || 3
+        seller_name: f.sellerName || '', ship_days: f.shipDays || 3, biz_ok: !!f.bizOk, biz_note: f.bizNote || ''
       };
       let farmId = f.ownerId ? f.id : null;
       if (farmId) {
@@ -589,6 +601,80 @@
     },
     async sendOrderMessage(orderId, text, asFarmer) {
       const { error } = await this.sb.from('order_messages').insert({ order_id: orderId, text, from_farmer: !!asFarmer });
+      if (error) throw rpcError(error);
+    },
+    // ---- 援農（お手伝い） ----
+    helpFrom(r) {
+      return { id: r.id, farmId: r.farm_id, title: r.title, body: r.body, date: r.work_date, from: r.start_hour, to: r.end_hour, capacity: r.capacity,
+        filled: r.filled, place: r.place, thanks: r.thanks, bring: r.bring, beginner: r.beginner, meal: r.meal, status: r.status };
+    },
+    entryFrom(r) {
+      return { id: r.id, helpId: r.help_id, name: r.name, tel: r.tel, people: r.people, message: r.message, status: r.status, date: r.created_at,
+        help: r.helps ? this.helpFrom(r.helps) : null };
+    },
+    async helps(farmId) {
+      let qb = this.sb.from('helps').select('*').order('work_date');
+      qb = farmId ? qb.eq('farm_id', farmId) : qb.eq('status', 'open').gt('work_date', today());
+      const { data, error } = await qb;
+      if (error) throw error;
+      return data.map(r => this.helpFrom(r));
+    },
+    async help(id) { const { data } = await this.sb.from('helps').select('*').eq('id', id).maybeSingle(); return data ? this.helpFrom(data) : null; },
+    async helpSave(farmId, h) {
+      const row = { title: h.title, body: h.body, work_date: h.date, start_hour: h.from, end_hour: h.to, capacity: h.capacity, place: h.place,
+        thanks: h.thanks, bring: h.bring, beginner: h.beginner, meal: h.meal, status: h.status || 'open' };
+      const { error } = h.id ? await this.sb.from('helps').update(row).eq('id', h.id) : await this.sb.from('helps').insert(Object.assign({ farm_id: farmId }, row));
+      if (error) throw rpcError(error);
+    },
+    async helpStatus(id, status) { const { error } = await this.sb.from('helps').update({ status }).eq('id', id); if (error) throw rpcError(error); },
+    async helpDelete(id) { const { error } = await this.sb.from('helps').delete().eq('id', id); if (error) throw rpcError(error); },
+    async helpEntries(helpId) {
+      const { data, error } = await this.sb.from('help_entries').select('*').eq('help_id', helpId).order('created_at');
+      if (error) throw error;
+      return data.map(r => this.entryFrom(r));
+    },
+    async myEntries() {
+      if (!this.user) return [];
+      const { data, error } = await this.sb.from('help_entries').select('*, helps(*)').eq('user_id', this.user.id).order('created_at', { ascending: false });
+      if (error) throw error;
+      return data.map(r => this.entryFrom(r));
+    },
+    async applyHelp(helpId, a) {
+      const { error } = await this.sb.rpc('apply_help', { p_help: helpId, p_name: a.name, p_tel: a.tel, p_people: a.people, p_message: a.message });
+      if (error) throw rpcError(error);
+    },
+    async respondHelp(id, to) { const { error } = await this.sb.rpc('respond_help', { p_entry: id, p_to: to }); if (error) throw rpcError(error); },
+    async cancelHelpEntry(id) { const { error } = await this.sb.rpc('cancel_help_entry', { p_entry: id }); if (error) throw rpcError(error); },
+    // ---- お店・飲食店からの相談 ----
+    bizFrom(r) {
+      return { id: r.id, farmId: r.farm_id, shopName: r.shop_name, shopKind: r.shop_kind, city: r.city, contactName: r.contact_name, tel: r.tel,
+        items: r.items, quantity: r.quantity, frequency: r.frequency, delivery: r.delivery, note: r.note, status: r.status, date: r.created_at };
+    },
+    async bizSend(farmId, b) {
+      const { error } = await this.sb.from('biz_requests').insert({ farm_id: farmId, shop_name: b.shopName, shop_kind: b.shopKind, city: b.city, contact_name: b.contactName,
+        tel: b.tel, items: b.items, quantity: b.quantity, frequency: b.frequency, delivery: b.delivery, note: b.note });
+      if (error) throw rpcError(error);
+    },
+    async bizMine() {
+      if (!this.user) return [];
+      const { data, error } = await this.sb.from('biz_requests').select('*').eq('user_id', this.user.id).order('created_at', { ascending: false });
+      if (error) throw error;
+      return data.map(r => this.bizFrom(r));
+    },
+    async bizForFarm(farmId) {
+      const { data, error } = await this.sb.from('biz_requests').select('*').eq('farm_id', farmId).order('created_at', { ascending: false });
+      if (error) throw error;
+      return data.map(r => this.bizFrom(r));
+    },
+    async bizClose(id) { const { error } = await this.sb.from('biz_requests').update({ status: 'closed' }).eq('id', id); if (error) throw rpcError(error); },
+    // ---- お手伝い・お店の相談のメッセージ ----
+    async talk(kind, ref) {
+      const { data, error } = await this.sb.from('talk_messages').select('*').eq('kind', kind).eq('ref_id', ref).order('created_at');
+      if (error) throw error;
+      return data.map(m => ({ id: m.id, fromFarmer: m.from_farmer, text: m.text, date: m.created_at }));
+    },
+    async talkSend(kind, ref, text, asFarmer) {
+      const { error } = await this.sb.from('talk_messages').insert({ kind, ref_id: ref, text, from_farmer: !!asFarmer });
       if (error) throw rpcError(error);
     },
     // 画面で起きたエラーを運営に知らせる（個人情報は送らない）
@@ -741,6 +827,39 @@
     async orderMessages(orderId) { return (store.get(KEY.omsg, {})[orderId] || []); },
     async sendOrderMessage(orderId, text, asFarmer) { const all = store.get(KEY.omsg, {}); (all[orderId] = all[orderId] || []).push({ id: uid(), fromFarmer: !!asFarmer, text, date: new Date().toISOString() }); store.set(KEY.omsg, all); },
     logError() {},
+    // ---- 援農（お手伝い）・お店の相談：お試し版は端末の中だけ ----
+    allHelps() { return SAMPLE_HELPS.concat(store.get(KEY.helps, [])); },
+    async helps(farmId) {
+      const l = this.allHelps().map(h => Object.assign({}, h, { filled: this.allEntries().filter(e => e.helpId === h.id && e.status === 'accepted').reduce((s, e) => s + e.people, 0) }));
+      return (farmId ? l.filter(h => h.farmId === farmId) : l.filter(h => h.status === 'open' && h.date > today())).sort((a, b) => a.date.localeCompare(b.date));
+    },
+    async help(id) { return (await this.helps()).concat(store.get(KEY.helps, [])).find(h => h.id === id) || null; },
+    async helpSave(farmId, h) {
+      const l = store.get(KEY.helps, []);
+      const i = l.findIndex(x => x.id === h.id);
+      const v = Object.assign({ id: 'h' + uid(), filled: 0, status: 'open' }, h, { farmId });
+      if (i >= 0) l[i] = v; else l.push(v);
+      store.set(KEY.helps, l);
+    },
+    async helpStatus(id, status) { const l = store.get(KEY.helps, []); const h = l.find(x => x.id === id); if (h) h.status = status; store.set(KEY.helps, l); },
+    async helpDelete(id) { store.set(KEY.helps, store.get(KEY.helps, []).filter(x => x.id !== id)); },
+    allEntries() { return store.get(KEY.entries, []); },
+    async helpEntries(helpId) { return this.allEntries().filter(e => e.helpId === helpId); },
+    async myEntries() { const hs = this.allHelps(); return this.allEntries().filter(e => e.mine).map(e => Object.assign({}, e, { help: hs.find(h => h.id === e.helpId) || null })); },
+    async applyHelp(helpId, a) {
+      const l = this.allEntries();
+      if (l.some(e => e.helpId === helpId && e.mine && e.status !== 'canceled')) throw new Error(RPC_MSG.already_applied);
+      l.push(Object.assign({ id: 'e' + uid(), helpId, status: 'applied', mine: true, date: new Date().toISOString() }, a));
+      store.set(KEY.entries, l);
+    },
+    async respondHelp(id, to) { const l = this.allEntries(); const e = l.find(x => x.id === id); if (e) e.status = to; store.set(KEY.entries, l); },
+    async cancelHelpEntry(id) { const l = this.allEntries(); const e = l.find(x => x.id === id); if (e) e.status = 'canceled'; store.set(KEY.entries, l); },
+    async bizSend(farmId, b) { const l = store.get(KEY.biz, []); l.unshift(Object.assign({ id: 'b' + uid(), farmId, status: 'open', date: new Date().toISOString() }, b)); store.set(KEY.biz, l); },
+    async bizMine() { return store.get(KEY.biz, []); },
+    async bizForFarm(farmId) { return store.get(KEY.biz, []).filter(b => b.farmId === farmId); },
+    async bizClose(id) { const l = store.get(KEY.biz, []); const b = l.find(x => x.id === id); if (b) b.status = 'closed'; store.set(KEY.biz, l); },
+    async talk(kind, ref) { return store.get(KEY.talk, {})[kind + ':' + ref] || []; },
+    async talkSend(kind, ref, text, asFarmer) { const all = store.get(KEY.talk, {}); (all[kind + ':' + ref] = all[kind + ':' + ref] || []).push({ id: uid(), fromFarmer: !!asFarmer, text, date: new Date().toISOString() }); store.set(KEY.talk, all); },
     // なかま市
     marketMine() { return store.get(KEY.market, []); },
     async marketList() {
@@ -1514,6 +1633,14 @@
       <h2 class="sec"><span class="ic">🚗</span>畑での受け取り</h2>
       <div class="box">${pickupInfo(f)}</div>
 
+      <div id="farmHelps"></div>
+      ${f.bizOk && !mine ? `
+      <h2 class="sec"><span class="ic">🏪</span>お店・飲食店の方へ</h2>
+      <div class="box" style="padding:14px 16px">
+        <p class="small" style="margin:0 0 10px">${f.bizNote ? esc(f.bizNote) : 'まとめ買い・定期的な仕入れの相談を受け付けています。'}</p>
+        <a class="btn small leaf" href="#/biz/${esc(f.id)}">まとめ買い・仕入れの相談をする</a>
+      </div>` : ''}
+
       <h2 class="sec"><span class="ic">📅</span>旬カレンダー</h2>
       ${seasonCalendar(f.products)}
 
@@ -1621,6 +1748,11 @@
       });
     }
     drawCheerForm();
+    api.helps(f.id).then(hs => {
+      const open = hs.filter(h => h.status === 'open' && h.date > today());
+      const slot = $('#farmHelps');
+      if (slot && open.length) slot.innerHTML = `<h2 class="sec"><span class="ic">🙌</span>お手伝い募集中</h2><div class="help-list">${open.map(helpCard).join('')}</div>`;
+    }).catch(() => {});
     await drawCheers();
   }
 
@@ -1874,9 +2006,11 @@
       return;
     }
     const list = await api.myOrders();
+    const bizMine = await api.bizMine().catch(() => []);
     app.innerHTML = `
       <section class="hero-intro simple"><h1>注文したもの</h1><p>注文の状況・受け取りコード・キャンセルはここから。</p></section>
       <div class="order-list" style="margin-top:18px">${list.length ? list.map(orderCard).join('') : '<div class="empty">まだ注文はありません。<br><a href="#/">農家さんをさがす →</a></div>'}</div>
+      ${bizMine.length ? `<p style="margin-top:16px"><a class="btn ghost small" href="#/biz">🏪 お店として送った相談（${bizMine.length}件）</a></p>` : ''}
       ${accountFooterWithLegal()}`;
     bindAccount(renderOrders);
   }
@@ -1979,6 +2113,7 @@
           <button data-mode="all" class="${state.feedMode === 'all' ? 'on' : ''}">すべて</button>
           <button data-mode="follow" class="${state.feedMode === 'follow' ? 'on' : ''}">フォロー中</button>
         </div>
+        <a class="small" href="#/follows" style="margin-left:10px">💚 フォロー中の農家さん →</a>
       </div>
       <div class="posts">
         ${shown.length ? shown.map(x => postItem(x.p, x.f, { showFarm: true })).join('')
@@ -2012,7 +2147,7 @@
     };
   }
   function subnav(cur, pending) {
-    const items = [['orders', '🧾 注文', '#/mine'], ['posts', '✏️ 畑だより', '#/mine/posts'], ['market', '🤝 なかま市', '#/mine/market'], ['profile', '🏡 プロフィール', '#/mine/profile']];
+    const items = [['orders', '🧾 注文', '#/mine'], ['posts', '✏️ 畑だより', '#/mine/posts'], ['help', '🙌 お手伝い', '#/mine/help'], ['market', '🤝 なかま市', '#/mine/market'], ['profile', '🏡 プロフィール', '#/mine/profile']];
     return `<nav class="subnav" aria-label="農家の方のメニュー">${items.map(([k, label, href]) => `<a href="${href}" class="${cur === k ? 'on' : ''}">${label}${k === 'orders' && pending ? `<span class="n">${pending}</span>` : ''}</a>`).join('')}</nav>`;
   }
 
@@ -2037,6 +2172,7 @@
       return renderMarket(head);
     }
     if (sub === 'profile') return renderProfile(false, head);
+    if (sub === 'help') return renderMyHelps(head, rest);
     return renderFarmerOrders(head);
   }
 
@@ -2076,6 +2212,7 @@
     const f = DATA.mine;
     const list = await api.farmOrders(f.id);
     farmerOrderList = list;
+    const bizList = await api.bizForFarm(f.id).catch(() => []);
     app.innerHTML = `
       ${head}
       ${api.mode === 'live' && !f.chargesEnabled ? `
@@ -2097,6 +2234,7 @@
       })()}
       <h2 class="sec" style="margin-top:12px"><span class="ic">🧾</span>届いた注文</h2>
       <div class="order-list" id="farmerOrders">${farmerOrderCards(list)}</div>
+      ${bizList.length ? `<h2 class="sec"><span class="ic">🏪</span>お店からの相談</h2><div class="order-list">${bizList.map(b => bizCard(b, true)).join('')}</div>` : ''}
       <p class="small dim" style="margin-top:16px"><a href="#/farm/${esc(f.id)}">お客さんから見た農園ページ →</a></p>`;
     const cn = $('#connectBtn');
     if (cn) cn.addEventListener('click', async () => {
@@ -2104,6 +2242,7 @@
       try { const r = await api.connect('onboard'); openExternal(r.url, async () => { const st = await api.connect('status'); await reload(); toast(st.charges_enabled ? '口座の登録が完了しました！' : '口座の登録がまだ途中です'); route(); }); }
       catch (err) { toast(err.message); cn.disabled = false; }
     });
+    bindBizCards(true, () => route());
     function bindOrders() {
       $$('[data-chat]').forEach(d => d.addEventListener('toggle', () => {
         if (!d.open) return;
@@ -2429,6 +2568,11 @@
         </div>
         <p class="small dim" style="margin:0 0 6px">運営の手数料は<b>0円</b>です。カード払いで売れたときだけ、カード会社などに払う決済手数料（売上の${FEE_PERCENT}%）が差し引かれ、残りが Stripe を通じて登録した口座に振り込まれます。現金払いの受け取りには、手数料はかかりません。</p>
 
+        <h3 style="margin:20px 0 8px;font-size:1rem">🏪 お店・飲食店からの相談</h3>
+        <div class="field"><label style="display:flex;gap:8px;align-items:center;font-weight:900"><input type="checkbox" id="fBiz" style="width:auto" ${f.bizOk ? 'checked' : ''}> まとめ買い・仕入れの相談を受け付ける</label>
+          <input id="fBizNote" maxlength="200" value="${esc(f.bizNote || '')}" placeholder="例：規格外品のまとめ売りもできます。週1回までお店に届けられます" style="margin-top:6px">
+          <span class="hint">お店からの相談がアプリに届きます。値段・お支払い・届け方は、お店と直接決めてください（手数料はかかりません）。</span></div>
+
         <h3 style="margin:20px 0 8px;font-size:1rem">↩️ キャンセルの受け付け</h3>
         <div class="field"><label for="fCancel">お客さんが自分でキャンセルできる期間</label>
           <select id="fCancel">${[1, 2, 3].map(d => `<option value="${d}" ${Number(f.cancelDays || 2) === d ? 'selected' : ''}>注文から${d}日以内</option>`).join('')}</select>
@@ -2575,6 +2719,7 @@
         certs: $('#fCerts').value.split(/[,、，]/).map(s => s.trim()).filter(Boolean),
         pickup: { enabled: pkOn, place: $('#pkPlace').value.trim(), addr: $('#pkAddrPublic').checked ? pkAddr : '', cash: $('#pkCash').checked, days: pkDays, from, to, note: $('#pkNote').value.trim() },
         pickupAddr: pkAddr, sellerName, sellerTel, sellerAddr, shipDays: Number($('#fShipDays').value),
+        bizOk: $('#fBiz').checked, bizNote: $('#fBizNote').value.trim(),
         cancelDays: Number($('#fCancel').value),
         products: draftProducts.map(p => Object.assign({}, p, pkOn ? {} : { pickupPrice: p.shipPrice }))
       });
@@ -2797,23 +2942,319 @@
   }
 
   // 注文ごとのメッセージ（お客さん ⇔ 農家さん）
-  async function chatBox(slot, o, asFarmer) {
-    const list = await api.orderMessages(o.id).catch(() => []);
-    const open = o.status !== 'pending_payment';
+  // メッセージのやりとり（注文・お手伝い・お店の相談で共通）
+  async function threadBox(slot, t) {
+    const list = await t.load().catch(() => []);
     slot.innerHTML = `
       <div class="chat">
-        ${list.length ? list.map(m => `<div class="msg ${m.fromFarmer === !!asFarmer ? 'me' : 'them'}"><div class="who">${m.fromFarmer ? '🧑‍🌾 農家さん' : '🙋 お客さん'} ・ ${fmtDateTime(m.date)}</div>${esc(m.text).replace(/\n/g, '<br>')}</div>`).join('')
-          : `<div class="small dim">${asFarmer ? 'お客さんへの連絡（発送が遅れる・受け取りの時間の相談など）に使えます。' : '受け取りの時間の相談や、届いたものについての連絡に使えます。'}</div>`}
+        ${list.length ? list.map(m => `<div class="msg ${m.fromFarmer === !!t.asFarmer ? 'me' : 'them'}"><div class="who">${m.fromFarmer ? '🧑‍🌾 農家さん' : t.otherLabel} ・ ${fmtDateTime(m.date)}</div>${esc(m.text).replace(/\n/g, '<br>')}</div>`).join('')
+          : `<div class="small dim">${esc(t.hint)}</div>`}
       </div>
-      ${open ? `<form class="chat-form"><textarea maxlength="500" rows="2" placeholder="${asFarmer ? 'お客さんへメッセージ' : '農家さんへメッセージ'}" aria-label="メッセージ"></textarea><button class="btn small leaf" type="submit">送る</button></form>` : ''}`;
+      ${t.open ? `<form class="chat-form"><textarea maxlength="500" rows="2" placeholder="${t.asFarmer ? `${t.otherLabel.replace(/^\S+\s/, '')}へメッセージ` : '農家さんへメッセージ'}" aria-label="メッセージ"></textarea><button class="btn small leaf" type="submit">送る</button></form>` : ''}`;
     const form = $('.chat-form', slot);
     if (form) form.addEventListener('submit', async e => {
       e.preventDefault();
-      const ta = $('textarea', form), text = ta.value.trim();
+      const text = $('textarea', form).value.trim();
       if (!text) return;
       $('button', form).disabled = true;
-      try { await api.sendOrderMessage(o.id, text, asFarmer); await chatBox(slot, o, asFarmer); }
+      try { await t.send(text); await threadBox(slot, t); }
       catch (err) { toast(err.message || '送れませんでした'); $('button', form).disabled = false; }
+    });
+  }
+  function chatBox(slot, o, asFarmer) {
+    return threadBox(slot, {
+      load: () => api.orderMessages(o.id), send: text => api.sendOrderMessage(o.id, text, asFarmer), asFarmer, open: o.status !== 'pending_payment',
+      otherLabel: '🙋 お客さん', hint: asFarmer ? 'お客さんへの連絡（発送が遅れる・受け取りの時間の相談など）に使えます。' : '受け取りの時間の相談や、届いたものについての連絡に使えます。'
+    });
+  }
+  const talkBox = (slot, kind, ref, asFarmer, open = true) => threadBox(slot, {
+    load: () => api.talk(kind, ref), send: text => api.talkSend(kind, ref, text, asFarmer), asFarmer, open,
+    otherLabel: kind === 'biz' ? '🏪 お店' : '🙋 お手伝いの方',
+    hint: kind === 'biz' ? (asFarmer ? '値段・量・届け方などを相談してください。' : '農家さんからの返事がここに届きます。') : (asFarmer ? '集合場所や当日の流れを伝えるのに使えます。' : '農家さんからの連絡がここに届きます。')
+  });
+
+  // ======================================================================
+  //  援農（お手伝い）
+  //  無償のボランティアに限る（お礼は収穫物のおすそわけ程度）。賃金のある仕事の募集は扱わない。
+  // ======================================================================
+  const ENTRY_LABEL = { applied: '返事待ち', accepted: '参加決定', declined: '今回は見送り', canceled: '取り消し' };
+  const helpLeft = h => Math.max(0, h.capacity - (h.filled || 0));
+  function helpCard(h) {
+    const f = findFarm(h.farmId), home = getHome(), left = helpLeft(h);
+    return `
+      <a class="help-card box" href="#/help/${esc(h.id)}">
+        <div class="when">📅 ${fmtDay(h.date)} ${h.from}:00〜${h.to}:00</div>
+        <h3>${esc(h.title)}</h3>
+        <div class="small">${f ? `${esc(f.emoji)} ${esc(f.farmName)} ・ ` : ''}📍 ${esc(h.place || (f ? f.city : ''))}${home && f ? ` ・ 🚗 ${fmtKm(km(home, f))}` : ''}</div>
+        <div class="tags" style="margin-top:6px">
+          ${h.beginner ? '<span class="tag">はじめてOK</span>' : ''}${h.meal ? '<span class="tag corn">お昼つき</span>' : ''}
+          ${h.thanks ? `<span class="tag carrot">🎁 ${esc(h.thanks)}</span>` : ''}
+          <span class="tag ${left ? 'eggplant' : 'tomato'}">${h.status !== 'open' ? '締め切り' : left ? `あと${left}人` : '満員'}</span>
+        </div>
+      </a>`;
+  }
+  const HELP_NOTE = `<div class="notice small">🙌 <b>お手伝いは、お金のやりとりのないボランティアです</b>（お礼は収穫物のおすそわけなど）。
+    けがに備えて、お住まいの市町の社会福祉協議会の「ボランティア活動保険」（年数百円）への加入をおすすめします。未成年の方は、保護者の同意を得てください。</div>`;
+  async function renderHelpList() {
+    const home = getHome();
+    let list = await api.helps();
+    if (home) list = list.slice().sort((a, b) => a.date.localeCompare(b.date) || (km(home, findFarm(a.farmId) || home) - km(home, findFarm(b.farmId) || home)));
+    const mine = needLogin() ? [] : await api.myEntries().catch(() => []);
+    const active = mine.filter(e => e.status !== 'canceled' && e.help && e.help.date >= today());
+    app.innerHTML = `
+      <section class="hero-intro"><span class="float a">🙌</span><h1>畑のお手伝い</h1><p>収穫や草取りを手伝って、農家さんと仲良くなろう。はじめての人も大歓迎です。</p></section>
+      ${active.length ? `<h2 class="sec"><span class="ic">📝</span>申し込んだお手伝い</h2><div class="order-list">${active.map(e => `
+        <a class="order box" href="#/help/${esc(e.helpId)}"><div class="head"><b>${esc(e.help.title)}</b><span class="status ${e.status === 'accepted' ? 'done' : e.status === 'declined' ? 'canceled' : 'paid'}">${ENTRY_LABEL[e.status]}</span></div>
+          <div class="small dim">📅 ${fmtDay(e.help.date)} ${e.help.from}:00〜${e.help.to}:00 ・ ${e.people}人</div></a>`).join('')}</div>` : ''}
+      <h2 class="sec"><span class="ic">📅</span>募集中のお手伝い <span class="dim small">${list.length}件</span></h2>
+      <div class="help-list">${list.length ? list.map(helpCard).join('') : '<div class="empty">いま募集中のお手伝いはありません。<br>農家さんをフォローしておくと、畑だよりで様子がわかります。</div>'}</div>
+      ${HELP_NOTE}
+      <p class="small dim" style="margin-top:12px">農家さんへ：お手伝いの募集は「<a href="#/mine/help">農家の方 → お手伝い</a>」から出せます。</p>
+      ${legalFoot()}`;
+  }
+  async function renderHelp(id) {
+    const h = await api.help(id);
+    if (!h) { app.innerHTML = '<a class="back" href="#/help">← もどる</a><div class="empty">この募集は見つかりませんでした。</div>'; return; }
+    const f = findFarm(h.farmId);
+    const own = f && isMine(f);
+    const entry = needLogin() || own ? null : (await api.myEntries().catch(() => [])).find(e => e.helpId === id && e.status !== 'canceled');
+    const future = h.date > today();
+    const left = helpLeft(h);
+    const row = (k, v) => v ? `<div class="row"><dt>${k}</dt><dd>${v}</dd></div>` : '';
+    app.innerHTML = `
+      <a class="back" href="#/help">← お手伝い一覧へ</a>
+      <section class="hero-intro simple"><h1>🙌 ${esc(h.title)}</h1><p>${f ? `<a href="#/farm/${esc(f.id)}">${esc(f.emoji)} ${esc(f.farmName)}</a>（${esc(f.city)}）` : ''}</p></section>
+      <div class="box" style="margin-top:14px"><div class="method"><dl>
+        ${row('日にち', `<b>${fmtDay(h.date)}</b>`)}
+        ${row('時間', `${h.from}:00〜${h.to}:00`)}
+        ${row('集まる場所', `${esc(h.place || (f ? f.city : ''))}<br><span class="small dim">くわしい場所は、参加が決まったらメッセージでお知らせします。</span>`)}
+        ${row('募集', `${h.capacity}人（${h.status !== 'open' ? '締め切り' : left ? `あと${left}人` : '満員'}）`)}
+        ${row('やること', esc(h.body).replace(/\n/g, '<br>'))}
+        ${row('お礼', esc(h.thanks))}
+        ${row('持ち物', esc(h.bring))}
+        ${row('お昼', h.meal ? 'あり' : 'なし（各自でご用意ください）')}
+        ${row('はじめての方', h.beginner ? '大歓迎です' : '経験のある方向けです')}
+      </dl></div></div>
+      ${HELP_NOTE}
+      <div id="helpAct" style="margin-top:16px"></div>`;
+    const act = $('#helpAct');
+    if (own) { act.innerHTML = '<p class="small">あなたの募集です。<a href="#/mine/help">申し込みの確認はこちら →</a></p>'; return; }
+    if (entry) {
+      act.innerHTML = `
+        <div class="panel">
+          <h3 style="font-size:1rem;margin:0 0 6px">申し込み状況：<span class="status ${entry.status === 'accepted' ? 'done' : entry.status === 'declined' ? 'canceled' : 'paid'}">${ENTRY_LABEL[entry.status]}</span></h3>
+          <p class="small" style="margin:0 0 8px">${entry.status === 'accepted' ? '参加が決まりました！集合場所などは、下のメッセージを確認してください。' : entry.status === 'declined' ? '今回は見送りになりました。またの機会にぜひ。' : '農家さんの返事をお待ちください。'}</p>
+          ${future && ['applied', 'accepted'].includes(entry.status) ? '<button class="btn danger small" id="cancelEntry">申し込みを取り消す</button>' : ''}
+        </div>
+        <h2 class="sec"><span class="ic">💬</span>農家さんとのメッセージ</h2>
+        <div class="panel" id="helpTalk"></div>`;
+      talkBox($('#helpTalk'), 'help', entry.id, false, entry.status !== 'declined');
+      const c = $('#cancelEntry');
+      if (c) c.addEventListener('click', async () => {
+        if (!(await ask('申し込みを取り消しますか？', '取り消す', true))) return;
+        try { await api.cancelHelpEntry(entry.id); toast('取り消しました'); renderHelp(id); } catch (err) { toast(err.message); }
+      });
+      return;
+    }
+    if (h.status !== 'open' || !future || !left) { act.innerHTML = '<div class="empty">この募集は締め切られました。</div>'; return; }
+    if (needLogin()) { act.innerHTML = loginPanel('申し込むには、ログインが必要です。'); bindLogin(location.hash, () => renderHelp(id)); return; }
+    const buyer = store.get(KEY.buyer, {});
+    act.innerHTML = `
+      <form class="panel" id="helpForm" novalidate>
+        <h3 style="font-size:1rem;margin:0 0 10px">✋ 申し込む</h3>
+        <div class="row2">
+          <div class="field"><label for="hName">お名前</label><input id="hName" maxlength="30" autocomplete="name" value="${esc(buyer.name || '')}"></div>
+          <div class="field"><label for="hTel">電話番号</label><input id="hTel" type="tel" maxlength="13" autocomplete="tel" value="${esc(buyer.tel || '')}" placeholder="090-0000-0000"></div>
+        </div>
+        <div class="field"><label for="hPeople">人数</label><select id="hPeople">${[1, 2, 3, 4, 5].filter(n => n <= left).map(n => `<option value="${n}">${n}人</option>`).join('')}</select></div>
+        <div class="field"><label for="hMsg">農家さんへひとこと</label><textarea id="hMsg" maxlength="400" placeholder="例：はじめてですが、体力には自信があります！"></textarea></div>
+        <p class="small dim">お名前と電話番号は、この農家さんにだけ伝わります。</p>
+        <button class="btn block leaf" type="submit" id="hSend">申し込む</button>
+      </form>`;
+    $('#helpForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const name = $('#hName').value.trim(), tel = $('#hTel').value.trim();
+      if (!name) { toast('お名前を入力してください'); $('#hName').focus(); return; }
+      if (!TEL_RE.test(tel)) { toast('電話番号を確認してください'); $('#hTel').focus(); return; }
+      $('#hSend').disabled = true;
+      try {
+        await api.applyHelp(id, { name, tel, people: Number($('#hPeople').value), message: $('#hMsg').value.trim() });
+        store.set(KEY.buyer, Object.assign(store.get(KEY.buyer, {}), { name, tel }));
+        toast('申し込みました！農家さんの返事をお待ちください');
+        renderHelp(id);
+      } catch (err) { toast(err.message); $('#hSend').disabled = false; }
+    });
+  }
+  // 農家さん：お手伝いの募集と申し込みの管理
+  async function renderMyHelps(head, rest) {
+    const f = DATA.mine;
+    if (rest[0] === 'new') return renderHelpNew(head);
+    const list = await api.helps(f.id);
+    const entries = {};
+    await Promise.all(list.map(async h => { entries[h.id] = await api.helpEntries(h.id).catch(() => []); }));
+    app.innerHTML = `
+      ${head}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:12px 0">
+        <h2 class="sec" style="margin:0"><span class="ic">🙌</span>お手伝いの募集</h2>
+        <a class="btn small leaf" href="#/mine/help/new">＋ 募集する</a>
+      </div>
+      <p class="small dim" style="margin:0 0 12px">収穫や草取りなどを、ボランティアで手伝ってくれる人を募集できます。<b>お金（日当・時給）は払えません</b>（お礼は収穫物のおすそわけ程度）。賃金を払う場合は雇用になり、労働基準法などのルールが適用されます。</p>
+      <div class="order-list">${list.length ? list.map(h => {
+        const es = entries[h.id] || [];
+        return `
+        <div class="order box">
+          <div class="head"><b>${esc(h.title)}</b><span class="status ${h.status === 'open' ? 'paid' : 'canceled'}">${h.status === 'open' ? '募集中' : '締め切り'}</span></div>
+          <div class="small">📅 ${fmtDay(h.date)} ${h.from}:00〜${h.to}:00 ・ 参加決定 ${h.filled || 0}/${h.capacity}人</div>
+          ${es.filter(e => e.status !== 'canceled').map(e => `
+            <div class="entry">
+              <div><b>${esc(e.name)} さん</b>（${e.people}人） <span class="status ${e.status === 'accepted' ? 'done' : e.status === 'declined' ? 'canceled' : 'paid'}">${ENTRY_LABEL[e.status]}</span></div>
+              <div class="small dim">📞 <a href="tel:${esc(String(e.tel).replace(/[^\d]/g, ''))}">${esc(e.tel)}</a>${e.message ? ` ・ 💬 ${esc(e.message)}` : ''}</div>
+              <div class="actions" style="margin-top:6px">
+                ${e.status === 'applied' ? `<button class="btn leaf small" data-resp="${esc(e.id)}" data-to="accepted">受け入れる</button><button class="btn ghost small" data-resp="${esc(e.id)}" data-to="declined">今回は見送る</button>` : ''}
+                ${e.status === 'accepted' ? `<button class="btn ghost small" data-resp="${esc(e.id)}" data-to="declined">取り消す</button>` : ''}
+              </div>
+              <details class="chat-toggle" data-talk="${esc(e.id)}"><summary>💬 メッセージ</summary><div class="chat-slot"></div></details>
+            </div>`).join('') || '<div class="small dim" style="margin-top:6px">まだ申し込みはありません。</div>'}
+          <div class="actions" style="margin-top:8px">
+            <button class="btn ghost small" data-hstatus="${esc(h.id)}" data-to="${h.status === 'open' ? 'closed' : 'open'}">${h.status === 'open' ? '締め切る' : '募集を再開する'}</button>
+            ${es.some(e => ['applied', 'accepted'].includes(e.status)) ? '' : `<button class="btn ghost small" data-hdel="${esc(h.id)}" style="color:var(--tomato)">削除</button>`}
+          </div>
+        </div>`;
+      }).join('') : '<div class="empty">まだ募集はありません。<br>「＋ 募集する」から始められます。</div>'}</div>`;
+    const again = () => renderMyHelps(head, []);
+    $$('[data-resp]').forEach(b => b.addEventListener('click', async () => {
+      if (b.dataset.to === 'declined' && !(await ask('見送りますか？\n相手には「今回は見送り」と表示されます。', '見送る'))) return;
+      try { await api.respondHelp(b.dataset.resp, b.dataset.to); toast(b.dataset.to === 'accepted' ? '受け入れました。メッセージで集合場所を伝えましょう' : '更新しました'); again(); } catch (err) { toast(err.message); }
+    }));
+    $$('[data-hstatus]').forEach(b => b.addEventListener('click', async () => { try { await api.helpStatus(b.dataset.hstatus, b.dataset.to); again(); } catch (err) { toast(err.message); } }));
+    $$('[data-hdel]').forEach(b => b.addEventListener('click', async () => {
+      if (!(await ask('この募集を削除しますか？', '削除する', true))) return;
+      try { await api.helpDelete(b.dataset.hdel); again(); } catch (err) { toast(err.message); }
+    }));
+    $$('[data-talk]').forEach(d => d.addEventListener('toggle', () => { if (d.open) talkBox($('.chat-slot', d), 'help', d.dataset.talk, true); }));
+  }
+  function renderHelpNew(head) {
+    const f = DATA.mine;
+    const min = (() => { const t = new Date(); t.setDate(t.getDate() + 1); return ymd(t); })();
+    const hours = Array.from({ length: 19 }, (_, i) => i + 5);
+    app.innerHTML = `
+      ${head}
+      <a class="back" href="#/mine/help">← お手伝いの募集へ</a>
+      <h2 class="sec"><span class="ic">📝</span>お手伝いを募集する</h2>
+      <form class="panel" id="hnForm" novalidate>
+        <div class="field"><label for="hnTitle">やること（タイトル）*</label><input id="hnTitle" maxlength="40" placeholder="例：ミニトマトの収穫"></div>
+        <div class="row2">
+          <div class="field"><label for="hnDate">日にち *</label><input id="hnDate" type="date" min="${min}"></div>
+          <div class="field"><label for="hnCap">募集人数</label><select id="hnCap">${[1, 2, 3, 4, 5, 6, 8, 10].map(n => `<option value="${n}" ${n === 2 ? 'selected' : ''}>${n}人</option>`).join('')}</select></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="hnFrom">何時から</label><select id="hnFrom">${hours.map(h => `<option value="${h}" ${h === 9 ? 'selected' : ''}>${h}:00</option>`).join('')}</select></div>
+          <div class="field"><label for="hnTo">何時まで</label><select id="hnTo">${hours.map(h => `<option value="${h}" ${h === 12 ? 'selected' : ''}>${h}:00</option>`).join('')}</select></div>
+        </div>
+        <div class="field"><label for="hnPlace">集まる場所（おおまかに）</label><input id="hnPlace" maxlength="60" value="${esc(f.city)}" placeholder="例：徳地三谷の畑"><span class="hint">くわしい住所は、参加が決まった人にメッセージで伝えてください。</span></div>
+        <div class="field"><label for="hnBody">くわしく</label><textarea id="hnBody" maxlength="1000" placeholder="作業の内容、体力の目安、雨の場合など"></textarea></div>
+        <div class="field"><label for="hnThanks">お礼</label><input id="hnThanks" maxlength="60" placeholder="例：収穫した野菜のおすそわけ"><span class="hint">お金（日当・時給・交通費以上の支払い）は出せません。</span></div>
+        <div class="field"><label for="hnBring">持ち物</label><input id="hnBring" maxlength="100" placeholder="例：軍手・帽子・飲み物"></div>
+        <label style="display:flex;gap:8px;align-items:center;margin:4px 0;font-weight:700"><input type="checkbox" id="hnBeginner" style="width:auto" checked> はじめての方も歓迎</label>
+        <label style="display:flex;gap:8px;align-items:center;margin:4px 0 12px;font-weight:700"><input type="checkbox" id="hnMeal" style="width:auto"> お昼ごはんあり</label>
+        <label style="display:flex;gap:8px;align-items:center;margin:0 0 12px;font-weight:700"><input type="checkbox" id="hnAgree" style="width:auto"> お金を払う仕事ではなく、ボランティアの募集です。作業中の安全に気を配ります。</label>
+        <button class="btn block leaf" type="submit" id="hnSave">募集する</button>
+      </form>`;
+    $('#hnForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const title = $('#hnTitle').value.trim(), date = $('#hnDate').value;
+      const from = Number($('#hnFrom').value), to = Number($('#hnTo').value);
+      if (!title) { toast('やることを入力してください'); $('#hnTitle').focus(); return; }
+      if (!date || date < min) { toast('日にちは明日以降をえらんでください'); $('#hnDate').focus(); return; }
+      if (to <= from) { toast('「何時まで」は「何時から」より後にしてください'); return; }
+      if (!$('#hnAgree').checked) { toast('ボランティアの募集であることを確認して、チェックを入れてください'); return; }
+      $('#hnSave').disabled = true;
+      try {
+        await api.helpSave(f.id, { title, date, from, to, capacity: Number($('#hnCap').value), place: $('#hnPlace').value.trim(), body: $('#hnBody').value.trim(),
+          thanks: $('#hnThanks').value.trim(), bring: $('#hnBring').value.trim(), beginner: $('#hnBeginner').checked, meal: $('#hnMeal').checked });
+        toast('募集しました！');
+        go('#/mine/help');
+      } catch (err) { toast(err.message); $('#hnSave').disabled = false; }
+    });
+  }
+
+  // ======================================================================
+  //  お店・飲食店からの「まとめ買い・仕入れの相談」
+  //  取引（値段・請求・お届け）は、お店と農家さんが直接決める。アプリはきっかけとやりとりの場だけ。
+  // ======================================================================
+  function bizCard(b, asFarmer) {
+    const f = findFarm(b.farmId);
+    const row = (k, v) => v ? `<div class="small"><b>${k}</b>：${esc(v)}</div>` : '';
+    return `
+      <div class="order box">
+        <div class="head"><b>🏪 ${esc(asFarmer ? b.shopName : (f ? f.farmName : '農家さん'))}</b><span class="status ${b.status === 'open' ? 'paid' : 'canceled'}">${b.status === 'open' ? '相談中' : '終了'}</span></div>
+        <div class="small dim">${fmtDateTime(b.date)}${asFarmer ? ` ・ ${esc(b.shopKind)}${b.city ? ` ・ ${esc(b.city)}` : ''}` : ''}</div>
+        ${row('ほしいもの', b.items)}${row('量', b.quantity)}${row('頻度', b.frequency)}${row('届け方', b.delivery)}${row('そのほか', b.note)}
+        ${asFarmer ? `<div class="small dim">担当：${esc(b.contactName)} ・ 📞 <a href="tel:${esc(String(b.tel).replace(/[^\d]/g, ''))}">${esc(b.tel)}</a></div>` : ''}
+        <details class="chat-toggle" data-biz="${esc(b.id)}" ${asFarmer ? '' : 'open'}><summary>💬 メッセージ</summary><div class="chat-slot"></div></details>
+        ${b.status === 'open' ? `<div style="margin-top:6px"><button class="btn ghost small" data-bizclose="${esc(b.id)}">この相談を終える</button></div>` : ''}
+      </div>`;
+  }
+  function bindBizCards(asFarmer, again) {
+    $$('[data-biz]').forEach(d => {
+      const load = () => talkBox($('.chat-slot', d), 'biz', d.dataset.biz, asFarmer, true);
+      if (d.open) load();
+      d.addEventListener('toggle', () => { if (d.open) load(); });
+    });
+    $$('[data-bizclose]').forEach(b => b.addEventListener('click', async () => {
+      if (!(await ask('この相談を終えますか？', '終える'))) return;
+      try { await api.bizClose(b.dataset.bizclose); again(); } catch (err) { toast(err.message); }
+    }));
+  }
+  async function renderBiz(farmId) {
+    const f = farmId ? findFarm(farmId) : null;
+    if (needLogin()) {
+      app.innerHTML = `<section class="hero-intro simple"><h1>🏪 お店・飲食店の方へ</h1></section><div style="margin-top:16px">${loginPanel('仕入れの相談をするには、ログインが必要です。')}</div>`;
+      bindLogin(location.hash, () => renderBiz(farmId));
+      return;
+    }
+    const mine = (await api.bizMine().catch(() => [])).filter(b => !f || b.farmId === f.id);
+    const canSend = f && f.bizOk && !isMine(f);
+    app.innerHTML = `
+      ${f ? `<a class="back" href="#/farm/${esc(f.id)}">← ${esc(f.farmName)}にもどる</a>` : '<a class="back" href="#/orders">← 注文へもどる</a>'}
+      <section class="hero-intro simple"><h1>🏪 まとめ買い・仕入れの相談</h1><p>${f ? `${esc(f.farmName)}さんに、お店・飲食店として相談できます。` : 'これまでに送った相談です。'}</p></section>
+      ${f && f.bizNote ? `<div class="bubble" style="margin-top:12px">${esc(f.bizNote)}</div>` : ''}
+      ${mine.length ? `<h2 class="sec"><span class="ic">💬</span>送った相談</h2><div class="order-list">${mine.map(b => bizCard(b, false)).join('')}</div>` : ''}
+      ${canSend ? `
+      <h2 class="sec"><span class="ic">📝</span>${mine.length ? '新しく相談する' : '相談する'}</h2>
+      <form class="panel" id="bizForm" novalidate>
+        <div class="row2">
+          <div class="field"><label for="bzShop">お店の名前 *</label><input id="bzShop" maxlength="60" placeholder="例：レストラン仁保"></div>
+          <div class="field"><label for="bzKind">業種</label><select id="bzKind">${['飲食店', '小売店・直売所', '旅館・ホテル', '給食・福祉施設', '加工業者', 'その他'].map(k => `<option>${k}</option>`).join('')}</select></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="bzCity">お店の市町</label><input id="bzCity" maxlength="30" placeholder="例：山口市"></div>
+          <div class="field"><label for="bzName">担当の方のお名前 *</label><input id="bzName" maxlength="30"></div>
+        </div>
+        <div class="field"><label for="bzTel">電話番号 *</label><input id="bzTel" type="tel" maxlength="13" placeholder="083-000-0000"></div>
+        <div class="field"><label for="bzItems">ほしいもの *</label><input id="bzItems" maxlength="300" placeholder="例：ミニトマト、規格外でもOK"></div>
+        <div class="row2">
+          <div class="field"><label for="bzQty">量</label><input id="bzQty" maxlength="200" placeholder="例：毎回5kgくらい"></div>
+          <div class="field"><label for="bzFreq">頻度</label><select id="bzFreq">${['1回だけ', '週1回', '週2回以上', '月1〜2回', '旬の時期だけ', '相談したい'].map(k => `<option>${k}</option>`).join('')}</select></div>
+        </div>
+        <div class="field"><label for="bzDeliv">届け方</label><select id="bzDeliv">${['お店まで届けてほしい', '畑まで取りに行く', '配送でほしい', '相談したい'].map(k => `<option>${k}</option>`).join('')}</select></div>
+        <div class="field"><label for="bzNote">そのほか</label><textarea id="bzNote" maxlength="600" placeholder="希望の値段、始めたい時期、請求書払いの希望など"></textarea></div>
+        <p class="small dim">値段・お支払い（請求書など）・お届けは、農家さんと直接決めてください。このアプリは手数料をいただきません。</p>
+        <button class="btn block leaf" type="submit" id="bzSend">相談を送る</button>
+      </form>` : (f && !f.bizOk ? '<div class="empty">この農家さんは、いまお店からの相談を受け付けていません。</div>' : '')}`;
+    bindBizCards(false, () => renderBiz(farmId));
+    const form = $('#bizForm');
+    if (form) form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const b = { shopName: $('#bzShop').value.trim(), shopKind: $('#bzKind').value, city: $('#bzCity').value.trim(), contactName: $('#bzName').value.trim(),
+        tel: $('#bzTel').value.trim(), items: $('#bzItems').value.trim(), quantity: $('#bzQty').value.trim(), frequency: $('#bzFreq').value, delivery: $('#bzDeliv').value, note: $('#bzNote').value.trim() };
+      if (!b.shopName) { toast('お店の名前を入力してください'); $('#bzShop').focus(); return; }
+      if (!b.contactName) { toast('担当の方のお名前を入力してください'); $('#bzName').focus(); return; }
+      if (!TEL_RE.test(b.tel)) { toast('電話番号を確認してください'); $('#bzTel').focus(); return; }
+      if (!b.items) { toast('ほしいものを入力してください'); $('#bzItems').focus(); return; }
+      $('#bzSend').disabled = true;
+      try { await api.bizSend(f.id, b); toast('相談を送りました！返事はここに届きます'); renderBiz(farmId); }
+      catch (err) { toast(err.message); $('#bzSend').disabled = false; }
     });
   }
 
@@ -2831,7 +3272,7 @@
     const parts = path.split('/').filter(Boolean);
     if (parts[0] !== 'mine' || parts[1] !== 'profile') { draftProducts = null; editingIdx = -1; }
     if (parts[0]) state.changingHome = false;
-    const tab = ['farm', 'checkout', 'legal', 'law', 'guide', 'faq', 'contact'].includes(parts[0]) ? '' : (parts[0] === 'order' ? 'orders' : (parts[0] || 'explore'));
+    const tab = ['farm', 'checkout', 'legal', 'law', 'guide', 'faq', 'contact', 'biz'].includes(parts[0]) ? '' : parts[0] === 'order' ? 'orders' : parts[0] === 'follows' ? 'feed' : (parts[0] || 'explore');
     $$('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.tab === tab));
     window.scrollTo(0, 0);
     try {
@@ -2843,6 +3284,8 @@
       else if (parts[0] === 'follows') renderFollows();
       else if (parts[0] === 'mine') await renderMine(parts[1], parts.slice(2), query);
       else if (parts[0] === 'legal') renderLegal(parts[1]);
+      else if (parts[0] === 'help') { if (parts[1]) await renderHelp(decodeURIComponent(parts[1])); else await renderHelpList(); }
+      else if (parts[0] === 'biz') await renderBiz(parts[1] ? decodeURIComponent(parts[1]) : null);
       else if (parts[0] === 'guide') renderGuide(parts[1]);
       else if (parts[0] === 'faq') renderFaq();
       else if (parts[0] === 'contact') await renderContact(query);
