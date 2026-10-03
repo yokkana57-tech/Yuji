@@ -30,11 +30,32 @@
 </script>
 </head>
 <body>
+<!-- 起動画面：アプリの準備ができるまで表示する（最低0.9秒。失敗したときはすぐ消して原因を見せる） -->
+<div id="splash" aria-hidden="true">
+  <div class="splash-in">
+    <img src="icons/icon.svg" alt="" width="112" height="112" class="splash-icon">
+    <div class="splash-title">やまぐち畑のとなり</div>
+    <div class="splash-sub">山口の農家さんと、まっすぐつながる</div>
+    <div class="splash-veg"><span>🥕</span><span>🍅</span><span>🌽</span><span>🍠</span><span>🍊</span></div>
+  </div>
+</div>
+<script>
+  (function () {
+    var t0 = Date.now(), el = document.getElementById('splash');
+    function hide() { if (!el) return; el.classList.add('out'); setTimeout(function () { el && el.remove(); el = null; }, 400); }
+    var iv = setInterval(function () {
+      if (window.__booted && Date.now() - t0 > 900) { clearInterval(iv); hide(); }
+    }, 100);
+    var orig = window.__bootError;
+    window.__bootError = function (m) { if (!window.__booted) { clearInterval(iv); hide(); } orig(m); };
+  })();
+</script>
 <header class="top">
   <div class="top-inner">
     <a class="brand" href="#/"><span class="veg">🥕</span> やまぐち畑のとなり<small>山口の農家さんと、まっすぐつながる</small></a>
     <span class="spacer"></span>
     <span class="mode-tag" id="modeTag" hidden>お試し版</span>
+    <button class="theme-btn menu-btn" id="menuBtn" title="メニュー" aria-label="メニュー（使い方・お問い合わせなど）">☰</button>
     <button class="theme-btn" id="themeBtn" title="表示テーマ切替" aria-label="表示テーマ切替">◐</button>
   </div>
 </header>
@@ -56,6 +77,7 @@
 <script src="config.js"></script>
 <script src="geo.js" onerror="__bootError('地図データ（geo.js）を読み込めませんでした')"></script>
 <script src="legal.js"></script>
+<script src="help.js"></script>
 <script src="app.js" onerror="__bootError('アプリ本体（app.js）を読み込めませんでした')"></script>
 </body>
 </html>
