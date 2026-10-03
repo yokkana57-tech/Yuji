@@ -2221,31 +2221,37 @@
     $('#cancelEdit').addEventListener('click', resetEditor);
     drawProducts();
 
-    $('#addProd').addEventListener('click', () => {
+    // 品目を追加する（成功したら true）。「登録」ボタンからも呼ぶ
+    function addProductFromEditor(quiet) {
       const name = $('#nName').value.trim();
       const months = $$('#nMonths input:checked').map(i => Number(i.value));
       const ship = Number($('#nShip').value);
       const pickOn = $('#pkOn').checked;
       const pick = pickOn ? Number($('#nPick').value) : ship;
-      if (!name) { toast('品目名を入力してください'); $('#nName').focus(); return; }
-      if (!$('#nUnit').value.trim()) { toast('1セットの量を入力してください'); $('#nUnit').focus(); return; }
-      if (!(ship > 0)) { toast('県内配送の価格（送料込み）を入力してください'); $('#nShip').focus(); return; }
-      if (pickOn && !(pick > 0)) { toast('畑で受け取りの価格を入力してください'); $('#nPick').focus(); return; }
-      if (pick > ship) { toast('受け取りの価格は、配送の価格以下にしてください'); $('#nPick').focus(); return; }
-      if (!months.length) { toast('お届けできる月を1つ以上選んでください'); return; }
+      const fail = (msg, el) => { toast(msg); if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } else $('#nMonths').scrollIntoView({ behavior: 'smooth', block: 'center' }); return false; };
+      if (!name) return fail('品目名を入力してください', $('#nName'));
+      if (!$('#nUnit').value.trim()) return fail('1セットの量を入力してください', $('#nUnit'));
+      if (!(ship > 0)) return fail('県内配送の価格（送料込み）を入力してください', $('#nShip'));
+      if (pickOn && !(pick > 0)) return fail('畑で受け取りの価格を入力してください', $('#nPick'));
+      if (pick > ship) return fail('受け取りの価格は、配送の価格以下にしてください', $('#nPick'));
+      if (!months.length) return fail('お届けできる月を1つ以上選んでください');
       const prev = editingIdx >= 0 ? draftProducts[editingIdx] : null;
       const p = { id: prev ? prev.id : 'new-' + uid(), name, cat: $('#nCat').value, months, note: $('#nNote').value.trim(), unit: $('#nUnit').value.trim(), shipPrice: ship, pickupPrice: pick, stock: Math.max(0, Number($('#nStock').value) || 0) };
       if (prev) draftProducts[editingIdx] = p; else draftProducts.push(p);
       resetEditor();
       drawProducts();
-      toast(prev ? '品目を更新しました（保存ボタンで確定）' : '品目を追加しました（保存ボタンで確定）');
-    });
+      if (!quiet) toast(prev ? '品目を更新しました（保存ボタンで確定）' : '品目を追加しました（保存ボタンで確定）');
+      return true;
+    }
+    $('#addProd').addEventListener('click', () => addProductFromEditor(false));
 
     $('#farmForm').addEventListener('submit', async e => {
       e.preventDefault();
       const need = [['#fName', '農園名'], ['#fFarmer', 'お名前'], ['#fCity', '市町'], ['#fCatch', 'ひとこと'], ['#fStory', '想い']];
       const miss = need.find(([s]) => !$(s).value.trim());
       if (miss) { toast(`${miss[1]}を入力してください`); $(miss[0]).focus(); return; }
+      // 品目を入力したまま「＋ この品目を追加」を押し忘れていたら、ここで追加する
+      if ($('#nName').value.trim() && !addProductFromEditor(true)) return;
       if (!draftProducts.length) { toast('売るものを1つ以上追加してください'); $('#nName').focus(); return; }
       if (cover.busy()) { toast('写真のアップロード中です'); return; }
       const pkOn = $('#pkOn').checked;
