@@ -6,6 +6,7 @@
   if (!GEO) throw new Error('地図データ（geo.js）を読み込めませんでした');
 
   // ---------- 実行環境 ----------
+  const APP_VERSION = '1.1.0';
   const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   const STANDALONE = NATIVE || (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
   const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -197,7 +198,8 @@
   const KEY = {
     mine: 'yamahata.myfarm', follows: 'yamahata.follows', cheers: 'yamahata.cheers', theme: 'yamahata.theme',
     orders: 'yamahata.orders', stock: 'yamahata.stock', buyer: 'yamahata.buyer', home: 'yamahata.home',
-    cart: 'yamahata.cart', next: 'yamahata.next', market: 'yamahata.market', mkmsg: 'yamahata.mkmsg', install: 'yamahata.install'
+    cart: 'yamahata.cart', next: 'yamahata.next', market: 'yamahata.market', mkmsg: 'yamahata.mkmsg', install: 'yamahata.install',
+    intro: 'yamahata.intro', inquiries: 'yamahata.inquiries', omsg: 'yamahata.omsg'
   };
   const store = {
     get(k, fallback) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; } },
@@ -265,7 +267,8 @@
     bad_pickup_day: 'その曜日は受け取りできません。', bad_pickup_time: 'その時間は受け取りできません。', bad_qty: '数量を確認してください。',
     product_not_found: '商品が見つかりませんでした。', out_of_season: 'いまはお届けできない時期の商品があります', out_of_stock: '在庫が足りない商品があります',
     cannot_cancel: 'この予約は取り消せません（期限切れ、または農家さんが準備を始めています）。',
-    too_early: '受け取りの時間が過ぎてから押してください。'
+    too_early: '受け取りの時間が過ぎてから押してください。',
+    too_many_posts: '短い時間にたくさん送られたため、いったん止めています。時間をおいてお試しください。'
   };
   const rpcError = e => { const [code, detail] = String(e.message || '').split(':'); return new Error(RPC_MSG[code] ? RPC_MSG[code] + (detail ? `（${detail}）` : '') : (e.message || 'エラーが起きました')); };
   function nextMonthOf(p) {
@@ -573,6 +576,25 @@
       if (error) throw new Error({ wrong_code: '受け取りコードがちがいます', bad_transition: 'この注文はもう更新できません（キャンセルされた可能性があります）', too_early: RPC_MSG.too_early }[error.message] || error.message);
     },
     async connect(action) { return this.invoke('connect-account', { action }); },
+    // お問い合わせ（運営に届く）
+    async contact(c) {
+      const { error } = await this.sb.from('inquiries').insert({ email: c.email, kind: c.kind, order_id: c.orderId || null, body: c.body });
+      if (error) throw rpcError(error);
+    },
+    // 注文ごとのメッセージ（お客さん ⇔ 農家さん）
+    async orderMessages(orderId) {
+      const { data, error } = await this.sb.from('order_messages').select('*').eq('order_id', orderId).order('created_at');
+      if (error) throw error;
+      return data.map(m => ({ id: m.id, fromFarmer: m.from_farmer, text: m.text, date: m.created_at }));
+    },
+    async sendOrderMessage(orderId, text, asFarmer) {
+      const { error } = await this.sb.from('order_messages').insert({ order_id: orderId, text, from_farmer: !!asFarmer });
+      if (error) throw rpcError(error);
+    },
+    // 画面で起きたエラーを運営に知らせる（個人情報は送らない）
+    logError(message, where) {
+      try { this.sb.from('client_errors').insert({ message: String(message).slice(0, 500), where_at: String(where || '').slice(0, 200), ua: navigator.userAgent.slice(0, 200), app_version: APP_VERSION }).then(() => {}, () => {}); } catch (e) { /* noop */ }
+    },
     // なかま市
     itemFrom(r) {
       return { id: r.id, ownerId: r.owner_id, farmId: r.farm_id, kind: r.kind, cat: r.cat, title: r.title, body: r.body, price: r.price,
@@ -694,7 +716,7 @@
     async cancelOrder(id) {
       const list = store.get(KEY.orders, []);
       const o = list.find(x => x.id === id);
-      if (!o || !['paid', 'reserved'].includes(o.status) || Date.now() >= new Date(o.cancelDeadline).getTime()) throw new Error('この注文はキャンセルできません（期限切れ、または農家さんが準備を始めています）。');
+      if (!o || !canCancel(o)) throw new Error('この注文はキャンセルできません（期限切れ、または農家さんが準備を始めています）。');
       o.refundStatus = o.status === 'paid' ? 'refunded' : null; o.status = 'canceled';
       store.set(KEY.orders, list);
       const f = DATA.farms.find(x => x.id === o.farmId);
@@ -715,6 +737,10 @@
       store.set(KEY.orders, list);
     },
     async connect() { return { connected: true, charges_enabled: true }; },
+    async contact(c) { const l = store.get(KEY.inquiries, []); l.unshift(Object.assign({ date: new Date().toISOString() }, c)); store.set(KEY.inquiries, l); },
+    async orderMessages(orderId) { return (store.get(KEY.omsg, {})[orderId] || []); },
+    async sendOrderMessage(orderId, text, asFarmer) { const all = store.get(KEY.omsg, {}); (all[orderId] = all[orderId] || []).push({ id: uid(), fromFarmer: !!asFarmer, text, date: new Date().toISOString() }); store.set(KEY.omsg, all); },
+    logError() {},
     // なかま市
     marketMine() { return store.get(KEY.market, []); },
     async marketList() {
@@ -1395,6 +1421,7 @@
         <div><span class="tag ${CAT_COLOR[p.cat] || ''}">${CATS[p.cat] || ''}</span> ${season ? '<span class="tag tomato">いま旬</span>' : ''}</div>
         <h3>${esc(p.name)}</h3>
         <div class="unit">${esc(p.unit)}${p.note ? ` ・ ${esc(p.note)}` : ''}</div>
+        <div class="origin">原産地：山口県${esc(f.city)}</div>
         <div class="prices" style="${pick ? '' : 'grid-template-columns:1fr'}">
           ${pick ? `
           <button type="button" class="price ship ${how === 'ship' ? 'on' : ''}" data-how="ship" aria-pressed="${how === 'ship'}" ${f.chargesEnabled ? '' : 'disabled'}><small>📦 県内配送（送料込み）</small><b>${yen(p.shipPrice)}</b></button>
@@ -1806,7 +1833,13 @@
     const idx = st.findIndex(s => s[0] === o.status);
     return `<div class="steps">${st.map((s, i) => `<div class="${i <= idx ? 'on' : ''}">${s[1]}</div>`).join('')}</div>`;
   }
-  const canCancel = o => ['paid', 'reserved'].includes(o.status) && Date.now() < new Date(o.cancelDeadline).getTime();
+  // 発送が「発送の目安」より3日以上遅れた配送の注文は、期限を過ぎてもキャンセル（全額返金）できる（サーバーの begin_cancel と同じ条件）
+  const shipLate = o => {
+    if (o.method !== 'ship' || o.status !== 'paid') return false;
+    const f = findFarm(o.farmId);
+    return Date.now() > new Date(o.createdAt).getTime() + ((f ? shipDaysOf(f) : 3) + 3) * 86400000;
+  };
+  const canCancel = o => (['paid', 'reserved'].includes(o.status) && Date.now() < new Date(o.cancelDeadline).getTime()) || shipLate(o);
   function orderCard(o) {
     return `
       <a class="order box" href="#/order/${esc(o.id)}">
@@ -1871,6 +1904,9 @@
     else if (canCancel(o) && o.payment === 'cash') cancelHtml = `
       <div class="cancel-box">↩️ <b>${fmtDateTime(o.cancelDeadline)}</b> まで、予約を取り消せます。行けなくなったときは、必ず取り消してください。
         <div style="margin-top:10px"><button class="btn danger small" id="cancelBtn">この予約を取り消す</button></div></div>`;
+    else if (shipLate(o)) cancelHtml = `
+      <div class="cancel-box">⚠️ 発送の目安を過ぎています。まずは下のメッセージで農家さんに確認してみてください。待てない場合は、キャンセル（全額返金）できます。
+        <div style="margin-top:10px"><button class="btn danger small" id="cancelBtn">この注文をキャンセルする</button></div></div>`;
     else if (canCancel(o)) cancelHtml = `
       <div class="cancel-box">↩️ <b>${fmtDateTime(o.cancelDeadline)}</b> まで、キャンセルできます（全額返金）。
         <div style="margin-top:10px"><button class="btn danger small" id="cancelBtn">この注文をキャンセルする</button></div></div>`;
@@ -1903,11 +1939,16 @@
           ${o.items.map(i => `<tr><td>${esc(i.name)}<br><span class="small dim">${esc(i.unit)} × ${i.qty}</span></td><td class="r">${yen(i.price * i.qty)}</td></tr>`).join('')}
           <tr class="total"><td>合計 <span class="small dim">${pickup ? '（送料なし）' : '（送料込み）'}</span></td><td class="r">${yen(o.total)}</td></tr>
         </table>
-        <p class="small dim" style="margin:8px 0 0">注文番号 ${esc(String(o.id).slice(0, 8))}${api.mode === 'demo' ? '（お試し版）' : ''}</p>
+        <p class="small dim" style="margin:8px 0 0">注文番号 ${esc(String(o.id).slice(0, 8))} ・ ${fmtDateTime(o.createdAt)} 注文 ・ 販売者 ${esc(f ? `${sellerOf(f)}（${o.farmName}）` : o.farmName)}${o.farmCity || (f && f.city) ? ` ・ 原産地 山口県${esc(o.farmCity || f.city)}` : ''}${api.mode === 'demo' ? '（お試し版）' : ''}</p>
       </div>
+      ${o.status !== 'pending_payment' && o.status !== 'expired' ? `
+      <h2 class="sec"><span class="ic">💬</span>農家さんとのメッセージ</h2>
+      <div class="panel" id="chatSlot"><div class="small dim">よみこみ中…</div></div>` : ''}
+      <p class="small dim" style="margin-top:12px">解決しないときは <a href="#/contact?kind=order&order=${esc(o.id)}">運営へのお問い合わせ</a> へ。</p>
       <div class="actions">${o.farmId ? `<a class="btn leaf" href="#/farm/${esc(o.farmId)}">${esc(o.farmName)}のページへ</a>` : ''}
       ${o.status === 'done' && o.farmId ? `<a class="btn corn" href="#/farm/${esc(o.farmId)}">💌 感想を届ける</a>` : ''}</div>
     `;
+    if ($('#chatSlot')) chatBox($('#chatSlot'), o, false);
     const pa = $('#payAgain');
     if (pa) pa.addEventListener('click', () => openExternal(o.checkoutUrl, () => renderOrder(o.id, true)));
     const cb = $('#cancelBtn');
@@ -2026,12 +2067,15 @@
             ? (o.status === 'canceled' ? '（予約取り消し）' : o.status === 'noshow' ? '（受け取りなし）' : o.status === 'done' ? '（現金で受け取り済み）' : ' <b>💴 受け取りのときに現金で</b>')
             : (o.status === 'canceled' ? '（キャンセル・返金済み）' : '（支払い済み）')}</div>
           ${act}
+          ${o.status !== 'pending_payment' ? `<details class="chat-toggle" data-chat="${esc(o.id)}"><summary>💬 お客さんとのメッセージ</summary><div class="chat-slot"><div class="small dim">よみこみ中…</div></div></details>` : ''}
         </div>`;
     }).join('');
   }
+  let farmerOrderList = [];
   async function renderFarmerOrders(head) {
     const f = DATA.mine;
     const list = await api.farmOrders(f.id);
+    farmerOrderList = list;
     app.innerHTML = `
       ${head}
       ${api.mode === 'live' && !f.chargesEnabled ? `
@@ -2061,17 +2105,22 @@
       catch (err) { toast(err.message); cn.disabled = false; }
     });
     function bindOrders() {
+      $$('[data-chat]').forEach(d => d.addEventListener('toggle', () => {
+        if (!d.open) return;
+        const o = farmerOrderList.find(x => x.id === d.dataset.chat);
+        if (o) chatBox($('.chat-slot', d), o, true);
+      }));
       $$('[data-adv]').forEach(b => b.addEventListener('click', async () => {
         if (b.dataset.to === 'noshow') { if (!(await ask('このお客さんは来なかったことにしますか？\n在庫は元に戻ります。来なかった予約が2回になると、その人は現金払いの予約ができなくなります。', '来なかった', true))) return; }
         else if (b.dataset.to !== 'done' && !(await ask('準備を始めると、お客さんはキャンセルできなくなります。よろしいですか？', b.dataset.to === 'ready' ? '準備できた' : '発送した'))) return;
         try { await api.updateOrder(b.dataset.adv, b.dataset.to); toast('更新しました'); } catch (err) { toast(err.message); }
-        $('#farmerOrders').innerHTML = farmerOrderCards(await api.farmOrders(f.id)); bindOrders(); updateBadge();
+        farmerOrderList = await api.farmOrders(f.id); $('#farmerOrders').innerHTML = farmerOrderCards(farmerOrderList); bindOrders(); updateBadge();
       }));
       $$('[data-done]').forEach(b => b.addEventListener('click', async () => {
         const input = $(`[data-code-for="${CSS.escape(b.dataset.done)}"]`);
         try { await api.updateOrder(b.dataset.done, 'done', input.value.trim()); toast('受け渡し完了！ありがとうございました'); }
         catch (err) { toast(err.message); input.focus(); return; }
-        $('#farmerOrders').innerHTML = farmerOrderCards(await api.farmOrders(f.id)); bindOrders(); updateBadge();
+        farmerOrderList = await api.farmOrders(f.id); $('#farmerOrders').innerHTML = farmerOrderCards(farmerOrderList); bindOrders(); updateBadge();
       }));
     }
     bindOrders();
@@ -2189,6 +2238,17 @@
         <div class="field"><label for="mkCond">状態</label><input id="mkCond" maxlength="30" placeholder="例：中古・動作良好 ／ 未使用"></div>
         <div class="field"><label for="mkBody">くわしく</label><textarea id="mkBody" maxlength="800" placeholder="使っていた年数、サイズ、受け渡しできる場所や日時など"></textarea></div>
         <div class="field"><span class="field-label">写真（3枚まで）</span><div id="mkPhotos"></div></div>
+        <div class="notice small">
+          <b>出品できないもの</b>
+          <ul style="margin:4px 0 0;padding-left:1.2em">
+            <li>農薬（無料でゆずるのもできません）</li>
+            <li>肥料を値段をつけて売ること（ゆずるのは可）</li>
+            <li>登録品種の種・苗を自分で増やしたもの</li>
+            <li>盗品、危ない物、法律で許可が必要な物（許可がない場合）</li>
+          </ul>
+          <div style="margin-top:4px">中古品をくり返し仕入れて売る場合は、古物商の許可が必要です。</div>
+        </div>
+        <label style="display:flex;gap:8px;align-items:center;margin:10px 0;font-weight:700"><input type="checkbox" id="mkAgree" style="width:auto"> 出品できないものではないことを確認しました</label>
         <button class="btn" type="submit" id="mkSave">出品する</button>
       </form>`;
     const photos = photoPicker($('#mkPhotos'), [], 3, '写真を追加');
@@ -2200,6 +2260,7 @@
       e.preventDefault();
       const title = $('#mkTitle').value.trim();
       const k = kind();
+      if (k !== 'want' && !$('#mkAgree').checked) { toast('出品できないものではないことを確認して、チェックを入れてください'); $('#mkAgree').focus(); return; }
       const price = k === 'sell' ? Number($('#mkPrice').value) : (k === 'give' ? 0 : null);
       if (!title) { toast('タイトルを入力してください'); $('#mkTitle').focus(); return; }
       if (k === 'sell' && !(price > 0)) { toast('値段を入力してください'); $('#mkPrice').focus(); return; }
@@ -2391,6 +2452,7 @@
           <div class="field"><span class="field-label">お届けできる月</span>
             <div class="months" id="nMonths">${MONTHS.map(mm => `<label><input type="checkbox" value="${mm}">${mm}月</label>`).join('')}</div></div>
           <div class="field"><label for="nNote">ひとことメモ</label><input id="nNote" maxlength="40" placeholder="例：皮ごと食べられます"></div>
+          <p class="small dim" style="margin:0 0 10px">⚠️ 漬物・ジャム・干し柿・もちなどの<b>加工品</b>は、保健所の営業許可と食品表示が必要です。許可を持っている場合だけ登録してください。お米は、産地・品種・産年・精米した日をメモに書いてください。</p>
           <button class="btn corn small" type="button" id="addProd">＋ この品目を追加</button>
           <button class="btn ghost small" type="button" id="cancelEdit" hidden>編集をやめる</button>
         </div>
@@ -2612,6 +2674,155 @@
     openSheet(kind === 'law' ? (f ? lawHtml(f) : '') : kind === 'privacy' ? window.HATAKE_LEGAL.privacy() : window.HATAKE_LEGAL.terms());
   });
 
+  // ---------- メニュー（使い方・よくある質問・お問い合わせ・規約・スポンサー） ----------
+  const HELP = window.HATAKE_HELP || { intro: [], guide: { buyer: [], farmer: [] }, faq: [] };
+  function sponsorsHtml() {
+    const list = ((window.HATAKE_CONFIG || {}).sponsors || []).filter(x => x && x.name);
+    return list.length
+      ? `<div class="sponsors"><div class="small dim">このアプリは、次のみなさんの応援で運営しています</div>${list.map(x => `<div class="sponsor">${safeUrl(x.url) ? `<a href="${safeUrl(x.url)}" target="_blank" rel="noopener">` : ''}<b>🌱 ${esc(x.name)}</b>${safeUrl(x.url) ? '</a>' : ''}${x.text ? `<div class="small">${esc(x.text)}</div>` : ''}</div>`).join('')}</div>`
+      : `<div class="sponsors"><div class="small"><b>🌱 応援してくれる企業・団体を募集しています</b></div><div class="small dim">このアプリは、運営の手数料をいただかずに続けています。地域の農業を一緒に応援してくださる方は、<a href="#/contact?kind=request" data-close-menu>お問い合わせ</a>からご連絡ください。</div></div>`;
+  }
+  function openMenu() {
+    const wrap = document.createElement('div');
+    wrap.className = 'modal sheet';
+    const item = (href, ic, t, sub) => `<a class="menu-item" href="${href}" data-close-menu><span class="ic">${ic}</span><span>${t}${sub ? `<small>${sub}</small>` : ''}</span><span class="arr">›</span></a>`;
+    wrap.innerHTML = `<div class="modal-card sheet-card" role="dialog" aria-modal="true" aria-label="メニュー"><button type="button" class="sheet-close" aria-label="閉じる">✕</button>
+      <h2 style="margin:0 0 12px;font-size:1.1rem">メニュー</h2>
+      <nav class="menu-list">
+        ${item('#/guide', '📖', '使い方ガイド', 'はじめての方はこちら')}
+        ${item('#/faq', '❓', 'よくある質問', '送料・キャンセル・手数料など')}
+        ${item('#/contact', '✉️', 'お問い合わせ', '困ったこと・ご意見・不具合')}
+        ${item('#/legal/terms', '📄', '利用規約')}
+        ${item('#/legal/privacy', '🔒', 'プライバシーポリシー')}
+      </nav>
+      ${sponsorsHtml()}
+      <p class="small dim" style="text-align:center;margin:14px 0 0">やまぐち畑のとなり ver.${APP_VERSION}</p></div>`;
+    const done = () => { wrap.remove(); document.removeEventListener('keydown', onKey); };
+    const onKey = e => { if (e.key === 'Escape') done(); };
+    wrap.addEventListener('click', e => { if (e.target === wrap || e.target.closest('.sheet-close, [data-close-menu]')) done(); });
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(wrap);
+  }
+  $('#menuBtn').addEventListener('click', openMenu);
+
+  function stepsHtml(list) {
+    return `<ol class="guide-steps">${list.map((x, i) => `<li><span class="num">${i + 1}</span><span class="em">${x.emoji}</span><div><b>${esc(x.title)}</b><p>${esc(x.text)}</p></div></li>`).join('')}</ol>`;
+  }
+  function renderGuide(who) {
+    const farmer = who === 'farmer';
+    app.innerHTML = `
+      <section class="hero-intro simple"><h1>📖 使い方ガイド</h1><p>はじめての方でも、かんたんに使えます。</p></section>
+      <div class="seg" style="margin:16px 0 4px" role="tablist">
+        <a href="#/guide" class="${farmer ? '' : 'on'}" role="tab" aria-selected="${!farmer}">🧺 買う方</a>
+        <a href="#/guide/farmer" class="${farmer ? 'on' : ''}" role="tab" aria-selected="${farmer}">👩‍🌾 農家さん</a>
+      </div>
+      ${stepsHtml(HELP.guide[farmer ? 'farmer' : 'buyer'])}
+      <div class="panel soft" style="margin-top:16px">
+        <p style="margin:0 0 10px"><b>わからないことがあったら</b></p>
+        <div class="actions"><a class="btn leaf small" href="#/faq">❓ よくある質問</a><a class="btn ghost small" href="#/contact">✉️ お問い合わせ</a>
+        ${farmer ? '' : '<button class="btn ghost small" type="button" id="replayIntro">🎬 はじめての案内をもう一度見る</button>'}</div>
+      </div>
+      ${legalFoot()}`;
+    const r = $('#replayIntro');
+    if (r) r.addEventListener('click', () => showIntro(true));
+  }
+  function renderFaq() {
+    const cats = [...new Set(HELP.faq.map(x => x.cat))];
+    app.innerHTML = `
+      <section class="hero-intro simple"><h1>❓ よくある質問</h1><p>見つからないときは、お気軽にお問い合わせください。</p></section>
+      ${cats.map(c => `<h2 class="sec">${esc(c)}</h2><div class="faq">${HELP.faq.filter(x => x.cat === c).map(x => `<details><summary>${esc(x.q)}</summary><p>${esc(x.a).replace(/\n/g, '<br>')}</p></details>`).join('')}</div>`).join('')}
+      <div class="panel soft" style="margin-top:18px;text-align:center"><p style="margin:0 0 10px">解決しないときは</p><a class="btn leaf" href="#/contact">✉️ お問い合わせ</a></div>
+      ${legalFoot()}`;
+  }
+  const INQ_KIND = { order: 'ご注文について', trouble: '農家さん・お客さんとのトラブル', bug: 'アプリの不具合', farmer: '農家さんの登録・出品について', request: 'ご意見・ご要望・スポンサーのご相談', other: 'その他' };
+  async function renderContact(query) {
+    const pre = new URLSearchParams(query || '');
+    const loggedIn = !needLogin();
+    const orders = loggedIn ? (await api.myOrders().catch(() => [])).slice(0, 20) : [];
+    const email = api.mode === 'live' && api.user ? api.user.email : '';
+    app.innerHTML = `
+      <section class="hero-intro simple"><h1>✉️ お問い合わせ</h1><p>運営にメッセージが届きます。返信は、入力したメールアドレスにお送りします。</p></section>
+      <p class="small" style="margin:12px 0">ご注文の内容は、まず<b>注文画面のメッセージ</b>で農家さんに聞くと早く解決します。<a href="#/faq">よくある質問</a>もご覧ください。</p>
+      <form class="panel" id="inqForm" novalidate>
+        <div class="field"><label for="iKind">お問い合わせの種類</label>
+          <select id="iKind">${Object.entries(INQ_KIND).map(([k, v]) => `<option value="${k}" ${pre.get('kind') === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+        ${orders.length ? `<div class="field"><label for="iOrder">関係する注文（あれば）</label>
+          <select id="iOrder"><option value="">えらばない</option>${orders.map(o => `<option value="${esc(o.id)}" ${pre.get('order') === o.id ? 'selected' : ''}>${fmtDate(o.createdAt)} ${esc(o.farmName)}（${yen(o.total)}）</option>`).join('')}</select></div>` : ''}
+        <div class="field"><label for="iEmail">返信先のメールアドレス</label><input id="iEmail" type="email" autocomplete="email" maxlength="200" value="${esc(email)}" placeholder="you@example.com"></div>
+        <div class="field"><label for="iBody">内容</label><textarea id="iBody" maxlength="2000" rows="7" placeholder="どの画面で、何をしたら、どうなったかを教えてください。"></textarea></div>
+        <p class="small dim">送信すると、<a href="#/legal/privacy" data-sheet>プライバシーポリシー</a>に同意したものとみなします。</p>
+        <button class="btn block" type="submit" id="iSend">送信する</button>
+        ${api.mode === 'demo' ? '<p class="small dim" style="margin:8px 0 0">お試し版のため、この端末の中にだけ保存されます。</p>' : ''}
+      </form>
+      ${legalFoot()}`;
+    $('#inqForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const em = $('#iEmail').value.trim(), body = $('#iBody').value.trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { toast('メールアドレスを確認してください'); $('#iEmail').focus(); return; }
+      if (!body) { toast('内容を入力してください'); $('#iBody').focus(); return; }
+      const btn = $('#iSend'); btn.disabled = true; btn.textContent = '送信中…';
+      try {
+        await api.contact({ email: em, kind: $('#iKind').value, orderId: $('#iOrder') ? $('#iOrder').value : '', body });
+        app.innerHTML = `<section class="hero-intro"><span class="float a">📮</span><h1>送信しました</h1><p>お問い合わせありがとうございます。内容を確認して、${esc(em)} にご連絡します。</p></section>
+          <div style="text-align:center;margin-top:16px"><a class="btn leaf" href="#/">トップへもどる</a></div>`;
+      } catch (err) { toast(err.message || '送信できませんでした'); btn.disabled = false; btn.textContent = '送信する'; }
+    });
+  }
+
+  // はじめて開いたときの案内（3枚）。メニューの「使い方ガイド」からもう一度見られる
+  function showIntro(force) {
+    if (!force && store.get(KEY.intro, false)) return;
+    const slides = HELP.intro;
+    if (!slides.length) return;
+    let i = 0;
+    const wrap = document.createElement('div');
+    wrap.className = 'modal intro';
+    const draw = () => {
+      const x = slides[i], last = i === slides.length - 1;
+      wrap.innerHTML = `<div class="modal-card intro-card" role="dialog" aria-modal="true">
+        <button type="button" class="intro-skip" data-skip>スキップ</button>
+        <div class="intro-em">${x.emoji}</div>
+        <h2>${esc(x.title).replace(/\n/g, '<br>')}</h2>
+        <p>${esc(x.text).replace(/\n/g, '<br>')}</p>
+        <div class="dots">${slides.map((_, k) => `<span class="${k === i ? 'on' : ''}"></span>`).join('')}</div>
+        <button type="button" class="btn block ${last ? 'leaf' : ''}" data-next>${last ? 'はじめる' : 'つぎへ'}</button></div>`;
+    };
+    const done = () => { wrap.remove(); store.set(KEY.intro, true); };
+    wrap.addEventListener('click', e => {
+      if (e.target.closest('[data-skip]')) done();
+      else if (e.target.closest('[data-next]')) { if (i < slides.length - 1) { i++; draw(); } else done(); }
+    });
+    draw();
+    document.body.appendChild(wrap);
+  }
+
+  // 注文ごとのメッセージ（お客さん ⇔ 農家さん）
+  async function chatBox(slot, o, asFarmer) {
+    const list = await api.orderMessages(o.id).catch(() => []);
+    const open = o.status !== 'pending_payment';
+    slot.innerHTML = `
+      <div class="chat">
+        ${list.length ? list.map(m => `<div class="msg ${m.fromFarmer === !!asFarmer ? 'me' : 'them'}"><div class="who">${m.fromFarmer ? '🧑‍🌾 農家さん' : '🙋 お客さん'} ・ ${fmtDateTime(m.date)}</div>${esc(m.text).replace(/\n/g, '<br>')}</div>`).join('')
+          : `<div class="small dim">${asFarmer ? 'お客さんへの連絡（発送が遅れる・受け取りの時間の相談など）に使えます。' : '受け取りの時間の相談や、届いたものについての連絡に使えます。'}</div>`}
+      </div>
+      ${open ? `<form class="chat-form"><textarea maxlength="500" rows="2" placeholder="${asFarmer ? 'お客さんへメッセージ' : '農家さんへメッセージ'}" aria-label="メッセージ"></textarea><button class="btn small leaf" type="submit">送る</button></form>` : ''}`;
+    const form = $('.chat-form', slot);
+    if (form) form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const ta = $('textarea', form), text = ta.value.trim();
+      if (!text) return;
+      $('button', form).disabled = true;
+      try { await api.sendOrderMessage(o.id, text, asFarmer); await chatBox(slot, o, asFarmer); }
+      catch (err) { toast(err.message || '送れませんでした'); $('button', form).disabled = false; }
+    });
+  }
+
+  // 画面で起きたエラーを運営に知らせる（1回の起動で5件まで）
+  let errCount = 0;
+  const reportError = (msg, where) => { if (errCount++ < 5 && api && api.logError) api.logError(msg, where || location.hash); };
+  window.addEventListener('error', e => reportError(e.message, (e.filename || '').split('/').pop() + ':' + e.lineno));
+  window.addEventListener('unhandledrejection', e => reportError('unhandled: ' + ((e.reason && e.reason.message) || e.reason)));
+
   async function route() {
     const seq = ++routeSeq;
     $('#cartbarSlot').innerHTML = '';
@@ -2620,7 +2831,7 @@
     const parts = path.split('/').filter(Boolean);
     if (parts[0] !== 'mine' || parts[1] !== 'profile') { draftProducts = null; editingIdx = -1; }
     if (parts[0]) state.changingHome = false;
-    const tab = ['farm', 'checkout', 'legal', 'law'].includes(parts[0]) ? '' : (parts[0] === 'order' ? 'orders' : (parts[0] || 'explore'));
+    const tab = ['farm', 'checkout', 'legal', 'law', 'guide', 'faq', 'contact'].includes(parts[0]) ? '' : (parts[0] === 'order' ? 'orders' : (parts[0] || 'explore'));
     $$('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.tab === tab));
     window.scrollTo(0, 0);
     try {
@@ -2632,10 +2843,14 @@
       else if (parts[0] === 'follows') renderFollows();
       else if (parts[0] === 'mine') await renderMine(parts[1], parts.slice(2), query);
       else if (parts[0] === 'legal') renderLegal(parts[1]);
+      else if (parts[0] === 'guide') renderGuide(parts[1]);
+      else if (parts[0] === 'faq') renderFaq();
+      else if (parts[0] === 'contact') await renderContact(query);
       else if (parts[0] === 'law' && parts[1]) renderLaw(decodeURIComponent(parts[1]));
       else renderExplore();
     } catch (err) {
       console.error(err);
+      reportError('route: ' + (err.message || err), location.hash);
       if (seq === routeSeq) app.innerHTML = `<div class="empty">読み込みに失敗しました。通信状況を確認して、もう一度お試しください。<br><small>${esc(err.message || '')}</small></div>`;
     }
     window.__booted = true;
@@ -2671,6 +2886,7 @@
       return;
     }
     route();
+    setTimeout(() => showIntro(false), 1000);
     // オフラインでも開けるように、画面のファイルを端末に保存しておく
     if ('serviceWorker' in navigator && location.protocol === 'https:' && !NATIVE) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
