@@ -756,6 +756,11 @@
       </div>`;
     const wrap = el.firstElementChild, svg = $('svg', wrap), over = $('.over', svg), tilesG = $('.tiles', svg);
     const tiles = new Map(); // "z/x/y" → <image>
+    let tileNeed = null;
+    function sweepTiles() { // 新しい段階のタイルがそろったら、下敷きにしていた前の段階のタイルを片付ける
+      if (!tileNeed || [...tileNeed].some(k => tiles.has(k) && !tiles.get(k).__done)) return;
+      tiles.forEach((img, key) => { if (!tileNeed.has(key)) { img.remove(); tiles.delete(key); } });
+    }
     let vb = null;
     const size = () => [svg.clientWidth || 300, svg.clientHeight || 300];
 
@@ -764,6 +769,7 @@
       let w = box[2] - box[0], h = box[3] - box[1];
       const cx = (box[0] + box[2]) / 2, cy = (box[1] + box[3]) / 2;
       if (w / h > cw / ch) h = w * ch / cw; else w = h * cw / ch;
+      stopAnim();
       vb = [cx - w / 2, cy - h / 2, w, h];
       clamp(); draw();
     }
@@ -772,14 +778,15 @@
       return [x - r, y - r, x + r, y + r];
     }
     function fitAll() { fit([V[0], V[1], V[0] + V[2], V[1] + V[3]]); }
-    function clamp() {
+    function clamp(b = vb) {
       const [cw, ch] = size();
       const maxW = V[2] * 1.15, minW = 4; // 最大で幅600mほどまで拡大できる
-      if (vb[2] > maxW) { const s = maxW / vb[2]; vb[0] += vb[2] * (1 - s) / 2; vb[1] += vb[3] * (1 - s) / 2; vb[2] = maxW; vb[3] = maxW * ch / cw; }
-      if (vb[2] < minW) { const s = minW / vb[2]; vb[0] -= vb[2] * (s - 1) / 2; vb[1] -= vb[3] * (s - 1) / 2; vb[2] = minW; vb[3] = minW * ch / cw; }
-      const cx = Math.min(Math.max(vb[0] + vb[2] / 2, V[0]), V[0] + V[2]);
-      const cy = Math.min(Math.max(vb[1] + vb[3] / 2, V[1]), V[1] + V[3]);
-      vb[0] = cx - vb[2] / 2; vb[1] = cy - vb[3] / 2;
+      if (b[2] > maxW) { const s = maxW / b[2]; b[0] += b[2] * (1 - s) / 2; b[1] += b[3] * (1 - s) / 2; b[2] = maxW; b[3] = maxW * ch / cw; }
+      if (b[2] < minW) { const s = minW / b[2]; b[0] -= b[2] * (s - 1) / 2; b[1] -= b[3] * (s - 1) / 2; b[2] = minW; b[3] = minW * ch / cw; }
+      const cx = Math.min(Math.max(b[0] + b[2] / 2, V[0]), V[0] + V[2]);
+      const cy = Math.min(Math.max(b[1] + b[3] / 2, V[1]), V[1] + V[3]);
+      b[0] = cx - b[2] / 2; b[1] = cy - b[3] / 2;
+      return b;
     }
 
     // ---- 国土地理院の地図タイル ----
@@ -797,26 +804,33 @@
         z--;
       }
       const need = new Set();
+      let pending = 0;
       for (let x = xs; x <= xe; x++) for (let y = ys; y <= ye; y++) {
         const key = `${z}/${x}/${y}`;
         need.add(key);
-        if (tiles.has(key)) continue;
+        if (tiles.has(key)) { if (!tiles.get(key).__done) pending++; continue; }
+        pending++;
         const [x0, y0] = toXY(ty2lat(y, z), tx2lng(x, z)), [x1, y1] = toXY(ty2lat(y + 1, z), tx2lng(x + 1, z));
         const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
         img.setAttribute('x', x0); img.setAttribute('y', y0);
         img.setAttribute('width', (x1 - x0) * 1.004); img.setAttribute('height', (y1 - y0) * 1.004);
         img.setAttribute('preserveAspectRatio', 'none');
-        img.addEventListener('load', () => { tileState.ok++; });
+        img.addEventListener('load', () => { tileState.ok++; img.__done = true; sweepTiles(); });
         img.addEventListener('error', () => {
           tileState.fail++;
-          img.remove();
+          img.__done = true;
+          img.remove(); tiles.delete(key);
+          sweepTiles();
           if (!tileState.ok && tileState.fail >= 3 && !tileState.broken) { tileState.broken = true; draw(); }
         });
         img.setAttribute('href', TILE_URL.replace('{z}', z).replace('{x}', x).replace('{y}', y));
         tilesG.appendChild(img);
         tiles.set(key, img);
       }
-      tiles.forEach((img, key) => { if (!need.has(key)) { img.remove(); tiles.delete(key); } });
+      tileNeed = need;
+      // 同じ段階で画面外になったものはすぐ消す。違う段階のものは、新しいタイルが届くまで下敷きとして残す
+      tiles.forEach((img, key) => { if (!need.has(key) && (key.startsWith(z + '/') || !pending)) { img.remove(); tiles.delete(key); } });
+      if (tiles.size > 160) tiles.forEach((img, key) => { if (!need.has(key)) { img.remove(); tiles.delete(key); } });
     }
 
     function draw() {
@@ -834,7 +848,7 @@
         // 市町名（画面上で十分な大きさがあるときだけ）
         CITY_NAMES.forEach(c => {
           const b = GEO.cities[c].b, l = GEO.cities[c].l;
-          if ((b[2] - b[0]) / s > 70 && (b[2] - b[0]) / s < 1400) h += `<text class="lbl" transform="translate(${l[0]} ${l[1]}) scale(${s})" font-size="12" stroke-width="3" text-anchor="middle">${c}</text>`;
+          if ((b[2] - b[0]) / s > 70 && (b[2] - b[0]) / s < 1400) h += `<text class="lbl" data-p="${l[0]} ${l[1]} 1" transform="translate(${l[0]} ${l[1]}) scale(${s})" font-size="12" stroke-width="3" text-anchor="middle">${c}</text>`;
         });
         // 詳しい地図が使えないときは、拡大したら町名を出す
         if (vb[2] < 180) {
@@ -842,33 +856,64 @@
           for (const p of PLACES) {
             if (p.x < vb[0] || p.x > vb[0] + vb[2] || p.y < vb[1] || p.y > vb[1] + vb[3]) continue;
             if (++n > 70) break;
-            h += `<g transform="translate(${p.x} ${p.y}) scale(${s})"><circle class="town-dot" r="2"/><text class="town" y="-4" font-size="10" stroke-width="2.5" text-anchor="middle">${esc(p.name)}</text></g>`;
+            h += `<g data-p="${p.x} ${p.y} 1" transform="translate(${p.x} ${p.y}) scale(${s})"><circle class="town-dot" r="2"/><text class="town" y="-4" font-size="10" stroke-width="2.5" text-anchor="middle">${esc(p.name)}</text></g>`;
           }
         }
       }
       if (opts.home) {
         const [hx, hy] = toXY(opts.home.lat, opts.home.lng);
         if (opts.radius) h += `<circle class="radius" cx="${hx}" cy="${hy}" r="${opts.radius * KM}" stroke-width="${2 * s}" style="stroke-dasharray:${6 * s} ${5 * s}"/>`;
-        h += `<g transform="translate(${hx} ${hy}) scale(${s})" pointer-events="none"><circle r="15" fill="var(--tomato)" stroke="#2E2A24" stroke-width="2.5"/><text y="6" font-size="16" text-anchor="middle">🏠</text></g>`;
+        h += `<g data-p="${hx} ${hy} 1" transform="translate(${hx} ${hy}) scale(${s})" pointer-events="none"><circle r="15" fill="var(--tomato)" stroke="#2E2A24" stroke-width="2.5"/><text y="6" font-size="16" text-anchor="middle">🏠</text></g>`;
       }
       (opts.farms || []).forEach(f => {
         if (typeof f.lat !== 'number') return;
         const [x, y] = toXY(f.lat, f.lng);
         const sel = opts.selected === f.id;
-        h += `<g class="mpin ${sel ? 'sel' : ''} ${opts.dim && opts.dim(f) ? 'far' : ''}" data-id="${esc(f.id)}" transform="translate(${x} ${y}) scale(${s * (sel ? 1.25 : 1)})">
+        h += `<g class="mpin ${sel ? 'sel' : ''} ${opts.dim && opts.dim(f) ? 'far' : ''}" data-id="${esc(f.id)}" data-p="${x} ${y} ${sel ? 1.25 : 1}" transform="translate(${x} ${y}) scale(${s * (sel ? 1.25 : 1)})">
           <circle r="17" cx="2" cy="2" fill="#2E2A24"/><circle class="bg" r="17" stroke-width="2.5"/><text y="7" font-size="19" text-anchor="middle">${esc(f.emoji)}</text></g>`;
       });
       if (opts.picked) {
         const [x, y] = toXY(opts.picked[0], opts.picked[1]);
-        h += `<g transform="translate(${x} ${y}) scale(${s})" pointer-events="none"><path d="M0 0 L-11 -20 A13 13 0 1 1 11 -20 Z" fill="var(--tomato)" stroke="#2E2A24" stroke-width="2.5"/><circle cy="-26" r="5" fill="#fff"/></g>`;
+        h += `<g data-p="${x} ${y} 1" transform="translate(${x} ${y}) scale(${s})" pointer-events="none"><path d="M0 0 L-11 -20 A13 13 0 1 1 11 -20 Z" fill="var(--tomato)" stroke="#2E2A24" stroke-width="2.5"/><circle cy="-26" r="5" fill="#fff"/></g>`;
       }
       over.innerHTML = h;
+      scaled = $$('[data-p]', over).map(n => [n, ...n.dataset.p.split(' ').map(Number)]);
+      lastFull = performance.now();
+    }
+    // 動かしている途中は、表示範囲とピンの大きさだけを変える（軽い）。
+    // 地図タイルや町名の作り直しは、少し間をあけて行い、動きが止まったら必ず行う。
+    let scaled = [], lastFull = 0, settle = 0;
+    function drawLight() {
+      if (!vb) return;
+      if (performance.now() - lastFull > 220) { draw(); return; }
+      svg.setAttribute('viewBox', vb.map(v => v.toFixed(3)).join(' '));
+      const s = vb[2] / size()[0];
+      for (const [n, x, y, k] of scaled) n.setAttribute('transform', `translate(${x} ${y}) scale(${s * k})`);
+      clearTimeout(settle);
+      settle = setTimeout(draw, 120);
+    }
+    // なめらかなズーム：目標の表示範囲に向かって、毎フレーム少しずつ近づける
+    let target = null, anim = 0;
+    function stopAnim() { if (anim) cancelAnimationFrame(anim); anim = 0; target = null; }
+    function step() {
+      anim = 0;
+      if (!target) return;
+      let done = true;
+      for (let i = 0; i < 4; i++) {
+        const d = target[i] - vb[i];
+        if (Math.abs(d) > target[2] * 0.0015) done = false;
+        vb[i] += d * 0.28;
+      }
+      if (done) { vb = target; target = null; draw(); return; }
+      drawLight();
+      anim = requestAnimationFrame(step);
     }
     function zoom(factor, cx, cy) {
       if (!vb) return;
-      if (cx === undefined) { cx = vb[0] + vb[2] / 2; cy = vb[1] + vb[3] / 2; }
-      vb = [cx - (cx - vb[0]) * factor, cy - (cy - vb[1]) * factor, vb[2] * factor, vb[3] * factor];
-      clamp(); draw();
+      const b = target || vb;
+      if (cx === undefined) { cx = b[0] + b[2] / 2; cy = b[1] + b[3] / 2; }
+      target = clamp([cx - (cx - b[0]) * factor, cy - (cy - b[1]) * factor, b[2] * factor, b[3] * factor]);
+      if (!anim) anim = requestAnimationFrame(step);
     }
     function svgPoint(evt) {
       const r = svg.getBoundingClientRect();
@@ -878,9 +923,10 @@
     // ドラッグで移動・2本指で拡大縮小・ダブルタップで拡大・タップで選択
     const pts = new Map();
     let start = null, moved = false, pinch = null, lastTap = 0, raf = 0;
-    const schedule = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; clamp(); draw(); }); };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; clamp(); drawLight(); }); };
     svg.addEventListener('pointerdown', e => {
       if (!vb) return;
+      stopAnim();
       svg.setPointerCapture(e.pointerId);
       pts.set(e.pointerId, [e.clientX, e.clientY]);
       if (pts.size === 1) { start = { x: e.clientX, y: e.clientY, vb: vb.slice() }; moved = false; }
@@ -911,6 +957,8 @@
     const end = e => {
       pts.delete(e.pointerId);
       if (pts.size < 2) pinch = null;
+      // 2本指のうち1本を離したら、残った指でそのまま移動できるようにする
+      if (pts.size === 1 && e.type !== 'pointerdown') { const [p] = [...pts.values()]; start = { x: p[0], y: p[1], vb: vb.slice() }; }
       if (pts.size === 0 && start) {
         if (!moved && e.type === 'pointerup') {
           const hit = document.elementFromPoint(e.clientX, e.clientY);
@@ -937,7 +985,9 @@
       if (!vb) return;
       e.preventDefault();
       const [x, y] = svgPoint(e);
-      zoom(Math.exp(e.deltaY * 0.0015), x, y);
+      // トラックパッドのピンチ（ctrlKey）は細かく、マウスのホイールは1目盛りで大きく動く
+      const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;
+      zoom(Math.exp(Math.max(-300, Math.min(300, dy)) * (e.ctrlKey ? 0.01 : 0.002)), x, y);
     }, { passive: false });
     $$('[data-z]', wrap).forEach(b => b.addEventListener('click', () => {
       if (b.dataset.z === 'in') zoom(0.5); else if (b.dataset.z === 'out') zoom(2); else fitAll();
@@ -945,6 +995,14 @@
 
     const ctl = {
       update(o) { Object.assign(opts, o); draw(); },
+      animateTo(lat, lng, radiusKm) {
+        if (!vb) return;
+        const bx = boxAround(lat, lng, radiusKm), [cw, ch] = size();
+        let w = bx[2] - bx[0], h = bx[3] - bx[1];
+        if (w / h > cw / ch) h = w * ch / cw; else w = h * cw / ch;
+        target = clamp([(bx[0] + bx[2] - w) / 2, (bx[1] + bx[3] - h) / 2, w, h]);
+        if (!anim) anim = requestAnimationFrame(step);
+      },
       showAround(lat, lng, radiusKm) { fit(boxAround(lat, lng, radiusKm)); },
       showCity(c) { const b = GEO.cities[c].b; fit([b[0] - 10, b[1] - 10, b[2] + 10, b[3] + 10]); },
       showAll: fitAll,
@@ -1249,7 +1307,9 @@
         ${pk.note ? `<div class="row"><dt>ひとこと</dt><dd>${esc(pk.note)}</dd></div>` : ''}
       </dl></div>`;
   }
-  function productCard(f, p) {
+  // 受け取り方法（発送 / 畑で受け取り）。カートと一緒に覚えておき、注文手続きでも最初から選ばれた状態にする
+  const howOf = f => (canPickup(f) && cart.farmId === f.id && cart.method === 'pickup') ? 'pickup' : 'ship';
+  function productCard(f, p, how = howOf(f)) {
     const season = inSeason(p);
     const qty = cart.farmId === f.id ? (cart.items[p.id] || 0) : 0;
     const next = nextMonthOf(p);
@@ -1271,8 +1331,10 @@
         <h3>${esc(p.name)}</h3>
         <div class="unit">${esc(p.unit)}${p.note ? ` ・ ${esc(p.note)}` : ''}</div>
         <div class="prices" style="${pick ? '' : 'grid-template-columns:1fr'}">
-          <div class="price ship"><small>📦 県内配送（送料込み）</small><b>${yen(p.shipPrice)}</b></div>
-          ${pick ? `<div class="price pick"><small>🚗 畑で受け取り</small><b>${yen(p.pickupPrice)}</b></div>` : ''}
+          ${pick ? `
+          <button type="button" class="price ship ${how === 'ship' ? 'on' : ''}" data-how="ship" aria-pressed="${how === 'ship'}"><small>📦 県内配送（送料込み）</small><b>${yen(p.shipPrice)}</b></button>
+          <button type="button" class="price pick ${how === 'pickup' ? 'on' : ''}" data-how="pickup" aria-pressed="${how === 'pickup'}"><small>🚗 畑で受け取り</small><b>${yen(p.pickupPrice)}</b></button>`
+          : `<div class="price ship"><small>📦 県内配送（送料込み）</small><b>${yen(p.shipPrice)}</b></div>`}
         </div>
         ${foot}
       </div>`;
@@ -1282,9 +1344,10 @@
     if (!f || cart.farmId !== f.id) { slot.innerHTML = ''; return; }
     const t = cartTotals(f);
     if (!t.count) { slot.innerHTML = ''; return; }
+    const pickup = howOf(f) === 'pickup';
     slot.innerHTML = `
       <div class="cartbar">
-        <div class="sum">${t.count}点 ${yen(t.ship)}<small>${canPickup(f) ? `畑で受け取りなら ${yen(t.pick)}` : '送料込み'}</small></div>
+        <div class="sum">${t.count}点 ${yen(pickup ? t.pick : t.ship)}<small>${pickup ? '🚗 畑で受け取り・送料なし' : '📦 県内配送・送料込み'}</small></div>
         <a class="btn" href="#/checkout/${esc(f.id)}">注文へ進む →</a>
       </div>`;
   }
@@ -1328,6 +1391,11 @@
 
       <h2 class="sec" id="buy"><span class="ic">🧺</span>買う</h2>
       <p class="small dim" style="margin:-4px 0 12px">配送は山口県内のみ・送料込みの価格です。${canPickup(f) ? '畑まで受け取りに行くと送料がかからず、農家さんに直接会えます。' : ''}<br>注文から${f.cancelDays || 2}日以内なら、農家さんが準備を始める前までキャンセルできます（全額返金）。</p>
+      ${canPickup(f) && products.length ? `
+      <div class="howbuy" role="radiogroup" aria-label="受け取り方法">
+        <button type="button" role="radio" data-how="ship"><b>📦 家に届けてもらう</b><small>山口県内・送料込み</small></button>
+        <button type="button" role="radio" data-how="pickup"><b>🚗 畑で受け取る</b><small>${pickupDates(f).length ? '送料なし・農家さんに会える' : '2週間以内に受け取り日がありません'}</small></button>
+      </div>` : ''}
       <div class="products">${products.length ? products.map(p => productCard(f, p)).join('') : '<div class="empty">まだ商品がありません。</div>'}</div>
 
       <div class="two-col">
@@ -1385,12 +1453,24 @@
           const other = findFarm(cart.farmId);
           if (!(await ask(`カートに「${other ? other.farmName : '別の農家さん'}」の商品があります。\n注文は1回につき1軒の農家さんずつです。カートを入れ替えますか？`, '入れ替える'))) return;
         }
-        cart = { farmId: f.id, items: {} };
+        cart = { farmId: f.id, items: {}, method: how };
       }
       cart.items[pid] = Math.max(0, Math.min(p.stock, (cart.items[pid] || 0) + d));
       saveCart();
+      redrawProducts();
+    }
+    // 受け取り方法は、カートが空でもこの画面では覚えておく（商品を選ぶ前に切り替える人が多いため）
+    let how = howOf(f);
+    function setHow(v) {
+      if (!canPickup(f) || how === v) return;
+      how = v;
+      if (cart.farmId === f.id) { cart.method = v; saveCart(); }
+      redrawProducts();
+    }
+    function redrawProducts() {
       const y = window.scrollY;
-      $('.products').innerHTML = products.map(x => productCard(f, x)).join('');
+      $('.products').innerHTML = products.map(x => productCard(f, x, how)).join('');
+      $$('.howbuy [data-how]').forEach(b => { const on = b.dataset.how === how; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
       bindSteppers();
       window.scrollTo(0, y);
       renderCartbar(f);
@@ -1398,9 +1478,10 @@
     function bindSteppers() {
       $$('[data-inc]').forEach(b => b.addEventListener('click', () => changeQty(b.dataset.inc, 1)));
       $$('[data-dec]').forEach(b => b.addEventListener('click', () => changeQty(b.dataset.dec, -1)));
+      $$('.products [data-how]').forEach(b => b.addEventListener('click', () => setHow(b.dataset.how)));
     }
-    bindSteppers();
-    renderCartbar(f);
+    $$('.howbuy [data-how]').forEach(b => b.addEventListener('click', () => setHow(b.dataset.how)));
+    redrawProducts();
 
     const fb = $('#followBtn');
     if (fb) fb.addEventListener('click', () => {
@@ -1476,6 +1557,7 @@
     const pick = canPickup(f);
     const dates = pick ? pickupDates(f) : [];
     const buyer = store.get(KEY.buyer, {});
+    const startPick = pick && dates.length > 0 && howOf(f) === 'pickup';
     const hours = pick ? Array.from({ length: Math.max(0, f.pickup.to - f.pickup.from) }, (_, i) => f.pickup.from + i) : [];
 
     app.innerHTML = `
@@ -1485,10 +1567,10 @@
       <form id="coForm" novalidate>
         <h2 class="sec"><span class="ic">🚚</span>受け取り方法</h2>
         <div class="choice">
-          <label><input type="radio" name="method" value="ship" checked>
+          <label><input type="radio" name="method" value="ship" ${startPick ? '' : 'checked'}>
             <span class="t">📦 家に届けてもらう<small>山口県内のみ・送料込み</small></span>
             <span class="p">${yen(t.ship)}</span></label>
-          ${pick ? `<label class="pickup"><input type="radio" name="method" value="pickup" ${dates.length ? '' : 'disabled'}>
+          ${pick ? `<label class="pickup"><input type="radio" name="method" value="pickup" ${dates.length ? '' : 'disabled'} ${startPick ? 'checked' : ''}>
             <span class="t">🚗 畑まで受け取りに行く<small>${dates.length ? '送料なし・農家さんに直接会えます' : '2週間以内に受け取れる日がありません'}</small></span>
             <span class="p">${yen(t.pick)}</span></label>` : ''}
         </div>
@@ -1556,7 +1638,7 @@
       $('#cancelNote').innerHTML = `↩️ キャンセルは、注文から<b>${f.cancelDays || 2}日以内</b>${mtd === 'pickup' ? '（受け取り日の前日まで）' : ''}、農家さんが準備を始める前までできます。全額返金します。`;
       $('#payBtn').textContent = api.mode === 'demo' ? `${yen(total)} で注文する（お試し）` : `${yen(total)} のお支払いへ進む`;
     }
-    $$('input[name=method]').forEach(r => r.addEventListener('change', refresh));
+    $$('input[name=method]').forEach(r => r.addEventListener('change', () => { cart.method = method(); saveCart(); refresh(); }));
     refresh();
 
     $('#coForm').addEventListener('submit', async e => {
