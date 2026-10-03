@@ -251,6 +251,23 @@
   const cats = f => [...new Set((f.products || []).map(p => p.cat))];
   const yearsFarming = f => f.since ? Math.max(0, new Date().getFullYear() - Number(f.since)) : null;
   const canPickup = f => !!(f.pickup && f.pickup.enabled && (f.pickup.days || []).length);
+  // 畑で受け取るときの現金払い（手数料ゼロ）。カード払いの口座がなくても予約を受けられる
+  const canCash = f => canPickup(f) && !!f.pickup.cash;
+  const canOrder = f => !!f.chargesEnabled || canCash(f);
+  // サーバー（Postgres）のエラーコードを、お客さんに見せる日本語にする
+  const RPC_MSG = {
+    login_required: 'ログインしてください。', farm_not_found: 'この農家さんは見つかりませんでした。',
+    cash_not_available: 'この農家さんは現金払いを受け付けていません。',
+    cash_blocked: '受け取りに来られなかった予約が続いたため、現金払いの予約はできません。カード払いをご利用ください。',
+    too_many_reserved: '現金払いの予約は、同時に3件までです。',
+    bad_name: 'お名前を入力してください。', bad_tel: '電話番号を確認してください。', bad_items: '商品を選んでください。',
+    pickup_not_available: 'この農家さんは畑での受け取りをしていません。', bad_pickup_date: '受け取り日を選び直してください。',
+    bad_pickup_day: 'その曜日は受け取りできません。', bad_pickup_time: 'その時間は受け取りできません。', bad_qty: '数量を確認してください。',
+    product_not_found: '商品が見つかりませんでした。', out_of_season: 'いまはお届けできない時期の商品があります', out_of_stock: '在庫が足りない商品があります',
+    cannot_cancel: 'この予約は取り消せません（期限切れ、または農家さんが準備を始めています）。',
+    too_early: '受け取りの時間が過ぎてから押してください。'
+  };
+  const rpcError = e => { const [code, detail] = String(e.message || '').split(':'); return new Error(RPC_MSG[code] ? RPC_MSG[code] + (detail ? `（${detail}）` : '') : (e.message || 'エラーが起きました')); };
   function nextMonthOf(p) {
     for (let i = 1; i <= 12; i++) { const m = ((NOW_MONTH - 1 + i) % 12) + 1; if ((p.months || []).includes(m)) return m; }
     return null;
@@ -432,7 +449,7 @@
         id: r.id, code: r.code, farmId: r.farm_id, farmName: f.farm_name || r.farm_name || '', farmEmoji: f.emoji || '🧺', farmCity: f.city || '',
         farmLat: f.lat, farmLng: f.lng, items: r.items, method: r.method, total: r.total, pickup: r.pickup, ship: r.ship,
         buyer: { name: r.buyer_name, tel: r.buyer_tel }, status: r.status, cancelDeadline: r.cancel_deadline,
-        createdAt: r.created_at, checkoutUrl: r.stripe_checkout_url, refundStatus: r.refund_status
+        createdAt: r.created_at, checkoutUrl: r.stripe_checkout_url, refundStatus: r.refund_status, payment: r.payment || 'card'
       };
     },
     async loadFarms() {
@@ -534,14 +551,26 @@
       const { data } = await this.sb.from('orders').select('*, farms(farm_name, emoji, city, lat, lng)').eq('id', id).maybeSingle();
       return data ? this.orderFrom(data) : null;
     },
-    async cancelOrder(id) { return this.invoke('cancel-order', { order_id: id }); },
+    async placeCashOrder(pl) {
+      const { data, error } = await this.sb.rpc('create_cash_order', { p_farm: pl.farm_id, p_items: pl.items, p_pickup: pl.pickup, p_name: pl.buyer.name, p_tel: pl.buyer.tel });
+      if (error) throw rpcError(error);
+      return { orderId: data.id };
+    },
+    async cancelOrder(id, payment) {
+      if (payment === 'cash') {
+        const { error } = await this.sb.rpc('cancel_cash_order', { p_order: id });
+        if (error) throw rpcError(error);
+        return { status: 'canceled' };
+      }
+      return this.invoke('cancel-order', { order_id: id });
+    },
     async farmOrders(farmId) {
       const { data } = await this.sb.from('orders').select('*').eq('farm_id', farmId).neq('status', 'pending_payment').order('created_at', { ascending: false });
       return (data || []).map(r => this.orderFrom(r));
     },
     async updateOrder(id, to, code) {
       const { error } = await this.sb.rpc('farmer_update_order', { p_order: id, p_to: to, p_code: code || null });
-      if (error) throw new Error({ wrong_code: '受け取りコードがちがいます', bad_transition: 'この注文はもう更新できません（キャンセルされた可能性があります）' }[error.message] || error.message);
+      if (error) throw new Error({ wrong_code: '受け取りコードがちがいます', bad_transition: 'この注文はもう更新できません（キャンセルされた可能性があります）', too_early: RPC_MSG.too_early }[error.message] || error.message);
     },
     async connect(action) { return this.invoke('connect-account', { action }); },
     // なかま市
@@ -647,7 +676,7 @@
         items: lines, method: pl.method, total: lines.reduce((s, l) => s + l.qty * l.price, 0),
         pickup: pl.method === 'pickup' ? { date: pl.pickup.date, hour: pl.pickup.hour, time: `${pl.pickup.hour}:00〜${pl.pickup.hour + 1}:00`, place: f.pickup.place || f.city, addr: f.pickupAddr || f.pickup.addr || '', msg: pl.pickup.msg } : null,
         ship: pl.method === 'ship' ? { zip: pl.ship.zip, pref: '山口県', addr: pl.ship.addr } : null,
-        buyer: pl.buyer, status: 'paid', cancelDeadline: new Date(deadline).toISOString(), createdAt: new Date().toISOString()
+        buyer: pl.buyer, status: pl.payment === 'cash' ? 'reserved' : 'paid', payment: pl.payment === 'cash' ? 'cash' : 'card', cancelDeadline: new Date(deadline).toISOString(), createdAt: new Date().toISOString()
       };
       const list = store.get(KEY.orders, []);
       list.unshift(order);
@@ -655,13 +684,18 @@
       this.changeStock(f, lines, -1);
       return { orderId: order.id };
     },
+    async placeCashOrder(pl) {
+      const f = DATA.farms.find(x => x.id === pl.farm_id);
+      if (!f || !canCash(f)) throw new Error(RPC_MSG.cash_not_available);
+      return this.placeOrder(Object.assign({}, pl, { payment: 'cash' }));
+    },
     async myOrders() { return store.get(KEY.orders, []); },
     async order(id) { return store.get(KEY.orders, []).find(o => o.id === id) || null; },
     async cancelOrder(id) {
       const list = store.get(KEY.orders, []);
       const o = list.find(x => x.id === id);
-      if (!o || o.status !== 'paid' || Date.now() >= new Date(o.cancelDeadline).getTime()) throw new Error('この注文はキャンセルできません（期限切れ、または農家さんが準備を始めています）。');
-      o.status = 'canceled'; o.refundStatus = 'refunded';
+      if (!o || !['paid', 'reserved'].includes(o.status) || Date.now() >= new Date(o.cancelDeadline).getTime()) throw new Error('この注文はキャンセルできません（期限切れ、または農家さんが準備を始めています）。');
+      o.refundStatus = o.status === 'paid' ? 'refunded' : null; o.status = 'canceled';
       store.set(KEY.orders, list);
       const f = DATA.farms.find(x => x.id === o.farmId);
       if (f) this.changeStock(f, o.items, +1);
@@ -671,10 +705,12 @@
     async updateOrder(id, to, code) {
       const list = store.get(KEY.orders, []);
       const o = list.find(x => x.id === id);
-      const ok = o && ((o.method === 'pickup' && o.status === 'paid' && to === 'ready') || (o.method === 'ship' && o.status === 'paid' && to === 'shipped') ||
+      const ok = o && ((o.method === 'pickup' && ['paid', 'reserved'].includes(o.status) && to === 'ready') ||
+        (o.payment === 'cash' && ['reserved', 'ready'].includes(o.status) && to === 'noshow') || (o.method === 'ship' && o.status === 'paid' && to === 'shipped') ||
         (o.method === 'pickup' && o.status === 'ready' && to === 'done') || (o.method === 'ship' && o.status === 'shipped' && to === 'done'));
       if (!ok) throw new Error('この注文はもう更新できません（キャンセルされた可能性があります）');
       if (o.method === 'pickup' && to === 'done' && code !== o.code) throw new Error('受け取りコードがちがいます');
+      if (to === 'noshow') { const f = DATA.farms.find(x => x.id === o.farmId); if (f) this.changeStock(f, o.items, +1); }
       o.status = to;
       store.set(KEY.orders, list);
     },
@@ -1157,7 +1193,7 @@
   function farmCard(f, dist) {
     const pest = PESTICIDE[f.methods?.pesticide];
     const season = seasonalNames(f);
-    const buyable = f.chargesEnabled ? (f.products || []).filter(p => inSeason(p) && p.stock > 0) : [];
+    const buyable = canOrder(f) ? (f.products || []).filter(p => inSeason(p) && p.stock > 0) : [];
     const minPrice = buyable.length ? Math.min(...buyable.map(p => canPickup(f) ? p.pickupPrice : p.shipPrice)) : null;
     return `
       <a class="card" href="#/farm/${esc(f.id)}">
@@ -1171,7 +1207,7 @@
             ${pest && pest.short ? `<span class="tag">${esc(pest.short)}</span>` : ''}
             ${(f.certs || []).map(c => `<span class="tag eggplant">${esc(c)}</span>`).join('')}
           </div>
-          <div class="price-from">${minPrice !== null ? `いま買える：<b>${yen(minPrice)}</b>〜${canPickup(f) ? '（畑で受け取り）' : '（送料込み）'}` : (f.chargesEnabled ? 'いま買えるものは準備中' : 'オンライン注文の準備中')}</div>
+          <div class="price-from">${minPrice !== null ? `いま買える：<b>${yen(minPrice)}</b>〜${canPickup(f) ? '（畑で受け取り）' : '（送料込み）'}` : (canOrder(f) ? 'いま買えるものは準備中' : 'オンライン注文の準備中')}</div>
         </div>
       </a>`;
   }
@@ -1326,6 +1362,7 @@
           : '<span class="dim">ご注文後に、注文画面でお知らせします</span>'}</dd></div>
         <div class="row"><dt>受け取り日</dt><dd>${pk.days.slice().sort().map(d => WEEK[d]).join('・')}曜日</dd></div>
         <div class="row"><dt>時間</dt><dd>${pk.from}:00〜${pk.to}:00</dd></div>
+        <div class="row"><dt>お支払い</dt><dd>${[f.chargesEnabled ? 'カード（アプリで前払い）' : '', pk.cash ? '現金（受け取りのときに）' : ''].filter(Boolean).join('・') || '―'}</dd></div>
         ${pk.note ? `<div class="row"><dt>ひとこと</dt><dd>${esc(pk.note)}</dd></div>` : ''}
       </dl></div>`;
   }
@@ -1333,6 +1370,7 @@
   // 農家さんに会いに行くのがこのアプリの良さなので、受け取りができる農家さんでは「畑で受け取る」を最初に選んでおく
   const howOf = f => {
     if (!canPickup(f)) return 'ship';
+    if (!f.chargesEnabled) return 'pickup'; // 口座の登録前は、現金払いの受け取りだけ
     if (cart.farmId === f.id && cart.method) return cart.method;
     return pickupDates(f).length ? 'pickup' : 'ship';
   };
@@ -1342,7 +1380,7 @@
     const next = nextMonthOf(p);
     const pick = canPickup(f);
     let foot;
-    if (!f.chargesEnabled) foot = '<div class="small dim">🛠 オンライン注文の準備中です</div>';
+    if (!canOrder(f)) foot = '<div class="small dim">🛠 オンライン注文の準備中です</div>';
     else if (!season) foot = `<div class="small dim">🌱 ${next ? `${next}月ごろから` : ''}お届け予定</div>`;
     else if (p.stock <= 0) foot = '<div class="small" style="color:var(--tomato);font-weight:900">今季は売り切れました</div>';
     else foot = `
@@ -1353,13 +1391,13 @@
         <span class="stock ${p.stock <= 5 ? 'low' : ''}">${p.stock <= 5 ? `のこり${p.stock}` : `在庫${p.stock}`}</span>
       </div>`;
     return `
-      <div class="prod ${season && p.stock > 0 && f.chargesEnabled ? '' : 'off'}">
+      <div class="prod ${season && p.stock > 0 && canOrder(f) ? '' : 'off'}">
         <div><span class="tag ${CAT_COLOR[p.cat] || ''}">${CATS[p.cat] || ''}</span> ${season ? '<span class="tag tomato">いま旬</span>' : ''}</div>
         <h3>${esc(p.name)}</h3>
         <div class="unit">${esc(p.unit)}${p.note ? ` ・ ${esc(p.note)}` : ''}</div>
         <div class="prices" style="${pick ? '' : 'grid-template-columns:1fr'}">
           ${pick ? `
-          <button type="button" class="price ship ${how === 'ship' ? 'on' : ''}" data-how="ship" aria-pressed="${how === 'ship'}"><small>📦 県内配送（送料込み）</small><b>${yen(p.shipPrice)}</b></button>
+          <button type="button" class="price ship ${how === 'ship' ? 'on' : ''}" data-how="ship" aria-pressed="${how === 'ship'}" ${f.chargesEnabled ? '' : 'disabled'}><small>📦 県内配送（送料込み）</small><b>${yen(p.shipPrice)}</b></button>
           <button type="button" class="price pick ${how === 'pickup' ? 'on' : ''}" data-how="pickup" aria-pressed="${how === 'pickup'}"><small>🚗 畑で受け取り</small><b>${yen(p.pickupPrice)}</b></button>`
           : `<div class="price ship"><small>📦 県内配送（送料込み）</small><b>${yen(p.shipPrice)}</b></div>`}
         </div>
@@ -1420,8 +1458,8 @@
       <p class="small dim" style="margin:-4px 0 12px">配送は山口県内のみ・送料込みの価格です。${canPickup(f) ? '畑まで受け取りに行くと送料がかからず、農家さんに直接会えます。' : ''}<br>注文から${f.cancelDays || 2}日以内なら、農家さんが準備を始める前までキャンセルできます（全額返金）。</p>
       ${canPickup(f) && products.length ? `
       <div class="howbuy" role="radiogroup" aria-label="受け取り方法">
-        <button type="button" role="radio" data-how="ship"><b>📦 家に届けてもらう</b><small>山口県内・送料込み</small></button>
-        <button type="button" role="radio" data-how="pickup"><b>🚗 畑で受け取る</b><small>${pickupDates(f).length ? '送料なし・農家さんに会える' : '2週間以内に受け取り日がありません'}</small></button>
+        <button type="button" role="radio" data-how="ship" ${f.chargesEnabled ? '' : 'disabled'}><b>📦 家に届けてもらう</b><small>${f.chargesEnabled ? '山口県内・送料込み' : 'いまは準備中です'}</small></button>
+        <button type="button" role="radio" data-how="pickup"><b>🚗 畑で受け取る</b><small>${pickupDates(f).length ? `送料なし・農家さんに会える${canCash(f) ? '・現金OK' : ''}` : '2週間以内に受け取り日がありません'}</small></button>
       </div>` : ''}
       <div class="products">${products.length ? products.map(p => productCard(f, p)).join('') : '<div class="empty">まだ商品がありません。</div>'}</div>
 
@@ -1587,7 +1625,8 @@
     const pick = canPickup(f);
     const dates = pick ? pickupDates(f) : [];
     const buyer = store.get(KEY.buyer, {});
-    const startPick = pick && dates.length > 0 && howOf(f) === 'pickup';
+    const startPick = pick && dates.length > 0 && (howOf(f) === 'pickup' || !f.chargesEnabled);
+    const cashOk = canCash(f) && dates.length > 0;
     const hours = pick ? Array.from({ length: Math.max(0, f.pickup.to - f.pickup.from) }, (_, i) => f.pickup.from + i) : [];
 
     app.innerHTML = `
@@ -1597,8 +1636,8 @@
       <form id="coForm" novalidate>
         <h2 class="sec"><span class="ic">🚚</span>受け取り方法</h2>
         <div class="choice">
-          <label><input type="radio" name="method" value="ship" ${startPick ? '' : 'checked'}>
-            <span class="t">📦 家に届けてもらう<small>山口県内のみ・送料込み</small></span>
+          <label><input type="radio" name="method" value="ship" ${startPick ? '' : 'checked'} ${f.chargesEnabled ? '' : 'disabled'}>
+            <span class="t">📦 家に届けてもらう<small>${f.chargesEnabled ? '山口県内のみ・送料込み' : 'この農家さんは、いまは配送の準備中です'}</small></span>
             <span class="p">${yen(t.ship)}</span></label>
           ${pick ? `<label class="pickup"><input type="radio" name="method" value="pickup" ${dates.length ? '' : 'disabled'} ${startPick ? 'checked' : ''}>
             <span class="t">🚗 畑まで受け取りに行く<small>${dates.length ? '送料なし・農家さんに直接会えます' : '2週間以内に受け取れる日がありません'}</small></span>
@@ -1615,6 +1654,14 @@
         </div>
 
         <div id="pickupFields" hidden>
+          ${cashOk ? `
+          <h2 class="sec"><span class="ic">👛</span>お支払いの方法</h2>
+          <div class="choice">
+            <label><input type="radio" name="pay" value="card" ${f.chargesEnabled ? 'checked' : 'disabled'}>
+              <span class="t">💳 いまカードで払う<small>${f.chargesEnabled ? 'アプリで前払い。受け取りは番号を伝えるだけ' : 'この農家さんは、いまは現金払いのみです'}</small></span></label>
+            <label class="pickup"><input type="radio" name="pay" value="cash" ${f.chargesEnabled ? '' : 'checked'}>
+              <span class="t">💴 受け取りのときに現金で払う<small>手数料がかからず、売上がまるごと農家さんに届きます</small></span></label>
+          </div>` : ''}
           <h2 class="sec"><span class="ic">📅</span>受け取り日時</h2>
           <div class="panel">
             <div class="row2">
@@ -1650,7 +1697,7 @@
         <div class="panel confirm small">
           <ul>
             <li>販売者：${esc(sellerOf(f))}（${esc(f.farmName)}）・<a href="#/law/${esc(f.id)}" data-sheet>特定商取引法に基づく表記</a></li>
-            <li>お支払い：クレジットカードなど・ご注文時にお支払い（決済画面を開いてから30分以内）</li>
+            <li id="payNote"></li>
             <li id="whenNote"></li>
             <li id="cancelNote"></li>
             <li>返品：生鮮食品のため、お客さまのご都合による返品はできません。傷みなどがあった場合は、受け取りから2日以内にご連絡ください。</li>
@@ -1659,12 +1706,13 @@
         </div>
         ${api.mode === 'demo'
           ? '<p class="notice">🧪 お試し版です。ボタンを押しても<b>実際の請求は発生しません</b>（支払ったことにして注文が入ります）。</p>'
-          : '<p class="notice">💳 次の画面（Stripe）で、クレジットカードなどでお支払いいただきます。カード情報はこのアプリには保存されません。</p>'}
+          : '<p class="notice" id="stripeNote">💳 次の画面（Stripe）で、クレジットカードなどでお支払いいただきます。カード情報はこのアプリには保存されません。</p>'}
         <button class="btn block" type="submit" style="margin-top:16px;font-size:1.05rem;padding:12px" id="payBtn"></button>
       </form>
     `;
 
     const method = () => ($('input[name=method]:checked') || {}).value || 'ship';
+    const payBy = () => method() === 'pickup' && cashOk && (($('input[name=pay]:checked') || {}).value === 'cash' || !f.chargesEnabled) ? 'cash' : 'card';
     function refresh() {
       const mtd = method();
       let total = 0;
@@ -1675,11 +1723,17 @@
       $('#saveNote').innerHTML = mtd === 'pickup' && other > total ? `<span class="save">🚗 受け取りで ${yen(other - total)} おトク</span>` : '';
       $('#pickupFields').hidden = mtd !== 'pickup';
       $('#shipFields').hidden = mtd === 'pickup';
-      $('#cancelNote').innerHTML = `キャンセル：注文から<b>${f.cancelDays || 2}日以内</b>${mtd === 'pickup' ? '（受け取り日の前日まで）' : ''}、農家さんが準備を始める前までできます。全額返金します。`;
+      const cash = payBy() === 'cash';
+      $('#payNote').innerHTML = cash
+        ? 'お支払い：<b>受け取りのときに現金で</b>お支払いください。連絡なく来られなかった予約が2回になると、現金払いの予約ができなくなります。'
+        : 'お支払い：クレジットカードなど・ご注文時にお支払い（決済画面を開いてから30分以内）';
+      if ($('#stripeNote')) $('#stripeNote').hidden = cash;
+      $('#cancelNote').innerHTML = cash ? `予約の取り消し：注文から<b>${f.cancelDays || 2}日以内</b>（受け取り日の前日まで）、農家さんが準備を始める前までできます。` : `キャンセル：注文から<b>${f.cancelDays || 2}日以内</b>${mtd === 'pickup' ? '（受け取り日の前日まで）' : ''}、農家さんが準備を始める前までできます。全額返金します。`;
       $('#whenNote').innerHTML = mtd === 'pickup' ? 'お渡し：上で選んだ受け取り日時に、畑でお渡しします。' : `お届け：ご注文から<b>${shipDaysOf(f)}日以内</b>に発送します。`;
-      $('#payBtn').textContent = api.mode === 'demo' ? `${yen(total)} で注文する（お試し）` : `${yen(total)} のお支払いへ進む`;
+      $('#payBtn').textContent = cash ? `${yen(total)} で予約する（受け取りのときに現金払い）` : api.mode === 'demo' ? `${yen(total)} で注文する（お試し）` : `${yen(total)} のお支払いへ進む`;
     }
     $$('input[name=method]').forEach(r => r.addEventListener('change', () => { cart.method = method(); saveCart(); refresh(); }));
+    $$('input[name=pay]').forEach(r => r.addEventListener('change', refresh));
     refresh();
 
     $('#coForm').addEventListener('submit', async e => {
@@ -1705,6 +1759,14 @@
       btn.disabled = true;
       btn.textContent = '手続き中…';
       try {
+        if (payBy() === 'cash') {
+          const res = await api.placeCashOrder(payload);
+          cart = { farmId: null, items: {} };
+          saveCart();
+          await reload();
+          location.hash = `#/order/${res.orderId}?new=1`;
+          return;
+        }
         const res = await api.placeOrder(payload);
         cart = { farmId: null, items: {} };
         saveCart();
@@ -1727,28 +1789,31 @@
   // ---------- 画面: 注文 ----------
   const STATUS = {
     ship: [['paid', 'お支払い済み'], ['shipped', '発送済み'], ['done', 'お届け完了']],
-    pickup: [['paid', 'お支払い済み'], ['ready', '準備OK'], ['done', '受け取り完了']]
+    pickup: [['paid', 'お支払い済み'], ['ready', '準備OK'], ['done', '受け取り完了']],
+    cash: [['reserved', '予約済み'], ['ready', '準備OK'], ['done', '受け取り完了']]
   };
+  const stepsOf = o => STATUS[o.payment === 'cash' ? 'cash' : o.method];
   function statusLabel(o) {
     if (o.status === 'pending_payment') return 'お支払い待ち';
     if (o.status === 'canceled') return 'キャンセル済み';
     if (o.status === 'expired') return '取り消し';
-    return (STATUS[o.method].find(s => s[0] === o.status) || [, ''])[1];
+    if (o.status === 'noshow') return '受け取りなし';
+    return (stepsOf(o).find(s => s[0] === o.status) || [, ''])[1];
   }
   function statusSteps(o) {
-    if (['pending_payment', 'canceled', 'expired'].includes(o.status)) return '';
-    const st = STATUS[o.method];
+    if (['pending_payment', 'canceled', 'expired', 'noshow'].includes(o.status)) return '';
+    const st = stepsOf(o);
     const idx = st.findIndex(s => s[0] === o.status);
     return `<div class="steps">${st.map((s, i) => `<div class="${i <= idx ? 'on' : ''}">${s[1]}</div>`).join('')}</div>`;
   }
-  const canCancel = o => o.status === 'paid' && Date.now() < new Date(o.cancelDeadline).getTime();
+  const canCancel = o => ['paid', 'reserved'].includes(o.status) && Date.now() < new Date(o.cancelDeadline).getTime();
   function orderCard(o) {
     return `
       <a class="order box" href="#/order/${esc(o.id)}">
         <div class="head"><b>${esc(o.farmEmoji)} ${esc(o.farmName)}</b><span class="status ${esc(o.status)}">${esc(statusLabel(o))}</span></div>
         <div class="small dim">${fmtDate(o.createdAt)} 注文 ・ ${o.method === 'pickup' ? `🚗 ${fmtDay(o.pickup.date)} ${esc(o.pickup.time)} 受け取り` : '📦 配送'}</div>
         <div class="small">${o.items.map(i => `${esc(i.name)}×${i.qty}`).join('、')}</div>
-        <div><b>${yen(o.total)}</b>${canCancel(o) ? ` <span class="small dim">・${fmtDateTime(o.cancelDeadline)}までキャンセルできます</span>` : ''}</div>
+        <div><b>${yen(o.total)}</b>${o.payment === 'cash' ? ' <span class="small">💴 受け取りのときに現金で</span>' : ''}${canCancel(o) ? ` <span class="small dim">・${fmtDateTime(o.cancelDeadline)}までキャンセルできます</span>` : ''}</div>
       </a>`;
   }
   function accountFooter() {
@@ -1803,9 +1868,15 @@
     if (o.status === 'pending_payment') cancelHtml = `
       <div class="cancel-box">お支払いがまだ完了していません。30分以内にお支払いがないと、自動で取り消されます。
         <div class="actions" style="margin-top:10px">${o.checkoutUrl ? '<button class="btn" id="payAgain">お支払いへ進む</button>' : ''}<button class="btn danger" id="cancelBtn">注文をやめる</button></div></div>`;
+    else if (canCancel(o) && o.payment === 'cash') cancelHtml = `
+      <div class="cancel-box">↩️ <b>${fmtDateTime(o.cancelDeadline)}</b> まで、予約を取り消せます。行けなくなったときは、必ず取り消してください。
+        <div style="margin-top:10px"><button class="btn danger small" id="cancelBtn">この予約を取り消す</button></div></div>`;
     else if (canCancel(o)) cancelHtml = `
       <div class="cancel-box">↩️ <b>${fmtDateTime(o.cancelDeadline)}</b> まで、キャンセルできます（全額返金）。
         <div style="margin-top:10px"><button class="btn danger small" id="cancelBtn">この注文をキャンセルする</button></div></div>`;
+    else if (o.status === 'reserved') cancelHtml = '<div class="cancel-box">取り消しの期限を過ぎました。行けなくなった場合は、農家さんにお電話でご連絡ください。</div>';
+    else if (o.status === 'noshow') cancelHtml = '<div class="cancel-box">受け取りの時間にお越しがなかったため、この予約は終了しました。</div>';
+    else if (o.status === 'canceled' && o.payment === 'cash') cancelHtml = '<div class="cancel-box">この予約は取り消しました。</div>';
     else if (o.status === 'paid') cancelHtml = '<div class="cancel-box">キャンセルの期限を過ぎました。ご都合が悪くなった場合は、農家さんにお電話でご相談ください。</div>';
     else if (o.status === 'ready' || o.status === 'shipped') cancelHtml = '<div class="cancel-box">農家さんが準備を始めたため、キャンセルはできません。</div>';
     else if (o.status === 'canceled') cancelHtml = `<div class="cancel-box">この注文はキャンセルしました。${o.refundStatus === 'failed' ? '返金の手続きでエラーが起きたため、運営からご連絡します。' : '代金は全額返金されます（カード会社によって反映まで数日かかります）。'}</div>`;
@@ -1813,14 +1884,15 @@
 
     app.innerHTML = `
       <a class="back" href="#/orders">← 注文一覧へ</a>
-      ${isNew && o.status === 'paid' ? `<section class="hero-intro"><span class="float a">🎉</span><h1>ご注文ありがとうございます！</h1><p>${esc(o.farmName)}さんに注文が届きました。</p></section>` : ''}
+      ${isNew && ['paid', 'reserved'].includes(o.status) ? `<section class="hero-intro"><span class="float a">🎉</span><h1>${o.status === 'reserved' ? 'ご予約ありがとうございます！' : 'ご注文ありがとうございます！'}</h1><p>${esc(o.farmName)}さんに${o.status === 'reserved' ? '予約' : '注文'}が届きました。</p></section>` : ''}
       <h2 class="sec"><span class="ic">${pickup ? '🚗' : '📦'}</span>${pickup ? '畑での受け取り' : '配送'} <span class="status ${esc(o.status)}">${esc(statusLabel(o))}</span></h2>
       <div class="panel">
         ${statusSteps(o)}
         ${pickup ? `
           <p style="margin:8px 0 4px"><b>${fmtDay(o.pickup.date)} ${esc(o.pickup.time)}</b></p>
           <p class="small" style="margin:0">📍 ${esc(o.pickup.place)}${o.pickup.addr ? `<br>${esc(fullAddr(o.pickup.addr))}` : ''}${o.pickup.addr || typeof loc.lat === 'number' ? `<br><a href="${gmapAddrUrl(o.pickup.addr, loc)}" target="_blank" rel="noopener">Googleマップで道順を見る</a>` : ''}</p>
-          ${['paid', 'ready'].includes(o.status) ? `<p class="small dim" style="margin:12px 0 6px">受け取りのときに、この番号を農家さんに伝えてください。</p><div class="code" aria-label="受け取りコード">${esc(o.code)}</div>` : ''}`
+          ${o.payment === 'cash' && ['reserved', 'ready'].includes(o.status) ? `<p class="cash-note">💴 受け取りのときに、<b>現金で ${yen(o.total)}</b> をお支払いください（おつりのないようご用意いただけると助かります）。</p>` : ''}
+          ${['paid', 'reserved', 'ready'].includes(o.status) ? `<p class="small dim" style="margin:12px 0 6px">受け取りのときに、この番号を農家さんに伝えてください。</p><div class="code" aria-label="受け取りコード">${esc(o.code)}</div>` : ''}`
         : `<p class="small" style="margin:8px 0 0">お届け先：〒${esc(o.ship.zip)} ${esc(o.ship.pref)} ${esc(o.ship.addr)}</p>
            <p class="small dim" style="margin:4px 0 0">${f ? `ご注文から${shipDaysOf(f)}日以内に発送します。` : ''}発送されたら、ここの状況が「発送済み」に変わります。</p>`}
         ${cancelHtml}
@@ -1840,12 +1912,13 @@
     if (pa) pa.addEventListener('click', () => openExternal(o.checkoutUrl, () => renderOrder(o.id, true)));
     const cb = $('#cancelBtn');
     if (cb) cb.addEventListener('click', async () => {
-      if (!(await ask(o.status === 'pending_payment' ? 'この注文をやめますか？' : 'この注文をキャンセルしますか？\n代金は全額返金されます。', 'キャンセルする', true))) return;
+      const cash = o.payment === 'cash';
+      if (!(await ask(o.status === 'pending_payment' ? 'この注文をやめますか？' : cash ? 'この予約を取り消しますか？' : 'この注文をキャンセルしますか？\n代金は全額返金されます。', cash ? '取り消す' : 'キャンセルする', true))) return;
       cb.disabled = true;
       try {
-        await api.cancelOrder(o.id);
+        await api.cancelOrder(o.id, o.payment);
         await reload();
-        toast(o.status === 'pending_payment' ? '注文をやめました' : 'キャンセルしました');
+        toast(o.status === 'pending_payment' ? '注文をやめました' : cash ? '予約を取り消しました' : 'キャンセルしました');
         renderOrder(o.id, false);
         updateBadge();
       } catch (err) { toast(err.message); cb.disabled = false; }
@@ -1914,7 +1987,7 @@
       history.replaceState(null, '', location.pathname + location.search + '#/mine');
     }
     if (!DATA.mine) { await renderProfile(true); return; }
-    const pending = (await api.farmOrders(DATA.mine.id)).filter(o => ['paid', 'ready', 'shipped'].includes(o.status)).length;
+    const pending = (await api.farmOrders(DATA.mine.id)).filter(o => ['paid', 'reserved', 'ready', 'shipped'].includes(o.status)).length;
     const head = subnav(sub || 'orders', pending);
     if (sub === 'posts') return renderMyPosts(head);
     if (sub === 'market') {
@@ -1932,13 +2005,16 @@
     return list.map(o => {
       const pickup = o.method === 'pickup';
       let act = '';
-      if (o.status === 'paid') act = `
+      const cash = o.payment === 'cash';
+      const late = pickup && Date.now() >= new Date(`${o.pickup.date}T${String(o.pickup.hour + 1).padStart(2, '0')}:00:00+09:00`).getTime();
+      const noshowBtn = cash && late && ['reserved', 'ready'].includes(o.status) ? ` <button class="btn ghost small" data-adv="${esc(o.id)}" data-to="noshow">来なかった</button>` : '';
+      if (o.status === 'paid' || o.status === 'reserved') act = `
         <div class="small dim">お客さんは ${fmtDateTime(o.cancelDeadline)} までキャンセルできます。準備を始めると、キャンセルできなくなります。</div>
-        <div><button class="btn corn small" data-adv="${esc(o.id)}" data-to="${pickup ? 'ready' : 'shipped'}">${pickup ? '準備できた' : '発送した'}</button></div>`;
+        <div><button class="btn corn small" data-adv="${esc(o.id)}" data-to="${pickup ? 'ready' : 'shipped'}">${pickup ? '準備できた' : '発送した'}</button>${noshowBtn}</div>`;
       else if (o.status === 'ready') act = `
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
           <input data-code-for="${esc(o.id)}" inputmode="numeric" maxlength="4" placeholder="受け取りコード" aria-label="受け取りコード" style="width:150px;padding:6px 12px;border:2px solid var(--ink);border-radius:999px;background:var(--surface-2)">
-          <button class="btn leaf small" data-done="${esc(o.id)}">受け渡し完了</button></div>`;
+          <button class="btn leaf small" data-done="${esc(o.id)}">受け渡し完了</button>${noshowBtn}</div>`;
       else if (o.status === 'shipped') act = `<div><button class="btn leaf small" data-adv="${esc(o.id)}" data-to="done">お届け完了にする</button></div>`;
       return `
         <div class="order box">
@@ -1946,7 +2022,9 @@
           <div class="small">${pickup ? `🚗 <b>${fmtDay(o.pickup.date)} ${esc(o.pickup.time)}</b> に受け取り` : `📦 配送：〒${esc(o.ship.zip)} ${esc(o.ship.pref)} ${esc(o.ship.addr)}`}</div>
           <div class="small">${o.items.map(i => `${esc(i.name)}（${esc(i.unit)}）×${i.qty}`).join('、')}</div>
           ${pickup && o.pickup.msg ? `<div class="cheer small">💬 ${esc(o.pickup.msg)}</div>` : ''}
-          <div class="small dim">📞 <a href="tel:${esc(String(o.buyer.tel).replace(/[^\d]/g, ''))}">${esc(o.buyer.tel)}</a> ・ ${yen(o.total)}${o.status === 'canceled' ? '（キャンセル・返金済み）' : '（支払い済み）'}</div>
+          <div class="small dim">📞 <a href="tel:${esc(String(o.buyer.tel).replace(/[^\d]/g, ''))}">${esc(o.buyer.tel)}</a> ・ ${yen(o.total)}${cash
+            ? (o.status === 'canceled' ? '（予約取り消し）' : o.status === 'noshow' ? '（受け取りなし）' : o.status === 'done' ? '（現金で受け取り済み）' : ' <b>💴 受け取りのときに現金で</b>')
+            : (o.status === 'canceled' ? '（キャンセル・返金済み）' : '（支払い済み）')}</div>
           ${act}
         </div>`;
     }).join('');
@@ -1959,7 +2037,7 @@
       ${api.mode === 'live' && !f.chargesEnabled ? `
         <div class="panel" style="margin:8px 0 16px">
           <h3 style="font-size:1rem">🏦 売上の受け取り口座を登録してください</h3>
-          <p class="small" style="margin:6px 0 10px">注文を受けるには、売上を受け取る銀行口座の登録が必要です（Stripe という決済サービスの画面で、本人確認と口座を登録します）。</p>
+          <p class="small" style="margin:6px 0 10px">${canCash(f) ? '畑での受け取り（現金払い）の予約は、いまでも受けられます。' : ''}カード払い・配送の注文を受けるには、売上を受け取る銀行口座の登録が必要です（Stripe という決済サービスの画面で、本人確認と口座を登録します）。</p>
           <button class="btn leaf" id="connectBtn">${f.stripeLinked ? '口座登録のつづきをする' : '受け取り口座を登録する'}</button>
         </div>` : ''}
       ${(() => {
@@ -1984,7 +2062,8 @@
     });
     function bindOrders() {
       $$('[data-adv]').forEach(b => b.addEventListener('click', async () => {
-        if (b.dataset.to !== 'done' && !(await ask('準備を始めると、お客さんはキャンセルできなくなります。よろしいですか？', b.dataset.to === 'ready' ? '準備できた' : '発送した'))) return;
+        if (b.dataset.to === 'noshow') { if (!(await ask('このお客さんは来なかったことにしますか？\n在庫は元に戻ります。来なかった予約が2回になると、その人は現金払いの予約ができなくなります。', '来なかった', true))) return; }
+        else if (b.dataset.to !== 'done' && !(await ask('準備を始めると、お客さんはキャンセルできなくなります。よろしいですか？', b.dataset.to === 'ready' ? '準備できた' : '発送した'))) return;
         try { await api.updateOrder(b.dataset.adv, b.dataset.to); toast('更新しました'); } catch (err) { toast(err.message); }
         $('#farmerOrders').innerHTML = farmerOrderCards(await api.farmOrders(f.id)); bindOrders(); updateBadge();
       }));
@@ -2270,6 +2349,8 @@
             <div class="field"><label for="pkFrom">何時から</label><select id="pkFrom">${hours.map(h => `<option value="${h}" ${f.pickup.from === h ? 'selected' : ''}>${h}:00</option>`).join('')}</select></div>
             <div class="field"><label for="pkTo">何時まで</label><select id="pkTo">${hours.map(h => `<option value="${h}" ${f.pickup.to === h ? 'selected' : ''}>${h}:00</option>`).join('')}</select></div>
           </div>
+          <div class="field"><label style="display:flex;gap:8px;align-items:center;font-weight:900"><input type="checkbox" id="pkCash" style="width:auto" ${f.pickup.cash ? 'checked' : ''}> 受け取りのときの現金払いも受け付ける</label>
+            <span class="hint">手数料がかからず、売上がまるごと手元に残ります。前払いではないので、来ない人がいるかもしれません（連絡なく来なかったら「来なかった」を押してください。2回でその人は現金払いの予約ができなくなります）。口座の登録前でも、現金払いの予約は受けられます。</span></div>
           <div class="field"><label for="pkNote">お客さんへひとこと</label><input id="pkNote" maxlength="80" value="${esc(f.pickup.note)}" placeholder="例：収穫体験もできます！"></div>
         </div>
 
@@ -2285,7 +2366,7 @@
           <div class="field"><label for="sTel">電話番号</label><input id="sTel" type="tel" maxlength="13" autocomplete="tel" value="${esc(f.sellerTel || '')}" placeholder="090-0000-0000"></div>
           <div class="field"><label for="sAddr">住所</label><input id="sAddr" maxlength="120" autocomplete="street-address" value="${esc(f.sellerAddr || '')}" placeholder="山口市徳地堀 1234"></div>
         </div>
-        ${api.mode === 'live' ? `<p class="small dim" style="margin:0 0 6px">販売手数料：売上の<b>${FEE_PERCENT}%</b>${FEE_PERCENT ? '' : '（現在無料）'}。売上は Stripe を通じて、登録した口座に振り込まれます。</p>` : ''}
+        <p class="small dim" style="margin:0 0 6px">運営の手数料は<b>0円</b>です。カード払いで売れたときだけ、カード会社などに払う決済手数料（売上の${FEE_PERCENT}%）が差し引かれ、残りが Stripe を通じて登録した口座に振り込まれます。現金払いの受け取りには、手数料はかかりません。</p>
 
         <h3 style="margin:20px 0 8px;font-size:1rem">↩️ キャンセルの受け付け</h3>
         <div class="field"><label for="fCancel">お客さんが自分でキャンセルできる期間</label>
@@ -2430,7 +2511,7 @@
         catch: $('#fCatch').value.trim(), story: $('#fStory').value.trim(),
         methods: { pesticide: $('#fPest').value, fertilizer: $('#fFert').value, style: $('#fStyle').value, soil: $('#fSoil').value.trim() },
         certs: $('#fCerts').value.split(/[,、，]/).map(s => s.trim()).filter(Boolean),
-        pickup: { enabled: pkOn, place: $('#pkPlace').value.trim(), addr: $('#pkAddrPublic').checked ? pkAddr : '', days: pkDays, from, to, note: $('#pkNote').value.trim() },
+        pickup: { enabled: pkOn, place: $('#pkPlace').value.trim(), addr: $('#pkAddrPublic').checked ? pkAddr : '', cash: $('#pkCash').checked, days: pkDays, from, to, note: $('#pkNote').value.trim() },
         pickupAddr: pkAddr, sellerName, sellerTel, sellerAddr, shipDays: Number($('#fShipDays').value),
         cancelDays: Number($('#fCancel').value),
         products: draftProducts.map(p => Object.assign({}, p, pkOn ? {} : { pickupPrice: p.shipPrice }))
@@ -2461,7 +2542,7 @@
   // ---------- ルーティング ----------
   async function updateBadge() {
     let n = 0;
-    try { if (!needLogin()) n = (await api.myOrders()).filter(o => ['paid', 'ready', 'shipped'].includes(o.status)).length; } catch (e) { /* noop */ }
+    try { if (!needLogin()) n = (await api.myOrders()).filter(o => ['paid', 'reserved', 'ready', 'shipped'].includes(o.status)).length; } catch (e) { /* noop */ }
     const a = $('#tabs a[data-tab=orders]');
     const b = a.querySelector('.badge');
     if (n && !b) a.insertAdjacentHTML('beforeend', `<span class="badge">${n}</span>`);
@@ -2498,11 +2579,11 @@
           ${row('所在地・電話番号', `ご請求があれば、遅滞なくお知らせします。<br>運営窓口（${o.contact}）までご連絡ください。`)}
           ${row('販売価格', '各商品に表示しています（税込）。')}
           ${row('商品代金以外の費用', `配送：送料込みの価格です（山口県内のみ）。<br>畑で受け取り：送料はかかりません。${canPickup(f) ? '' : '<br>（この農家さんは現在、受け取りをしていません）'}`)}
-          ${row('お支払い方法', 'クレジットカードなど（Stripe の決済画面でお支払い）')}
-          ${row('お支払いの時期', 'ご注文時にお支払いいただきます。')}
+          ${row('お支払い方法', `${f.chargesEnabled ? 'クレジットカードなど（Stripe の決済画面でお支払い）' : ''}${f.chargesEnabled && canCash(f) ? '<br>' : ''}${canCash(f) ? '現金（畑で受け取りの場合、受け取りのときにお支払い）' : ''}`)}
+          ${row('お支払いの時期', `${f.chargesEnabled ? 'カード：ご注文時にお支払いいただきます。' : ''}${f.chargesEnabled && canCash(f) ? '<br>' : ''}${canCash(f) ? '現金：受け取りのときにお支払いいただきます。' : ''}`)}
           ${row('お届けの時期', `配送：ご注文から${shipDaysOf(f)}日以内に発送します。${canPickup(f) ? '<br>畑で受け取り：ご注文時に選んだ日時にお渡しします。' : ''}`)}
-          ${row('お申し込みの有効期限', '決済画面を開いてから30分以内にお支払いください。')}
-          ${row('キャンセル', `ご注文から${f.cancelDays || 2}日以内（畑で受け取りの場合は受け取り日の前日まで）で、農家が準備を始める前であれば、アプリからキャンセルできます。代金は全額返金します。`)}
+          ${f.chargesEnabled ? row('お申し込みの有効期限', 'カード払いは、決済画面を開いてから30分以内にお支払いください。') : ''}
+          ${row('キャンセル', `ご注文から${f.cancelDays || 2}日以内（畑で受け取りの場合は受け取り日の前日まで）で、農家が準備を始める前であれば、アプリからキャンセルできます。カード払いの代金は全額返金します。`)}
           ${row('返品・交換', '生鮮食品のため、お客さまのご都合による返品・交換はできません。<br>傷み・破損・品違いがあった場合は、受け取りから2日以内に運営窓口までご連絡ください。返金または交換で対応します。')}
         </dl></div>
         <p class="small dim" style="margin-top:12px">このアプリの運営者：${o.name}。売買契約は、上記の販売業者とお客さまの間で成立します。</p>`;

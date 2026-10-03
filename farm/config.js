@@ -10,6 +10,7 @@ window.HATAKE_CONFIG = {
     name: '',     // 例: '山口 太郎' または屋号・会社名
     contact: ''   // 例: 'info@example.jp'（お問い合わせ用のメールアドレス）
   },
-  // 販売手数料（%）。サーバーの PLATFORM_FEE_PERCENT と必ず同じ値にする（農家さんの画面に表示する）
-  feePercent: 0
+  // カード払いのときに農家さんの売上から差し引く決済手数料（%）。運営の取り分はなく、Stripe の手数料（3.6%）の実費。
+  // サーバーの PLATFORM_FEE_PERCENT と必ず同じ値にする（農家さんの画面に表示する）
+  feePercent: 3.6
 };
