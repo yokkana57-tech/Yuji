@@ -12,7 +12,7 @@
 //   PLATFORM_FEE_PERCENT   任意。運営の手数料（%）。省略時 0
 //   RESEND_API_KEY         任意。あればログイン用メールの送信（SMTP）を設定する
 //   MAIL_FROM              RESEND_API_KEY を使うときの送信元（例: no-reply@example.jp）
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
 const TOKEN = process.env.SUPABASE_ACCESS_TOKEN;
@@ -46,6 +46,11 @@ if (exists) {
 } else {
   await sql(readFileSync('supabase/migrations/20261002000000_init.sql', 'utf8'));
   console.log('  作成しました');
+}
+// 追加分（何度実行しても同じ結果になるように書いてある）は毎回あてる
+for (const file of readdirSync('supabase/migrations').filter(f => f.endsWith('.sql') && !f.includes('_init')).sort()) {
+  await sql(readFileSync(`supabase/migrations/${file}`, 'utf8'));
+  console.log(`  追加分 ${file} をあてました`);
 }
 
 // ---- 2. 画面の接続設定（公開キー） ----
