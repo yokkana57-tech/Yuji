@@ -390,6 +390,17 @@
       if (error) throw new Error('コードが正しくないか、期限が切れています。');
       this.user = data.user;
     },
+    async passwordLogin(email, password) {
+      const { data, error } = await this.sb.auth.signInWithPassword({ email, password });
+      if (error) throw new Error(/invalid login/i.test(error.message) ? 'メールアドレスかパスワードがちがいます。はじめての方は「新しく登録する」を押してください。' : 'ログインできませんでした：' + error.message);
+      this.user = data.user;
+    },
+    async register(email, password) {
+      const { data, error } = await this.sb.auth.signUp({ email, password });
+      if (error) throw new Error(/already registered|already exists/i.test(error.message) ? 'このメールアドレスは登録済みです。「ログイン」を押してください。' : '登録できませんでした：' + error.message);
+      if (!data.session) throw new Error('このメールアドレスは登録済みか、確認待ちです。「ログイン」を押してください。');
+      this.user = data.user;
+    },
     async signOut() { await this.sb.auth.signOut(); this.user = null; },
     farmFrom(r) {
       return {
@@ -555,7 +566,7 @@
   const demo = {
     mode: 'demo', user: { id: 'demo', email: 'お試し版' },
     async init() {},
-    async signIn() {}, async verify() {}, async signOut() {},
+    async signIn() {}, async verify() {}, async passwordLogin() {}, async register() {}, async signOut() {},
     stockOverrides() { return store.get(KEY.stock, {}); },
     async loadFarms() {
       const ov = this.stockOverrides();
@@ -953,44 +964,34 @@
     return `
       <div class="panel" id="loginPanel">
         <h3 style="font-size:1.05rem">🔑 ログイン</h3>
-        <p class="small dim" style="margin:4px 0 12px">${esc(reason)}メールアドレスに届くログイン用のメールで、パスワードなしでログインできます。</p>
-        <form id="loginForm" class="field" style="margin:0">
-          <label for="lgEmail">メールアドレス</label>
-          <input id="lgEmail" type="email" autocomplete="email" required placeholder="you@example.com">
-          <button class="btn leaf" type="submit" style="margin-top:8px">ログイン用のメールを送る</button>
-        </form>
-        <form id="codeForm" class="field" style="margin:12px 0 0" hidden>
-          <p class="small" style="margin:0 0 6px"><b>📩 メールを送りました。</b>${NATIVE ? 'メールに書かれた6桁のコードを入力してください。' : 'このブラウザで、メールの中のリンクを開いてください。メールに6桁のコードが書かれていれば、下に入力してもログインできます。'}</p>
-          <label for="lgCode">メールに書かれた6桁のコード（ある場合）</label>
-          <input id="lgCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="123456">
-          <button class="btn" type="submit" style="margin-top:8px">ログインする</button>
+        <p class="small dim" style="margin:4px 0 12px">${esc(reason)}はじめての方は「新しく登録する」、2回目からは「ログイン」を押してください。</p>
+        <form id="loginForm" style="margin:0">
+          <div class="field"><label for="lgEmail">メールアドレス</label>
+            <input id="lgEmail" type="email" autocomplete="email" required placeholder="you@example.com"></div>
+          <div class="field"><label for="lgPass">パスワード（8文字以上）</label>
+            <input id="lgPass" type="password" autocomplete="current-password" minlength="8" required></div>
+          <div class="actions" style="margin-top:4px">
+            <button class="btn leaf" type="submit" data-mode="login">ログイン</button>
+            <button class="btn ghost" type="submit" data-mode="register">新しく登録する</button>
+          </div>
         </form>
       </div>`;
   }
   function bindLogin(nextHash, after) {
-    let email = '';
+    let mode = 'login';
+    $$('#loginForm [data-mode]').forEach(b => b.addEventListener('click', () => { mode = b.dataset.mode; }));
     $('#loginForm').addEventListener('submit', async e => {
       e.preventDefault();
-      email = $('#lgEmail').value.trim();
-      const btn = $('#loginForm button');
-      btn.disabled = true;
+      const email = $('#lgEmail').value.trim(), pass = $('#lgPass').value;
+      if (!email) { toast('メールアドレスを入力してください'); return; }
+      if (pass.length < 8) { toast('パスワードは8文字以上にしてください'); $('#lgPass').focus(); return; }
+      $$('#loginForm button').forEach(b => { b.disabled = true; });
       try {
-        store.set(KEY.next, nextHash);
-        await api.signIn(email);
-        $('#codeForm').hidden = false;
-        toast('メールを送りました');
-        $('#lgCode').focus();
-      } catch (err) { toast(err.message); } finally { btn.disabled = false; }
-    });
-    $('#codeForm').addEventListener('submit', async e => {
-      e.preventDefault();
-      try {
-        await api.verify(email, $('#lgCode').value.trim());
-        store.del(KEY.next);
+        if (mode === 'register') await api.register(email, pass); else await api.passwordLogin(email, pass);
         await reload();
-        toast('ログインしました');
+        toast(mode === 'register' ? '登録しました' : 'ログインしました');
         after();
-      } catch (err) { toast(err.message); }
+      } catch (err) { toast(err.message); $$('#loginForm button').forEach(b => { b.disabled = false; }); }
     });
   }
   const needLogin = () => api.mode === 'live' && !api.user;
