@@ -6,7 +6,7 @@
   if (!GEO) throw new Error('地図データ（geo.js）を読み込めませんでした');
 
   // ---------- 実行環境 ----------
-  const APP_VERSION = '1.2.0';
+  const APP_VERSION = '1.3.0';
   const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   const STANDALONE = NATIVE || (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
   const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -194,6 +194,11 @@
       { id: 'sh2', farmId: 's4', title: 'りんごの葉摘み', body: '実に日が当たるように、まわりの葉を摘む作業です。脚立は使いません。', date: d(9), from: 9, to: 15, capacity: 5, filled: 0, place: '山口市阿東徳佐・りんご園の受付', thanks: 'りんご1袋', bring: '軍手・汚れてもいい服', beginner: true, meal: true, status: 'open' }
     ];
   })();
+  // お試し版の口コミの見本（架空）
+  const SAMPLE_REVIEWS = [
+    { id: 'sr1', farmId: 's1', rating: 5, tags: ['おいしい', '新鮮'], comment: '皮がやわらかくて、焼きなすが最高でした。また買います！', name: '萩のみちこ', items: '千両なす', reply: 'ありがとうございます！焼きなす、うちでも毎晩です。', date: '2026-08-21T10:00:00Z' },
+    { id: 'sr2', farmId: 's4', rating: 4, tags: ['おいしい', '農家さんが親切'], comment: '受け取りのときに、りんごの見分け方を教えてもらいました。', name: 'あとうっ子', items: '秋映', reply: '', date: '2026-09-28T10:00:00Z' }
+  ];
   const SAMPLE_MARKET = [
     { id: 'm1', farmId: 's7', kind: 'give', cat: 'material', title: '育苗トレイ（128穴）30枚', body: '新しいのを買ったので、前のを譲ります。少し日焼けしていますが、まだまだ使えます。取りに来てもらえる方。', price: 0, condition: 'やや使用感あり', status: 'open', date: '2026-09-28', photos: [] },
     { id: 'm2', farmId: 's1', kind: 'sell', cat: 'machine', title: '管理機（ミニ耕うん機）', body: '畝立てに使っていました。エンジンは快調で、春にメンテナンス済みです。軽トラで運べます。', price: 35000, condition: '中古・動作良好', status: 'open', date: '2026-09-25', photos: [] },
@@ -208,7 +213,7 @@
     orders: 'yamahata.orders', stock: 'yamahata.stock', buyer: 'yamahata.buyer', home: 'yamahata.home',
     cart: 'yamahata.cart', next: 'yamahata.next', market: 'yamahata.market', mkmsg: 'yamahata.mkmsg', install: 'yamahata.install',
     intro: 'yamahata.intro', inquiries: 'yamahata.inquiries', omsg: 'yamahata.omsg',
-    helps: 'yamahata.helps', entries: 'yamahata.entries', biz: 'yamahata.biz', talk: 'yamahata.talk'
+    helps: 'yamahata.helps', entries: 'yamahata.entries', biz: 'yamahata.biz', talk: 'yamahata.talk', reviews: 'yamahata.reviews'
   };
   const store = {
     get(k, fallback) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; } },
@@ -277,6 +282,7 @@
     product_not_found: '商品が見つかりませんでした。', out_of_season: 'いまはお届けできない時期の商品があります', out_of_stock: '在庫が足りない商品があります',
     cannot_cancel: 'この予約は取り消せません（期限切れ、または農家さんが準備を始めています）。',
     too_early: '受け取りの時間が過ぎてから押してください。',
+    review_not_allowed: '口コミは、受け取りが完了した注文だけ書けます。', review_too_late: '口コミは、受け取りから60日以内に書いてください。',
     help_not_found: 'このお手伝いの募集は見つかりませんでした。', help_closed: 'この募集は締め切られました。',
     own_help: '自分の募集には申し込めません。', already_applied: 'すでに申し込んでいます。', help_full: '募集人数がいっぱいです。',
     not_allowed: 'この操作はできません。', bad_transition: 'この申し込みはもう変更できません。',
@@ -468,9 +474,14 @@
       };
     },
     async loadFarms() {
-      const { data, error } = await this.sb.from('farms').select('*, products(*), posts(*)').eq('published', true);
+      const [{ data, error }, rt] = await Promise.all([
+        this.sb.from('farms').select('*, products(*), posts(*)').eq('published', true),
+        this.sb.from('farm_ratings').select('*')
+      ]);
       if (error) throw error;
-      return data.map(r => this.farmFrom(r));
+      const rating = {};
+      (rt.data || []).forEach(x => { rating[x.farm_id] = { avg: Number(x.avg), n: x.n }; });
+      return data.map(r => Object.assign(this.farmFrom(r), { rating: rating[r.id] || null }));
     },
     async myFarm() {
       if (!this.user) return null;
@@ -603,6 +614,23 @@
       const { error } = await this.sb.from('order_messages').insert({ order_id: orderId, text, from_farmer: !!asFarmer });
       if (error) throw rpcError(error);
     },
+    // ---- 口コミ ----
+    reviewFrom(r) {
+      return { id: r.id, orderId: r.order_id, farmId: r.farm_id, mine: !!(this.user && r.user_id === this.user.id), rating: r.rating, tags: r.tags || [],
+        comment: r.comment, name: r.name, items: r.items, reply: r.reply, replyAt: r.reply_at, hidden: r.hidden, date: r.created_at };
+    },
+    async reviews(farmId) {
+      const { data, error } = await this.sb.from('reviews').select('*').eq('farm_id', farmId).eq('hidden', false).order('created_at', { ascending: false }).limit(100);
+      if (error) throw error;
+      return data.map(r => this.reviewFrom(r));
+    },
+    async orderReview(orderId) { const { data } = await this.sb.from('reviews').select('*').eq('order_id', orderId).maybeSingle(); return data ? this.reviewFrom(data) : null; },
+    async saveReview(orderId, v) {
+      const { error } = await this.sb.rpc('save_review', { p_order: orderId, p_rating: v.rating, p_tags: v.tags, p_comment: v.comment, p_name: v.name });
+      if (error) throw rpcError(error);
+    },
+    async deleteReview(id) { const { error } = await this.sb.rpc('delete_review', { p_review: id }); if (error) throw rpcError(error); },
+    async replyReview(id, text) { const { error } = await this.sb.rpc('reply_review', { p_review: id, p_reply: text }); if (error) throw rpcError(error); },
     // ---- 援農（お手伝い） ----
     helpFrom(r) {
       return { id: r.id, farmId: r.farm_id, title: r.title, body: r.body, date: r.work_date, from: r.start_hour, to: r.end_hour, capacity: r.capacity,
@@ -728,7 +756,9 @@
         products: f.products.map(p => Object.assign({}, p, { stock: typeof ov[`${f.id}:${p.id}`] === 'number' ? ov[`${f.id}:${p.id}`] : p.stock }))
       }));
       const m = await this.myFarm();
-      return m ? [m, ...samples] : samples;
+      const all = m ? [m, ...samples] : samples;
+      all.forEach(f => { const rs = this.allReviews().filter(r => r.farmId === f.id && !r.hidden); f.rating = rs.length ? { avg: Math.round(rs.reduce((s, r) => s + r.rating, 0) / rs.length * 10) / 10, n: rs.length } : null; });
+      return all;
     },
     async myFarm() { const m = store.get(KEY.mine, null); return m && m.farmName ? Object.assign({}, m, { chargesEnabled: true, ownerId: 'demo' }) : null; },
     async saveFarm(f) {
@@ -827,6 +857,21 @@
     async orderMessages(orderId) { return (store.get(KEY.omsg, {})[orderId] || []); },
     async sendOrderMessage(orderId, text, asFarmer) { const all = store.get(KEY.omsg, {}); (all[orderId] = all[orderId] || []).push({ id: uid(), fromFarmer: !!asFarmer, text, date: new Date().toISOString() }); store.set(KEY.omsg, all); },
     logError() {},
+    // ---- 口コミ（お試し版は端末の中だけ。見本の農家さんには見本の口コミ） ----
+    allReviews() { return SAMPLE_REVIEWS.concat(store.get(KEY.reviews, [])); },
+    async reviews(farmId) { return this.allReviews().filter(r => r.farmId === farmId && !r.hidden).sort((a, b) => String(b.date).localeCompare(String(a.date))); },
+    async orderReview(orderId) { return store.get(KEY.reviews, []).find(r => r.orderId === orderId) || null; },
+    async saveReview(orderId, v) {
+      const o = store.get(KEY.orders, []).find(x => x.id === orderId);
+      if (!o || o.status !== 'done') throw new Error(RPC_MSG.review_not_allowed);
+      const l = store.get(KEY.reviews, []);
+      const i = l.findIndex(r => r.orderId === orderId);
+      const r = Object.assign(i >= 0 ? l[i] : { id: 'r' + uid(), orderId, farmId: o.farmId, mine: true, reply: '', date: new Date().toISOString(), items: o.items.map(x => x.name).join('・') }, v);
+      if (i >= 0) l[i] = r; else l.push(r);
+      store.set(KEY.reviews, l);
+    },
+    async deleteReview(id) { store.set(KEY.reviews, store.get(KEY.reviews, []).filter(r => r.id !== id)); },
+    async replyReview(id, text) { const l = store.get(KEY.reviews, []); const r = l.find(x => x.id === id); if (r) { r.reply = text; r.replyAt = new Date().toISOString(); } store.set(KEY.reviews, l); },
     // ---- 援農（お手伝い）・お店の相談：お試し版は端末の中だけ ----
     allHelps() { return SAMPLE_HELPS.concat(store.get(KEY.helps, [])); },
     async helps(farmId) {
@@ -1346,6 +1391,7 @@
         <div class="card-body">
           <h3>${esc(f.farmName)}${isMine(f) ? ' <span class="tag corn">あなたの農園</span>' : ''}</h3>
           <div class="small dim">${esc(f.farmer)}${yearsFarming(f) !== null ? `・農業${yearsFarming(f)}年目` : ''}</div>
+          ${f.rating ? `<div class="small">${stars(f.rating.avg)} <b>${f.rating.avg.toFixed(1)}</b> <span class="dim">（${f.rating.n}件）</span></div>` : ''}
           <div class="catch">${esc(f.catch)}</div>
           <div class="tags">
             ${season.length ? `<span class="tag tomato">いま旬：${esc(season.slice(0, 2).join('・'))}</span>` : ''}
@@ -1582,6 +1628,7 @@
         <span class="pref" style="color:#2E2A24">📍 ${esc(f.city)}${home ? ` ・ 🚗 ${fmtKm(km(home, f))}` : ''}</span>
         <h1>${esc(f.farmName)}</h1>
         <div class="who">${esc(f.farmer)}</div>
+        ${f.rating ? `<a class="hero-rating" href="#reviewSec" data-jump="reviewSec">${stars(f.rating.avg)} ${f.rating.avg.toFixed(1)}（${f.rating.n}件）</a>` : ''}
         <div class="actions">
           <a class="btn" href="#buy" data-jump="buy">🧺 買う</a>
           ${mine ? '<a class="btn ghost" href="#/mine/profile">農園ページを編集</a>' : `
@@ -1646,6 +1693,9 @@
 
       <h2 class="sec"><span class="ic">📰</span>畑だより</h2>
       <div class="posts">${posts.length ? posts.map(p => postItem(p, f)).join('') : '<div class="empty">まだ投稿がありません。</div>'}</div>
+
+      <h2 class="sec" id="reviewSec"><span class="ic">⭐</span>口コミ</h2>
+      <div id="reviewList"><div class="small dim">よみこみ中…</div></div>
 
       <h2 class="sec" id="cheerSec"><span class="ic">💌</span>届いた声</h2>
       <div class="cheers" id="cheerList"><div class="small dim">よみこみ中…</div></div>
@@ -1748,6 +1798,7 @@
       });
     }
     drawCheerForm();
+    drawReviews($('#reviewList'), f);
     api.helps(f.id).then(hs => {
       const open = hs.filter(h => h.status === 'open' && h.date > today());
       const slot = $('#farmHelps');
@@ -2075,14 +2126,18 @@
         </table>
         <p class="small dim" style="margin:8px 0 0">注文番号 ${esc(String(o.id).slice(0, 8))} ・ ${fmtDateTime(o.createdAt)} 注文 ・ 販売者 ${esc(f ? `${sellerOf(f)}（${o.farmName}）` : o.farmName)}${o.farmCity || (f && f.city) ? ` ・ 原産地 山口県${esc(o.farmCity || f.city)}` : ''}${api.mode === 'demo' ? '（お試し版）' : ''}</p>
       </div>
+      ${o.status === 'done' && o.farmId ? `
+      <h2 class="sec"><span class="ic">⭐</span>口コミ</h2>
+      <div class="panel" id="reviewSlot"><div class="small dim">よみこみ中…</div></div>` : ''}
       ${o.status !== 'pending_payment' && o.status !== 'expired' ? `
       <h2 class="sec"><span class="ic">💬</span>農家さんとのメッセージ</h2>
       <div class="panel" id="chatSlot"><div class="small dim">よみこみ中…</div></div>` : ''}
       <p class="small dim" style="margin-top:12px">解決しないときは <a href="#/contact?kind=order&order=${esc(o.id)}">運営へのお問い合わせ</a> へ。</p>
       <div class="actions">${o.farmId ? `<a class="btn leaf" href="#/farm/${esc(o.farmId)}">${esc(o.farmName)}のページへ</a>` : ''}
-      ${o.status === 'done' && o.farmId ? `<a class="btn corn" href="#/farm/${esc(o.farmId)}">💌 感想を届ける</a>` : ''}</div>
+      </div>
     `;
     if ($('#chatSlot')) chatBox($('#chatSlot'), o, false);
+    if ($('#reviewSlot')) reviewBox($('#reviewSlot'), o);
     const pa = $('#payAgain');
     if (pa) pa.addEventListener('click', () => openExternal(o.checkoutUrl, () => renderOrder(o.id, true)));
     const cb = $('#cancelBtn');
@@ -2894,7 +2949,7 @@
         ${orders.length ? `<div class="field"><label for="iOrder">関係する注文（あれば）</label>
           <select id="iOrder"><option value="">えらばない</option>${orders.map(o => `<option value="${esc(o.id)}" ${pre.get('order') === o.id ? 'selected' : ''}>${fmtDate(o.createdAt)} ${esc(o.farmName)}（${yen(o.total)}）</option>`).join('')}</select></div>` : ''}
         <div class="field"><label for="iEmail">返信先のメールアドレス</label><input id="iEmail" type="email" autocomplete="email" maxlength="200" value="${esc(email)}" placeholder="you@example.com"></div>
-        <div class="field"><label for="iBody">内容</label><textarea id="iBody" maxlength="2000" rows="7" placeholder="どの画面で、何をしたら、どうなったかを教えてください。"></textarea></div>
+        <div class="field"><label for="iBody">内容</label><textarea id="iBody" maxlength="2000" rows="7" placeholder="どの画面で、何をしたら、どうなったかを教えてください。">${pre.get('review') ? esc(`口コミの報告（番号：${pre.get('review')}）\n理由：`) : ''}</textarea></div>
         <p class="small dim">送信すると、<a href="#/legal/privacy" data-sheet>プライバシーポリシー</a>に同意したものとみなします。</p>
         <button class="btn block" type="submit" id="iSend">送信する</button>
         ${api.mode === 'demo' ? '<p class="small dim" style="margin:8px 0 0">お試し版のため、この端末の中にだけ保存されます。</p>' : ''}
@@ -2972,6 +3027,87 @@
     otherLabel: kind === 'biz' ? '🏪 お店' : '🙋 お手伝いの方',
     hint: kind === 'biz' ? (asFarmer ? '値段・量・届け方などを相談してください。' : '農家さんからの返事がここに届きます。') : (asFarmer ? '集合場所や当日の流れを伝えるのに使えます。' : '農家さんからの連絡がここに届きます。')
   });
+
+  // ======================================================================
+  //  口コミ：受け取りが完了した注文の本人だけが書ける。農家さんは返事を書ける。
+  // ======================================================================
+  const REVIEW_TAGS = ['おいしい', '新鮮', 'ていねい', '量がたっぷり', 'また買いたい', '農家さんが親切'];
+  const stars = (n, cls = '') => `<span class="stars ${cls}" aria-label="5点中${n}点">${'★'.repeat(Math.round(n))}<span class="off">${'★'.repeat(5 - Math.round(n))}</span></span>`;
+  function reviewItem(r, own) {
+    return `
+      <div class="review" data-rid="${esc(r.id)}">
+        <div class="head">${stars(r.rating)} <b>${esc(r.name || '購入した人')}</b> <span class="small dim">・ ${fmtDate(r.date)}${r.items ? ` ・ ${esc(r.items)}` : ''}</span></div>
+        ${r.tags && r.tags.length ? `<div class="tags">${r.tags.map(t => `<span class="tag leaf">${esc(t)}</span>`).join('')}</div>` : ''}
+        ${r.comment ? `<p>${esc(r.comment).replace(/\n/g, '<br>')}</p>` : ''}
+        ${r.reply ? `<div class="reply"><b>🧑‍🌾 農家さんから</b><p>${esc(r.reply).replace(/\n/g, '<br>')}</p></div>` : ''}
+        ${own ? `<form class="reply-form"><textarea maxlength="400" rows="2" placeholder="口コミへの返事（みんなに表示されます）">${esc(r.reply || '')}</textarea><button class="btn small leaf" type="submit">${r.reply ? '返事を直す' : '返事を書く'}</button></form>`
+          : `<button class="linkbtn small dim" type="button" data-report="${esc(r.id)}">不適切な口コミを報告</button>`}
+      </div>`;
+  }
+  async function drawReviews(slot, f) {
+    const list = await api.reviews(f.id).catch(() => []);
+    const own = isMine(f);
+    const avg = list.length ? Math.round(list.reduce((s, r) => s + r.rating, 0) / list.length * 10) / 10 : 0;
+    const tagCount = {};
+    list.forEach(r => (r.tags || []).forEach(t => { tagCount[t] = (tagCount[t] || 0) + 1; }));
+    const topTags = Object.entries(tagCount).sort((a, b) => b[1] - a[1]).slice(0, 4);
+    slot.innerHTML = list.length ? `
+      <div class="review-sum box">
+        <div class="big">${avg.toFixed(1)}</div>
+        <div>${stars(avg, 'lg')}<div class="small dim">${list.length}件の口コミ（買った人だけが書けます）</div>
+          ${topTags.length ? `<div class="tags" style="margin-top:6px">${topTags.map(([t, n]) => `<span class="tag leaf">${esc(t)} ${n}</span>`).join('')}</div>` : ''}</div>
+      </div>
+      <div class="reviews">${list.map(r => reviewItem(r, own)).join('')}</div>`
+      : '<div class="small dim">まだ口コミはありません。この農家さんから買って受け取ると、注文画面から口コミを書けます。</div>';
+    $$('.reply-form', slot).forEach(form => form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const id = form.closest('[data-rid]').dataset.rid;
+      try { await api.replyReview(id, $('textarea', form).value.trim()); toast('返事を保存しました'); drawReviews(slot, f); } catch (err) { toast(err.message); }
+    }));
+    $$('[data-report]', slot).forEach(b => b.addEventListener('click', () => go(`#/contact?kind=trouble&review=${encodeURIComponent(b.dataset.report)}`)));
+  }
+  // 注文画面：受け取りが完了したら口コミを書ける
+  async function reviewBox(slot, o) {
+    const r = await api.orderReview(o.id).catch(() => null);
+    const draw = (editing) => {
+      if (r && !editing) {
+        slot.innerHTML = `<div class="small dim" style="margin-bottom:6px">あなたの口コミ（農家さんのページに表示されています）</div>${reviewItem(r, false).replace(/<button class="linkbtn[^>]*data-report[^>]*>.*?<\/button>/, '')}
+          <div class="actions" style="margin-top:8px"><button class="btn ghost small" id="rvEdit">直す</button><button class="btn ghost small" id="rvDel" style="color:var(--tomato)">消す</button></div>`;
+        $('#rvEdit').addEventListener('click', () => draw(true));
+        $('#rvDel').addEventListener('click', async () => {
+          if (!(await ask('口コミを消しますか？', '消す', true))) return;
+          try { await api.deleteReview(r.id); toast('消しました'); reviewBox(slot, o); } catch (err) { toast(err.message); }
+        });
+        return;
+      }
+      const v = r || { rating: 0, tags: [], comment: '', name: '' };
+      slot.innerHTML = `
+        <form id="rvForm" novalidate>
+          <div class="field"><span class="field-label">評価</span>
+            <div class="star-pick" role="radiogroup" aria-label="評価">${[1, 2, 3, 4, 5].map(n => `<button type="button" role="radio" data-star="${n}" aria-label="${n}点" class="${n <= v.rating ? 'on' : ''}">★</button>`).join('')}</div></div>
+          <div class="field"><span class="field-label">良かったところ（いくつでも）</span>
+            <div class="chips">${REVIEW_TAGS.map(t => `<button type="button" class="chip leaf ${v.tags.includes(t) ? 'on' : ''}" data-rtag="${esc(t)}">${esc(t)}</button>`).join('')}</div></div>
+          <div class="field"><label for="rvText">ひとこと</label><textarea id="rvText" maxlength="400" placeholder="味・鮮度・受け取りのときのことなど">${esc(v.comment)}</textarea></div>
+          <div class="field"><label for="rvName">表示する名前（ニックネーム）</label><input id="rvName" maxlength="30" value="${esc(v.name)}" placeholder="例：仁保のはなこ"><span class="hint">本名や住所・電話番号は書かないでください。</span></div>
+          <button class="btn block leaf" type="submit">${r ? '口コミを直す' : '口コミを投稿する'}</button>
+        </form>`;
+      let rating = v.rating;
+      const tags = new Set(v.tags);
+      $$('[data-star]', slot).forEach(b => b.addEventListener('click', () => { rating = Number(b.dataset.star); $$('[data-star]', slot).forEach(x => x.classList.toggle('on', Number(x.dataset.star) <= rating)); }));
+      $$('[data-rtag]', slot).forEach(b => b.addEventListener('click', () => { const t = b.dataset.rtag; if (tags.has(t)) tags.delete(t); else tags.add(t); b.classList.toggle('on', tags.has(t)); }));
+      $('#rvForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        if (!rating) { toast('★の数をえらんでください'); return; }
+        try {
+          await api.saveReview(o.id, { rating, tags: [...tags], comment: $('#rvText').value.trim(), name: $('#rvName').value.trim() });
+          toast('口コミを投稿しました。ありがとうございます！');
+          reviewBox(slot, o);
+          reload().catch(() => {});
+        } catch (err) { toast(err.message); }
+      });
+    };
+    draw(false);
+  }
 
   // ======================================================================
   //  援農（お手伝い）
