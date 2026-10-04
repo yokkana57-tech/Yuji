@@ -519,3 +519,26 @@
 .star-pick { display: flex; gap: 4px; }
 .star-pick button { font-size: 2rem; line-height: 1; background: none; border: none; cursor: pointer; color: var(--line, #ccc); padding: 0 2px; }
 .star-pick button.on { color: #F2B705; text-shadow: 1px 1px 0 var(--ink); }
+
+/* ---- 質問箱（AI）・文字の大きさ ---- */
+html[data-size="lg"] { font-size: 112.5%; }
+html[data-size="xl"] { font-size: 125%; }
+html[data-size="lg"] body, html[data-size="lg"] input, html[data-size="lg"] select, html[data-size="lg"] textarea { font-size: 18px; }
+html[data-size="xl"] body, html[data-size="xl"] input, html[data-size="xl"] select, html[data-size="xl"] textarea { font-size: 20px; }
+.ask-fab { position: fixed; right: 12px; bottom: calc(86px + env(safe-area-inset-bottom)); z-index: 1002; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 68px; height: 68px; border-radius: 50%; border: 3px solid var(--ink); background: var(--corn); color: #2E2A24; box-shadow: 3px 3px 0 var(--ink); font-weight: 900; font-size: .72rem; cursor: pointer; line-height: 1.1; padding: 0; }
+.ask-fab .q { font-size: 1.5rem; }
+body:has(.cartbar) .ask-fab { bottom: calc(150px + env(safe-area-inset-bottom)); }
+body:has(.modal) .ask-fab { display: none; }
+.ask-card { display: flex; flex-direction: column; }
+.ask-log { display: grid; gap: 10px; margin-bottom: 10px; }
+.ask-log .msg { max-width: 92%; font-size: 1rem; line-height: 1.8; }
+.ask-log .msg.them { background: var(--surface-2); }
+.ask-hit { margin-top: 8px; padding-top: 8px; border-top: 2px dashed var(--line, #ddd); }
+.ask-form { display: grid; gap: 8px; margin-top: 8px; }
+.ask-form textarea { font-size: 18px; min-height: 64px; }
+.ask-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.ask-btns .btn { padding: 10px 18px; font-size: 1rem; }
+button.menu-item { width: 100%; font: inherit; font-weight: 900; text-align: left; cursor: pointer; }
+.text-size { margin-top: 14px; }
+.text-size .seg button { font-size: .9rem; padding: 6px 12px; }
+.first-help { margin-top: 16px; padding: 12px; border: 2px dashed var(--ink); border-radius: var(--radius-md); background: var(--surface-2); }

@@ -12,6 +12,7 @@
 //   PLATFORM_FEE_PERCENT   任意。カード払いで農家さんの売上から差し引く決済手数料（%）。省略時 3.6（Stripe の実費）
 //   RESEND_API_KEY         任意。あればログイン用メールの送信（SMTP）を設定する
 //   MAIL_FROM              RESEND_API_KEY を使うときの送信元（例: no-reply@example.jp）
+//   ANTHROPIC_API_KEY      任意。あれば質問箱（AI）のキーとして登録する。なければ質問箱は「よくある質問」から探して答える
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
@@ -99,6 +100,7 @@ const secrets = [
   { name: 'SITE_URL', value: SITE_URL },
   { name: 'PLATFORM_FEE_PERCENT', value: FEE },
 ];
+if (process.env.ANTHROPIC_API_KEY) secrets.push({ name: 'ANTHROPIC_API_KEY', value: process.env.ANTHROPIC_API_KEY });
 if (STRIPE) {
   step('Stripe の通知先（Webhook）');
   const stripe = async (path, method = 'GET', form) => {
@@ -140,7 +142,9 @@ console.log('  ' + secrets.map(s => s.name).join(', '));
 
 // ---- 6. サーバーの処理（Edge Functions）の公開 ----
 step('サーバーの処理（Edge Functions）の公開');
-for (const fn of ['create-checkout', 'cancel-order', 'connect-account', 'delete-account', 'stripe-webhook']) {
+// 質問箱（AI）の説明書を、使い方ガイドとよくある質問から作りなおしてから公開する
+execFileSync('node', ['scripts/build-ai-knowledge.mjs'], { stdio: 'inherit' });
+for (const fn of ['create-checkout', 'cancel-order', 'connect-account', 'delete-account', 'stripe-webhook', 'ask-ai']) {
   const args = ['--yes', 'supabase@latest', 'functions', 'deploy', fn, '--project-ref', REF, '--use-api'];
   if (fn === 'stripe-webhook') args.push('--no-verify-jwt');
   execFileSync('npx', args, { stdio: 'inherit', env: { ...process.env, SUPABASE_ACCESS_TOKEN: TOKEN } });

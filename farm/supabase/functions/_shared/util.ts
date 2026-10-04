@@ -75,6 +75,7 @@ const MESSAGES: Record<string, string> = {
   cannot_cancel: 'この注文はキャンセルできません（期限切れ、または農家さんが準備を始めています）。',
   login_required: 'ログインしてください。',
   payments_not_ready: 'オンライン決済の準備中です。もうしばらくお待ちください。',
+  bad_question: '質問を入力してください。',
 };
 export function friendly(err: unknown): { status: number; message: string } {
   if (err instanceof HttpError) return { status: err.status, message: MESSAGES[err.message] ?? err.message };
