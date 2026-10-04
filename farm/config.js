@@ -12,6 +12,9 @@ window.HATAKE_CONFIG = {
   },
   // 応援してくれている企業・団体（スポンサー）。例: [{ name: '徳地チャレンジ農業', text: 'ひとこと', url: 'https://...' }]
   sponsors: [],
+  // 質問箱で AI（Claude）を使うか。false のあいだは、よくある質問と使い方ガイドから探して答える（費用0円）。
+  // true にするときは、Supabase の秘密の値 ANTHROPIC_API_KEY も登録すること（FEATURES.md「質問箱（AI）のしくみ」）
+  aiEnabled: false,
   // カード払いのときに農家さんの売上から差し引く決済手数料（%）。運営の取り分はなく、Stripe の手数料（3.6%）の実費。
   // サーバーの PLATFORM_FEE_PERCENT と必ず同じ値にする（農家さんの画面に表示する）
   feePercent: 3.6
