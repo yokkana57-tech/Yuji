@@ -6,7 +6,7 @@
   if (!GEO) throw new Error('地図データ（geo.js）を読み込めませんでした');
 
   // ---------- 実行環境 ----------
-  const APP_VERSION = '1.3.0';
+  const APP_VERSION = '1.4.0';
   const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   const STANDALONE = NATIVE || (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
   const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -213,7 +213,7 @@
     orders: 'yamahata.orders', stock: 'yamahata.stock', buyer: 'yamahata.buyer', home: 'yamahata.home',
     cart: 'yamahata.cart', next: 'yamahata.next', market: 'yamahata.market', mkmsg: 'yamahata.mkmsg', install: 'yamahata.install',
     intro: 'yamahata.intro', inquiries: 'yamahata.inquiries', omsg: 'yamahata.omsg',
-    helps: 'yamahata.helps', entries: 'yamahata.entries', biz: 'yamahata.biz', talk: 'yamahata.talk', reviews: 'yamahata.reviews'
+    helps: 'yamahata.helps', entries: 'yamahata.entries', biz: 'yamahata.biz', talk: 'yamahata.talk', reviews: 'yamahata.reviews', textSize: 'yamahata.textsize'
   };
   const store = {
     get(k, fallback) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; } },
@@ -614,6 +614,12 @@
       const { error } = await this.sb.from('order_messages').insert({ order_id: orderId, text, from_farmer: !!asFarmer });
       if (error) throw rpcError(error);
     },
+    // 質問箱（AI）。AI が使えないときは { fallback: true }
+    async askAI(turns) {
+      const { data, error } = await this.sb.functions.invoke('ask-ai', { body: { messages: turns } });
+      if (error) return { fallback: true };
+      return data || { fallback: true };
+    },
     // ---- 口コミ ----
     reviewFrom(r) {
       return { id: r.id, orderId: r.order_id, farmId: r.farm_id, mine: !!(this.user && r.user_id === this.user.id), rating: r.rating, tags: r.tags || [],
@@ -857,6 +863,7 @@
     async orderMessages(orderId) { return (store.get(KEY.omsg, {})[orderId] || []); },
     async sendOrderMessage(orderId, text, asFarmer) { const all = store.get(KEY.omsg, {}); (all[orderId] = all[orderId] || []).push({ id: uid(), fromFarmer: !!asFarmer, text, date: new Date().toISOString() }); store.set(KEY.omsg, all); },
     logError() {},
+    async askAI() { return { fallback: true }; },
     // ---- 口コミ（お試し版は端末の中だけ。見本の農家さんには見本の口コミ） ----
     allReviews() { return SAMPLE_REVIEWS.concat(store.get(KEY.reviews, [])); },
     async reviews(farmId) { return this.allReviews().filter(r => r.farmId === farmId && !r.hidden).sort((a, b) => String(b.date).localeCompare(String(a.date))); },
@@ -1334,6 +1341,10 @@
         <div class="city-groups">${groups}</div>
         <div style="margin-top:16px;text-align:center">
           ${getHome() ? '<button class="linkbtn" type="button" id="cancelHome">変更しないでもどる</button>' : '<button class="linkbtn" type="button" id="skipHome">あとで決める（県内ぜんぶ見る）</button>'}
+        </div>
+        <div class="first-help">
+          <b>はじめての方へ</b>
+          <div class="actions" style="margin-top:6px"><a class="btn small leaf" href="#/guide">📖 使い方ガイド</a><button class="btn small corn" type="button" data-open-ask>🤖 質問箱でAIに聞く</button></div>
         </div>
         <p class="small dim" style="margin:14px 0 0;font-size:.68rem">地名データ：Geolonia 住所データ（CC BY 4.0）／ 地図：国土数値情報（行政区域データ）を加工</p>
       </section>
@@ -2874,6 +2885,134 @@
     openSheet(kind === 'law' ? (f ? lawHtml(f) : '') : kind === 'privacy' ? window.HATAKE_LEGAL.privacy() : window.HATAKE_LEGAL.terms());
   });
 
+  // ======================================================================
+  //  質問箱：アプリの使い方を AI がやさしく答える（AI が使えないときは、よくある質問から探す）
+  //  スマホに慣れていない人向けに、声で入力・答えの読み上げもできる
+  // ======================================================================
+  const ASK_SAMPLES = ['注文のしかたを教えて', '畑で受け取るには？', '注文をキャンセルしたい', '農家として登録したい', '文字を大きくしたい'];
+  // よくある質問と使い方ガイドから、質問に近いものを探す（2文字ずつの一致で点数をつける）
+  function searchHelp(question) {
+    const norm = t => String(t).toLowerCase().replace(/[\s、。？！?!「」（）()・]/g, '');
+    const grams = t => { const n = norm(t), g = new Set(); for (let i = 0; i < n.length - 1; i++) g.add(n.slice(i, i + 2)); return g; };
+    const q = grams(question);
+    if (!q.size) return [];
+    const docs = HELP.faq.map(x => ({ title: x.q, text: x.a, href: '#/faq' }))
+      .concat(HELP.guide.buyer.map(x => ({ title: x.title, text: x.text, href: '#/guide' })))
+      .concat(HELP.guide.farmer.map(x => ({ title: x.title, text: x.text, href: '#/guide/farmer' })));
+    return docs.map(d => {
+      const tg = grams(d.title), bg = grams(d.text);
+      let sc = 0;
+      q.forEach(g => { if (tg.has(g)) sc += 3; else if (bg.has(g)) sc += 1; });
+      return { d, sc: sc / Math.sqrt(q.size) };
+    }).filter(x => x.sc >= 1.2).sort((a, b) => b.sc - a.sc).slice(0, 3).map(x => x.d);
+  }
+  // 答えの中の [名前](#/...) だけをリンクにする（ほかの書式は文字のまま）
+  const answerHtml = t => esc(t).replace(/\[([^\]]{1,30})\]\((#\/[a-z/]*)\)/g, '<a href="$2" data-close-ask>$1</a>').replace(/\n/g, '<br>');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let askLog = []; // { role, text }（この起動のあいだだけ覚えておく）
+  function speak(text) {
+    if (!('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1'));
+    u.lang = 'ja-JP'; u.rate = 0.95;
+    speechSynthesis.speak(u);
+  }
+  function openAsk(prefill) {
+    if ($('.modal.ask')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'modal sheet ask';
+    wrap.innerHTML = `<div class="modal-card sheet-card ask-card" role="dialog" aria-modal="true" aria-label="質問箱">
+      <button type="button" class="sheet-close" aria-label="閉じる">✕</button>
+      <h2 style="margin:0 0 4px;font-size:1.15rem">🤖 なんでも質問箱</h2>
+      <p class="small dim" style="margin:0 0 10px">アプリの使い方を、AIがお答えします。ふだんの言葉で聞いてください。</p>
+      <div class="ask-log" id="askLog"></div>
+      <div class="chips" id="askSamples">${ASK_SAMPLES.map(t => `<button type="button" class="chip leaf" data-sample="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+      <form class="ask-form" id="askForm">
+        <textarea id="askText" rows="2" maxlength="400" placeholder="例：注文のしかたを教えて" aria-label="質問"></textarea>
+        <div class="ask-btns">
+          ${SR ? '<button type="button" class="btn ghost" id="askMic" aria-label="声で入力">🎤 声で</button>' : ''}
+          <button type="submit" class="btn leaf" id="askSend">送る</button>
+        </div>
+      </form>
+      <p class="small dim" style="margin:8px 0 0">AIの答えは、まちがうことがあります。注文のことは注文画面のメッセージか、<a href="#/contact" data-close-ask>お問い合わせ</a>へ。電話番号や住所は書かないでください。</p>
+    </div>`;
+    const done = () => { wrap.remove(); document.removeEventListener('keydown', onKey); if ('speechSynthesis' in window) speechSynthesis.cancel(); };
+    const onKey = e => { if (e.key === 'Escape') done(); };
+    wrap.addEventListener('click', e => {
+      if (e.target === wrap || e.target.closest('.sheet-close, [data-close-ask]')) done();
+      const sp = e.target.closest('[data-speak]');
+      if (sp) speak(askLog[Number(sp.dataset.speak)].text);
+      const sm = e.target.closest('[data-sample]');
+      if (sm) send(sm.dataset.sample);
+    });
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(wrap);
+    const log = $('#askLog', wrap);
+    const draw = (thinking) => {
+      log.innerHTML = askLog.map((m, i) => m.role === 'user'
+        ? `<div class="msg me">${esc(m.text)}</div>`
+        : `<div class="msg them">${m.html || answerHtml(m.text)}${m.text ? `<div><button type="button" class="linkbtn small" data-speak="${i}">🔊 読み上げる</button></div>` : ''}</div>`).join('')
+        + (thinking ? '<div class="msg them dim">考えています…</div>' : '');
+      $('#askSamples', wrap).hidden = askLog.length > 0;
+      log.scrollTop = log.scrollHeight;
+      $('.ask-card', wrap).scrollTop = $('.ask-card', wrap).scrollHeight;
+    };
+    async function send(text) {
+      text = String(text || '').trim();
+      if (!text) return;
+      $('#askText', wrap).value = '';
+      askLog.push({ role: 'user', text });
+      draw(true);
+      $('#askSend', wrap).disabled = true;
+      let res;
+      try { res = await api.askAI(askLog.filter(m => !m.local).slice(-8).map(m => ({ role: m.role, text: m.text }))); } catch (e) { res = { fallback: true }; }
+      if (res && res.answer) askLog.push({ role: 'assistant', text: res.answer });
+      else {
+        const hits = searchHelp(text);
+        const head = res && res.limited ? '今日は質問の回数が多いため、AIはお休みしています。かわりに、近い説明をさがしました。\n' : '';
+        const body = hits.length
+          ? hits.map(h => `「${h.title}」\n${h.text}`).join('\n\n')
+          : 'ぴったりの説明が見つかりませんでした。';
+        const html = esc(head).replace(/\n/g, '<br>') + (hits.length
+          ? hits.map(h => `<div class="ask-hit"><b>${esc(h.title)}</b><br>${esc(h.text).replace(/\n/g, '<br>')}<br><a href="${h.href}" data-close-ask>くわしく見る →</a></div>`).join('')
+          : 'ぴったりの説明が見つかりませんでした。<a href="#/faq" data-close-ask>よくある質問</a>を見るか、<a href="#/contact" data-close-ask>お問い合わせ</a>から運営に聞いてください。');
+        askLog.push({ role: 'assistant', text: head + body, html, local: true });
+        if (askLog.length >= 2) askLog[askLog.length - 2].local = true; // AI に答えられなかった質問は、次の会話に含めない
+      }
+      draw(false);
+      $('#askSend', wrap).disabled = false;
+    }
+    $('#askForm', wrap).addEventListener('submit', e => { e.preventDefault(); send($('#askText', wrap).value); });
+    $('#askText', wrap).addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send($('#askText', wrap).value); } });
+    const mic = $('#askMic', wrap);
+    if (mic) mic.addEventListener('click', () => {
+      try {
+        const rec = new SR();
+        rec.lang = 'ja-JP'; rec.interimResults = true;
+        mic.disabled = true; mic.textContent = '🎤 話してください…';
+        rec.onresult = ev => { $('#askText', wrap).value = Array.from(ev.results).map(r => r[0].transcript).join(''); };
+        rec.onend = () => { mic.disabled = false; mic.textContent = '🎤 声で'; if ($('#askText', wrap).value.trim()) send($('#askText', wrap).value); };
+        rec.onerror = () => { toast('声を聞き取れませんでした。マイクの使用を許可してください'); };
+        rec.start();
+      } catch (e) { toast('この端末では声の入力が使えません'); }
+    });
+    draw(false);
+    if (prefill) send(prefill); else setTimeout(() => $('#askText', wrap).focus(), 100);
+  }
+  const fab = document.createElement('button');
+  fab.type = 'button'; fab.className = 'ask-fab'; fab.id = 'askFab';
+  fab.innerHTML = '<span class="q">❓</span><span>しつもん</span>';
+  fab.setAttribute('aria-label', '質問箱をひらく');
+  fab.addEventListener('click', () => openAsk());
+  document.body.appendChild(fab);
+  // どの画面の「質問箱」ボタンからも開けるように
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-open-ask]'); if (b && !b.closest('.modal')) openAsk(); });
+
+  // 文字の大きさ（スマホの文字が小さく感じる人向け）
+  const TEXT_SIZES = { normal: 'ふつう', lg: '大きい', xl: 'とても大きい' };
+  function applyTextSize(v) { if (v && v !== 'normal') document.documentElement.setAttribute('data-size', v); else document.documentElement.removeAttribute('data-size'); }
+  applyTextSize(store.get(KEY.textSize, 'normal'));
+
   // ---------- メニュー（使い方・よくある質問・お問い合わせ・規約・スポンサー） ----------
   const HELP = window.HATAKE_HELP || { intro: [], guide: { buyer: [], farmer: [] }, faq: [] };
   function sponsorsHtml() {
@@ -2889,17 +3028,25 @@
     wrap.innerHTML = `<div class="modal-card sheet-card" role="dialog" aria-modal="true" aria-label="メニュー"><button type="button" class="sheet-close" aria-label="閉じる">✕</button>
       <h2 style="margin:0 0 12px;font-size:1.1rem">メニュー</h2>
       <nav class="menu-list">
+        <button type="button" class="menu-item" data-open-ask><span class="ic">🤖</span><span>質問箱（AIに聞く）<small>使い方がわからないときに</small></span><span class="arr">›</span></button>
         ${item('#/guide', '📖', '使い方ガイド', 'はじめての方はこちら')}
         ${item('#/faq', '❓', 'よくある質問', '送料・キャンセル・手数料など')}
         ${item('#/contact', '✉️', 'お問い合わせ', '困ったこと・ご意見・不具合')}
         ${item('#/legal/terms', '📄', '利用規約')}
         ${item('#/legal/privacy', '🔒', 'プライバシーポリシー')}
       </nav>
+      <div class="text-size"><b>🔠 文字の大きさ</b>
+        <div class="seg" style="margin-top:6px">${Object.entries(TEXT_SIZES).map(([k, v]) => `<button type="button" data-size="${k}" class="${(store.get(KEY.textSize, 'normal')) === k ? 'on' : ''}">${v}</button>`).join('')}</div></div>
       ${sponsorsHtml()}
       <p class="small dim" style="text-align:center;margin:14px 0 0">やまぐち畑のとなり ver.${APP_VERSION}</p></div>`;
     const done = () => { wrap.remove(); document.removeEventListener('keydown', onKey); };
     const onKey = e => { if (e.key === 'Escape') done(); };
-    wrap.addEventListener('click', e => { if (e.target === wrap || e.target.closest('.sheet-close, [data-close-menu]')) done(); });
+    wrap.addEventListener('click', e => {
+      if (e.target === wrap || e.target.closest('.sheet-close, [data-close-menu]')) done();
+      if (e.target.closest('[data-open-ask]')) { done(); openAsk(); }
+      const sz = e.target.closest('[data-size]');
+      if (sz) { store.set(KEY.textSize, sz.dataset.size); applyTextSize(sz.dataset.size); $$('[data-size]', wrap).forEach(b => b.classList.toggle('on', b === sz)); }
+    });
     document.addEventListener('keydown', onKey);
     document.body.appendChild(wrap);
   }
@@ -2919,12 +3066,13 @@
       ${stepsHtml(HELP.guide[farmer ? 'farmer' : 'buyer'])}
       <div class="panel soft" style="margin-top:16px">
         <p style="margin:0 0 10px"><b>わからないことがあったら</b></p>
-        <div class="actions"><a class="btn leaf small" href="#/faq">❓ よくある質問</a><a class="btn ghost small" href="#/contact">✉️ お問い合わせ</a>
+        <div class="actions"><button class="btn corn small" type="button" data-open-ask>🤖 質問箱でAIに聞く</button><a class="btn leaf small" href="#/faq">❓ よくある質問</a><a class="btn ghost small" href="#/contact">✉️ お問い合わせ</a>
         ${farmer ? '' : '<button class="btn ghost small" type="button" id="replayIntro">🎬 はじめての案内をもう一度見る</button>'}</div>
       </div>
       ${legalFoot()}`;
     const r = $('#replayIntro');
     if (r) r.addEventListener('click', () => showIntro(true));
+
   }
   function renderFaq() {
     const cats = [...new Set(HELP.faq.map(x => x.cat))];
