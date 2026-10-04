@@ -1344,7 +1344,7 @@
         </div>
         <div class="first-help">
           <b>はじめての方へ</b>
-          <div class="actions" style="margin-top:6px"><a class="btn small leaf" href="#/guide">📖 使い方ガイド</a><button class="btn small corn" type="button" data-open-ask>🤖 質問箱でAIに聞く</button></div>
+          <div class="actions" style="margin-top:6px"><a class="btn small leaf" href="#/guide">📖 使い方ガイド</a><button class="btn small corn" type="button" data-open-ask>${ASK_LABEL}</button></div>
         </div>
         <p class="small dim" style="margin:14px 0 0;font-size:.68rem">地名データ：Geolonia 住所データ（CC BY 4.0）／ 地図：国土数値情報（行政区域データ）を加工</p>
       </section>
@@ -2889,6 +2889,8 @@
   //  質問箱：アプリの使い方を AI がやさしく答える（AI が使えないときは、よくある質問から探す）
   //  スマホに慣れていない人向けに、声で入力・答えの読み上げもできる
   // ======================================================================
+  const AI_ON = !!(window.HATAKE_CONFIG || {}).aiEnabled;
+  const ASK_LABEL = AI_ON ? '🤖 質問箱でAIに聞く' : '❓ 質問箱で調べる';
   const ASK_SAMPLES = ['注文のしかたを教えて', '畑で受け取るには？', '注文をキャンセルしたい', '農家として登録したい', '文字を大きくしたい'];
   // よくある質問と使い方ガイドから、質問に近いものを探す（2文字ずつの一致で点数をつける）
   function searchHelp(question) {
@@ -2923,8 +2925,8 @@
     wrap.className = 'modal sheet ask';
     wrap.innerHTML = `<div class="modal-card sheet-card ask-card" role="dialog" aria-modal="true" aria-label="質問箱">
       <button type="button" class="sheet-close" aria-label="閉じる">✕</button>
-      <h2 style="margin:0 0 4px;font-size:1.15rem">🤖 なんでも質問箱</h2>
-      <p class="small dim" style="margin:0 0 10px">アプリの使い方を、AIがお答えします。ふだんの言葉で聞いてください。</p>
+      <h2 style="margin:0 0 4px;font-size:1.15rem">${AI_ON ? '🤖' : '❓'} なんでも質問箱</h2>
+      <p class="small dim" style="margin:0 0 10px">${AI_ON ? 'アプリの使い方を、AIがお答えします。ふだんの言葉で聞いてください。' : '知りたいことを書くと、使い方の説明から近い答えをさがします。'}</p>
       <div class="ask-log" id="askLog"></div>
       <div class="chips" id="askSamples">${ASK_SAMPLES.map(t => `<button type="button" class="chip leaf" data-sample="${esc(t)}">${esc(t)}</button>`).join('')}</div>
       <form class="ask-form" id="askForm">
@@ -2934,7 +2936,7 @@
           <button type="submit" class="btn leaf" id="askSend">送る</button>
         </div>
       </form>
-      <p class="small dim" style="margin:8px 0 0">AIの答えは、まちがうことがあります。注文のことは注文画面のメッセージか、<a href="#/contact" data-close-ask>お問い合わせ</a>へ。電話番号や住所は書かないでください。</p>
+      <p class="small dim" style="margin:8px 0 0">${AI_ON ? 'AIの答えは、まちがうことがあります。' : ''}注文のことは注文画面のメッセージか、<a href="#/contact" data-close-ask>お問い合わせ</a>へ。電話番号や住所は書かないでください。</p>
     </div>`;
     const done = () => { wrap.remove(); document.removeEventListener('keydown', onKey); if ('speechSynthesis' in window) speechSynthesis.cancel(); };
     const onKey = e => { if (e.key === 'Escape') done(); };
@@ -2965,7 +2967,7 @@
       draw(true);
       $('#askSend', wrap).disabled = true;
       let res;
-      try { res = await api.askAI(askLog.filter(m => !m.local).slice(-8).map(m => ({ role: m.role, text: m.text }))); } catch (e) { res = { fallback: true }; }
+      try { res = AI_ON ? await api.askAI(askLog.filter(m => !m.local).slice(-8).map(m => ({ role: m.role, text: m.text }))) : { fallback: true }; } catch (e) { res = { fallback: true }; }
       if (res && res.answer) askLog.push({ role: 'assistant', text: res.answer });
       else {
         const hits = searchHelp(text);
@@ -3028,7 +3030,7 @@
     wrap.innerHTML = `<div class="modal-card sheet-card" role="dialog" aria-modal="true" aria-label="メニュー"><button type="button" class="sheet-close" aria-label="閉じる">✕</button>
       <h2 style="margin:0 0 12px;font-size:1.1rem">メニュー</h2>
       <nav class="menu-list">
-        <button type="button" class="menu-item" data-open-ask><span class="ic">🤖</span><span>質問箱（AIに聞く）<small>使い方がわからないときに</small></span><span class="arr">›</span></button>
+        <button type="button" class="menu-item" data-open-ask><span class="ic">${AI_ON ? '🤖' : '❓'}</span><span>${AI_ON ? '質問箱（AIに聞く）' : '質問箱'}<small>使い方がわからないときに</small></span><span class="arr">›</span></button>
         ${item('#/guide', '📖', '使い方ガイド', 'はじめての方はこちら')}
         ${item('#/faq', '❓', 'よくある質問', '送料・キャンセル・手数料など')}
         ${item('#/contact', '✉️', 'お問い合わせ', '困ったこと・ご意見・不具合')}
@@ -3066,7 +3068,7 @@
       ${stepsHtml(HELP.guide[farmer ? 'farmer' : 'buyer'])}
       <div class="panel soft" style="margin-top:16px">
         <p style="margin:0 0 10px"><b>わからないことがあったら</b></p>
-        <div class="actions"><button class="btn corn small" type="button" data-open-ask>🤖 質問箱でAIに聞く</button><a class="btn leaf small" href="#/faq">❓ よくある質問</a><a class="btn ghost small" href="#/contact">✉️ お問い合わせ</a>
+        <div class="actions"><button class="btn corn small" type="button" data-open-ask>${ASK_LABEL}</button><a class="btn leaf small" href="#/faq">❓ よくある質問</a><a class="btn ghost small" href="#/contact">✉️ お問い合わせ</a>
         ${farmer ? '' : '<button class="btn ghost small" type="button" id="replayIntro">🎬 はじめての案内をもう一度見る</button>'}</div>
       </div>
       ${legalFoot()}`;
