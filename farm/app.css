@@ -542,3 +542,10 @@ button.menu-item { width: 100%; font: inherit; font-weight: 900; text-align: lef
 .text-size { margin-top: 14px; }
 .text-size .seg button { font-size: .9rem; padding: 6px 12px; }
 .first-help { margin-top: 16px; padding: 12px; border: 2px dashed var(--ink); border-radius: var(--radius-md); background: var(--surface-2); }
+
+/* ---- 保管と鮮度 ---- */
+.checks { display: grid; gap: 6px; }
+.checks label { display: flex; gap: 8px; align-items: center; font-weight: 700; }
+.checks input { width: auto; }
+.storage-photo { display: block; width: 100%; max-height: 240px; object-fit: cover; border-radius: var(--radius-sm); margin-bottom: 8px; border: 2px solid var(--ink); }
+.prod .origin a { color: inherit; font-weight: 900; }

@@ -6,7 +6,7 @@
   if (!GEO) throw new Error('地図データ（geo.js）を読み込めませんでした');
 
   // ---------- 実行環境 ----------
-  const APP_VERSION = '1.4.0';
+  const APP_VERSION = '1.5.0';
   const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   const STANDALONE = NATIVE || (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
   const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -45,6 +45,12 @@
   // 利用規約・プライバシーポリシーへのリンク（App Store の審査でも、アプリ内から見られることが必要）
   const legalFoot = extra => `<p class="legal-foot">${extra || ''}<a href="#/legal/terms">利用規約</a> ・ <a href="#/legal/privacy">プライバシーポリシー</a></p>`;
   const sellerOf = f => f.sellerName || f.farmer;
+  // 保管・鮮度（農家さんの申告）
+  const FRESH = { same_day: '収穫したその日に発送・お渡し', next_day: '収穫の翌日までに発送・お渡し', few_days: '収穫から2〜3日以内に発送・お渡し', stored: '貯蔵して出荷する品目（お米・いも・玉ねぎなど）' };
+  const FRESH_SHORT = { same_day: '🌅 朝どれ当日', next_day: '🌱 収穫翌日まで', few_days: '🗓 収穫2〜3日', stored: '🏠 貯蔵品' };
+  const STORE_WAYS = { cold_room: '予冷庫（冷蔵室）で保管', fridge: '業務用の冷蔵庫で保管', shade: '風通しのよい日陰で常温保管', dry_store: '乾燥・追熟させてから保管', rice_cold: '玄米を低温倉庫で保管', none: '保管せず、収穫してすぐお渡し' };
+  const SHIP_TEMP = { normal: '常温便', cool: 'クール便（冷蔵）', depends: '品目によって常温便・クール便' };
+  const hasStorage = f => !!(f.storage && (f.storage.fresh || (f.storage.ways || []).length || f.storage.note));
   const shipDaysOf = f => f.shipDays || 3;
   const FEE_PERCENT = Number((window.HATAKE_CONFIG || {}).feePercent) || 0;
   const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
@@ -73,6 +79,7 @@
       catch: 'ひとつでたまげる、萩の大きななす。',
       story: '「たまげなす」っちゅう名前は、あんまり大きゅうて、みんなが「たまげた！」って言うたのが始まりなんよ。\n\nひとつ500gから、大きいのは1kg近くになる。皮がやわらかくて、焼くととろっとする。この味を絶やしたくなくて、30年以上つくり続けちょります。\n\n夏の朝は4時から畑。なすは水が大好きじゃけえ、毎日の水やりが勝負です。一回、焼きなすで食べてみてほしいっちゃ。',
       methods: { pesticide: 'reduced', fertilizer: 'reduced', style: '露地', soil: '牛ふん堆肥と稲わらで土づくり。なすの間にマリーゴールドを植えて虫よけに。' },
+      storage: { fresh: 'same_day', ways: ['cold_room'], temp: '10℃前後', ship: 'cool', note: '朝4時から収穫して、すぐ予冷庫へ。皮がやわらかいので、冷やしすぎないようにしています。' },
       certs: ['やまぐちブランド'],
       pickup: { enabled: true, place: '萩市内・畑の横の直売小屋', days: [2, 4, 6], from: 9, to: 16, note: '軍手を持ってきてくれたら、収穫体験もできます！' },
       products: [
@@ -116,6 +123,7 @@
       catch: '西日本でりんご？ 阿東の寒さがつくる甘さです。',
       story: '「山口でりんご？」ってよく驚かれます。阿東徳佐は標高が高くて、冬は雪も積もる寒い土地。だから、りんごが育つんです。\n\n義父が植えたふじの木は、もう60年選手。1本1本クセがあって、毎年話しかけながら剪定しています。\n\n秋はりんご狩りもしているので、注文したりんごを受け取りに来たついでに、木からもいでいってくださいね。',
       methods: { pesticide: 'reduced', fertilizer: 'reduced', style: '果樹園', soil: '剪定した枝をチップにして畑に還す。葉とらずで樹上完熟。' },
+      storage: { fresh: 'next_day', ways: ['cold_room', 'shade'], temp: '5℃前後', ship: 'normal', note: '収穫したりんごは予冷庫で休ませてから、1つずつ手で選んで箱詰めします。' },
       certs: [],
       pickup: { enabled: true, place: '山口市阿東徳佐・りんご園の受付', days: [0, 1, 3, 5, 6], from: 9, to: 16, note: '9〜11月はりんご狩りも営業中。' },
       products: [
@@ -455,7 +463,7 @@
         coverUrl: r.cover_url || '',
         methods: Object.assign({ pesticide: 'conventional', fertilizer: 'conventional', style: '露地', soil: '' }, r.methods || {}),
         certs: r.certs || [], pickup: r.pickup || {}, cancelDays: r.cancel_days, published: r.published,
-        sellerName: r.seller_name || '', shipDays: r.ship_days || 3, bizOk: !!r.biz_ok, bizNote: r.biz_note || '',
+        sellerName: r.seller_name || '', shipDays: r.ship_days || 3, bizOk: !!r.biz_ok, bizNote: r.biz_note || '', storage: r.storage || {},
         chargesEnabled: r.charges_enabled, stripeLinked: !!r.stripe_account_id,
         products: (r.products || []).slice().sort((a, b) => a.sort - b.sort).map(p => ({
           id: p.id, name: p.name, cat: p.cat, months: p.months, note: p.note, unit: p.unit,
@@ -495,7 +503,7 @@
         farm_name: f.farmName, farmer: f.farmer, city: f.city, lat: f.lat, lng: f.lng, lat_picked: f.latPicked,
         since: f.since || null, area: f.area, emoji: f.emoji, hue: f.hue, catch: f.catch, story: f.story, cover_url: f.coverUrl || null,
         methods: f.methods, certs: f.certs, pickup: f.pickup, cancel_days: f.cancelDays, published: true,
-        seller_name: f.sellerName || '', ship_days: f.shipDays || 3, biz_ok: !!f.bizOk, biz_note: f.bizNote || ''
+        seller_name: f.sellerName || '', ship_days: f.shipDays || 3, biz_ok: !!f.bizOk, biz_note: f.bizNote || '', storage: f.storage || {}
       };
       let farmId = f.ownerId ? f.id : null;
       if (farmId) {
@@ -1406,6 +1414,7 @@
           <div class="catch">${esc(f.catch)}</div>
           <div class="tags">
             ${season.length ? `<span class="tag tomato">いま旬：${esc(season.slice(0, 2).join('・'))}</span>` : ''}
+            ${f.storage && f.storage.fresh === 'same_day' ? '<span class="tag leaf">🌅 朝どれ</span>' : ''}
             ${pest && pest.short ? `<span class="tag">${esc(pest.short)}</span>` : ''}
             ${(f.certs || []).map(c => `<span class="tag eggplant">${esc(c)}</span>`).join('')}
           </div>
@@ -1576,6 +1585,24 @@
     if (cart.farmId === f.id && cart.method) return cart.method;
     return pickupDates(f).length ? 'pickup' : 'ship';
   };
+  function storageSection(f) {
+    if (!hasStorage(f)) return '';
+    const st = f.storage, photo = safeUrl(st.photo);
+    const row = (k, v) => v ? `<div class="row"><dt>${k}</dt><dd>${v}</dd></div>` : '';
+    return `
+      <h2 class="sec" id="storageSec"><span class="ic">🧊</span>保管と鮮度のこと</h2>
+      <div class="method box">
+        ${photo ? `<img class="storage-photo" src="${photo}" alt="保管している場所の写真" loading="lazy">` : ''}
+        <dl>
+          ${row('収穫からお届けまで', esc(FRESH[st.fresh] || ''))}
+          ${row('保管のしかた', (st.ways || []).filter(w => STORE_WAYS[w]).map(w => esc(STORE_WAYS[w])).join('<br>'))}
+          ${row('温度', esc(st.temp || ''))}
+          ${row('配送のとき', esc(SHIP_TEMP[st.ship] || ''))}
+          ${row('ひとこと', esc(st.note || '').replace(/\n/g, '<br>'))}
+        </dl>
+      </div>
+      <p class="small dim" style="margin-top:8px">保管と鮮度の表記は、農家さん本人の申告です。届いたらなるべく早く、冷蔵庫など涼しい場所に入れてください。</p>`;
+  }
   function productCard(f, p, how = howOf(f)) {
     const season = inSeason(p);
     const qty = cart.farmId === f.id ? (cart.items[p.id] || 0) : 0;
@@ -1597,7 +1624,7 @@
         <div><span class="tag ${CAT_COLOR[p.cat] || ''}">${CATS[p.cat] || ''}</span> ${season ? '<span class="tag tomato">いま旬</span>' : ''}</div>
         <h3>${esc(p.name)}</h3>
         <div class="unit">${esc(p.unit)}${p.note ? ` ・ ${esc(p.note)}` : ''}</div>
-        <div class="origin">原産地：山口県${esc(f.city)}</div>
+        <div class="origin">原産地：山口県${esc(f.city)}${f.storage && FRESH_SHORT[f.storage.fresh] ? ` ・ <a href="#storageSec" data-jump="storageSec">${FRESH_SHORT[f.storage.fresh]}</a>` : ''}${f.storage && f.storage.ship === 'cool' ? ' ・ 🧊 クール便' : ''}</div>
         <div class="prices" style="${pick ? '' : 'grid-template-columns:1fr'}">
           ${pick ? `
           <button type="button" class="price ship ${how === 'ship' ? 'on' : ''}" data-how="ship" aria-pressed="${how === 'ship'}" ${f.chargesEnabled ? '' : 'disabled'}><small>📦 県内配送（送料込み）</small><b>${yen(p.shipPrice)}</b></button>
@@ -1687,6 +1714,7 @@
             : `<p class="small dim" style="margin-top:8px">${esc(f.city)}（位置はおおよそです）・<a href="${gmapUrl(f)}" target="_blank" rel="noopener">Googleマップで開く</a>${canPickup(f) ? '<br>🚗 受け取り場所のくわしい住所は、ご注文後にお知らせします。' : ''}</p>`}
         </div>
       </div>
+      ${storageSection(f)}
 
       <h2 class="sec"><span class="ic">🚗</span>畑での受け取り</h2>
       <div class="box">${pickupInfo(f)}</div>
@@ -1950,7 +1978,7 @@
         : 'お支払い：クレジットカードなど・ご注文時にお支払い（決済画面を開いてから30分以内）';
       if ($('#stripeNote')) $('#stripeNote').hidden = cash;
       $('#cancelNote').innerHTML = cash ? `予約の取り消し：注文から<b>${f.cancelDays || 2}日以内</b>（受け取り日の前日まで）、農家さんが準備を始める前までできます。` : `キャンセル：注文から<b>${f.cancelDays || 2}日以内</b>${mtd === 'pickup' ? '（受け取り日の前日まで）' : ''}、農家さんが準備を始める前までできます。全額返金します。`;
-      $('#whenNote').innerHTML = mtd === 'pickup' ? 'お渡し：上で選んだ受け取り日時に、畑でお渡しします。' : `お届け：ご注文から<b>${shipDaysOf(f)}日以内</b>に発送します。`;
+      $('#whenNote').innerHTML = mtd === 'pickup' ? 'お渡し：上で選んだ受け取り日時に、畑でお渡しします。' : `お届け：ご注文から<b>${shipDaysOf(f)}日以内</b>に発送します。${f.storage && SHIP_TEMP[f.storage.ship] ? `（${esc(SHIP_TEMP[f.storage.ship])}）` : ''}`;
       $('#payBtn').textContent = cash ? `${yen(total)} で予約する（受け取りのときに現金払い）` : api.mode === 'demo' ? `${yen(total)} で注文する（お試し）` : `${yen(total)} のお支払いへ進む`;
     }
     $$('input[name=method]').forEach(r => r.addEventListener('change', () => { cart.method = method(); saveCart(); refresh(); }));
@@ -2209,7 +2237,8 @@
       since: '', area: '', emoji: '🥬', hue: 0, catch: '', story: '', cancelDays: 2,
       methods: { pesticide: 'conventional', fertilizer: 'conventional', style: '露地', soil: '' },
       certs: [], products: [], posts: [],
-      pickup: { enabled: true, place: '', days: [6], from: 9, to: 16, note: '' }
+      pickup: { enabled: true, place: '', days: [6], from: 9, to: 16, note: '' },
+      storage: {}
     };
   }
   function subnav(cur, pending) {
@@ -2600,6 +2629,21 @@
         </div>
         <div class="field"><label for="fSoil">こだわり</label><textarea id="fSoil" maxlength="400" placeholder="例：落ち葉堆肥で土づくり。">${esc(f.methods.soil)}</textarea></div>
 
+        <h3 style="margin:20px 0 8px;font-size:1rem">🧊 保管と鮮度</h3>
+        <p class="small dim" style="margin:0 0 10px">収穫してからどう保管しているかを書くと、お客さんが安心して買えます。農園ページに表示します。</p>
+        ${(() => { const st = f.storage || {}; return `
+        <div class="field"><label for="stFresh">収穫からお届けまで</label>
+          <select id="stFresh"><option value="">えらばない</option>${Object.entries(FRESH).map(([k, v]) => `<option value="${k}" ${st.fresh === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+        <div class="field"><span class="field-label">保管のしかた（いくつでも）</span>
+          <div class="checks">${Object.entries(STORE_WAYS).map(([k, v]) => `<label><input type="checkbox" name="stWay" value="${k}" ${(st.ways || []).includes(k) ? 'checked' : ''}> ${v}</label>`).join('')}</div></div>
+        <div class="row2">
+          <div class="field"><label for="stTemp">温度（わかれば）</label><input id="stTemp" maxlength="30" value="${esc(st.temp || '')}" placeholder="例：5℃前後"></div>
+          <div class="field"><label for="stShip">配送のとき</label><select id="stShip"><option value="">えらばない</option>${Object.entries(SHIP_TEMP).map(([k, v]) => `<option value="${k}" ${st.ship === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+            <span class="hint">クール便にする場合は、その送料も配送の価格に含めてください。</span></div>
+        </div>
+        <div class="field"><span class="field-label">保管している場所の写真（あれば）</span><div id="stPhotoPick"></div></div>
+        <div class="field"><label for="stNote">ひとこと</label><textarea id="stNote" maxlength="300" placeholder="例：朝どれを予冷庫で冷やしてから、その日のうちに発送します。">${esc(st.note || '')}</textarea></div>`; })()}
+
         <h3 style="margin:20px 0 8px;font-size:1rem">🚗 畑での受け取り</h3>
         <div class="field"><label style="display:flex;gap:8px;align-items:center;font-weight:900"><input type="checkbox" id="pkOn" style="width:auto" ${f.pickup.enabled ? 'checked' : ''}> 畑での受け取りを受け付ける</label>
           <span class="hint">お客さんが畑まで取りに来ます。送料がかからない分、配送より安い価格を設定できます。</span></div>
@@ -2677,6 +2721,7 @@
     `;
     bindAccount(() => route());
     const cover = photoPicker($('#coverPick'), f.coverUrl ? [f.coverUrl] : [], 1, '畑の写真');
+    const stPhoto = photoPicker($('#stPhotoPick'), f.storage && f.storage.photo ? [f.storage.photo] : [], 1, '保管場所の写真');
 
     // 位置
     let picked = f.latPicked && typeof f.lat === 'number' ? [f.lat, f.lng] : null;
@@ -2782,6 +2827,7 @@
         emoji, hue: Math.max(0, EMOJIS.indexOf(emoji)) % HUES.length,
         catch: $('#fCatch').value.trim(), story: $('#fStory').value.trim(),
         methods: { pesticide: $('#fPest').value, fertilizer: $('#fFert').value, style: $('#fStyle').value, soil: $('#fSoil').value.trim() },
+        storage: { fresh: $('#stFresh').value, ways: $$('input[name=stWay]:checked').map(i => i.value), temp: $('#stTemp').value.trim(), ship: $('#stShip').value, photo: stPhoto.get()[0] || '', note: $('#stNote').value.trim() },
         certs: $('#fCerts').value.split(/[,、，]/).map(s => s.trim()).filter(Boolean),
         pickup: { enabled: pkOn, place: $('#pkPlace').value.trim(), addr: $('#pkAddrPublic').checked ? pkAddr : '', cash: $('#pkCash').checked, days: pkDays, from, to, note: $('#pkNote').value.trim() },
         pickupAddr: pkAddr, sellerName, sellerTel, sellerAddr, shipDays: Number($('#fShipDays').value),
