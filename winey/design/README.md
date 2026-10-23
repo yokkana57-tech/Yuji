@@ -1,14 +1,14 @@
 # デザインを印刷用データにする
 
 ## いまの状況
-- **デザイン画像がまだこのフォルダにありません。**（2026-10-23 時点。リポジトリの全ブランチを探しても見つからなかった）
-- 画像を `windy/design/original/` に入れてもらえれば、下のスクリプトで変換できます。元の画像は上書きしません。
+- 受け取った5枚は `winey/design/original/` に保存済み。ただし**服の完成イメージ図**で、絵の部分の画素が少ないため、そのままでは印刷用にならない（清書が必要。RESEARCH_無在庫の会社比較.md の3章）
+- 画像を `winey/design/original/` に入れてもらえれば、下のスクリプトで変換できます。元の画像は上書きしません。
 
 ## 使い方（画像が届いたら私＝Claudeが実行します）
 ```
-python3 windy/tools/prepare_print.py windy/design/original/画像の名前.jpg
+python3 winey/tools/prepare_print.py winey/design/original/画像の名前.jpg
 ```
-- 出力先: `windy/design/print/画像の名前_print_300dpi.png`
+- 出力先: `winey/design/print/画像の名前_print_300dpi.png`
 - 確認用: `_preview_on_white.jpg`（白Tに乗せたイメージ）、`_preview_on_gray.jpg`（背景のゴミを探す用）
 - 線を真っ黒1色にしたいときは `--mono` を付ける
 
@@ -60,4 +60,4 @@ python3 windy/tools/prepare_print.py windy/design/original/画像の名前.jpg
 
 ## デザイン面で気になる点（要確認）
 - **人物3人**: 実在の人（有名なミュージシャン等）に似せている場合、肖像権・パブリシティ権（有名人の顔や名前で商売してはいけない権利）の問題になり得ます（推測・確信度 中）。架空の人物なら問題ありません
-- **「WINDY」「one love」**: 商標（他社が登録した名前）と重なっていないか、特許庁の無料検索 [J-PlatPat](https://www.j-platpat.inpit.go.jp/) で「衣類（第25類）」を確認するのがおすすめ。**登録状況は未確認**
+- **「Winey」「one love」**: 商標（他社が登録した名前）と重なっていないか、特許庁の無料検索 [J-PlatPat](https://www.j-platpat.inpit.go.jp/) で「衣類（第25類）」を確認するのがおすすめ。**登録状況は未確認**

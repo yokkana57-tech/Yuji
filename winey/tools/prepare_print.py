@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""WINDY のデザイン画像を Printful 入稿用 PNG にするスクリプト。
+"""Winey のデザイン画像を Printful 入稿用 PNG にするスクリプト。
 
 使い方:
-  python3 windy/tools/prepare_print.py 元画像のパス
-  python3 windy/tools/prepare_print.py 元画像のパス --mono   # 線を真っ黒1色にする
+  python3 winey/tools/prepare_print.py 元画像のパス
+  python3 winey/tools/prepare_print.py 元画像のパス --mono   # 線を真っ黒1色にする
 
 やること:
   1. 画像の診断（解像度・ぼやけ・影）を表示する
   2. 紙の白い背景を透明にする（影のムラもなるべく消す）
   3. 半透明のピクセルを無くす（Printful は半透明を避けるよう案内している）
   4. 印刷範囲 15x18 インチに収まる大きさ・300dpi に拡大して保存する
-元の画像は上書きしない。出力は windy/design/print/ に別名で保存する。
+元の画像は上書きしない。出力は winey/design/print/ に別名で保存する。
 """
 import argparse
 import os

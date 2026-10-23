@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""値段の計算表 (windy/pricing/WINDY_利益計算.xlsx) を作るスクリプト。"""
+"""値段の計算表 (winey/pricing/Winey_利益計算.xlsx) を作るスクリプト。"""
 import os
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -38,7 +38,7 @@ def row(r, label, b=None, c=None, note="", fill=None, fmt=None, bold=False):
         ws.cell(r, 1).font = Font(bold=True)
 
 
-ws["A1"] = "WINDY 1枚あたりの利益計算"
+ws["A1"] = "Winey 1枚あたりの利益計算"
 ws["A1"].font = Font(size=14, bold=True)
 ws["A2"] = "黄色のマスだけ入力してください。緑は自動計算。灰色は公式ページで確認した手数料（変わったら書き換える）。"
 ws.merge_cells("A2:D2")
@@ -155,6 +155,6 @@ for i, (a, b) in enumerate(src, 1):
     ws3.cell(i, 2, b)
 ws3["A1"].font = ws3["B1"].font = Font(bold=True)
 
-out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "pricing", "WINDY_利益計算.xlsx")
+out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "pricing", "Winey_利益計算.xlsx")
 wb.save(os.path.normpath(out))
 print("保存:", os.path.normpath(out))
